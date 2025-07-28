@@ -16,7 +16,7 @@ export default function (config?: WysiwygPlugin) {
     const mergedConfig = {
         ...config?.lezer ?? [], // Spreads user-passed lezer config (like codeLanguages)
         extensions: [
-            GFM,
+            // GFM,
             OFM,
             Table,
             { remove: ["SetextHeading"] },

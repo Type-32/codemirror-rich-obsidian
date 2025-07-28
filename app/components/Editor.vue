@@ -5,7 +5,6 @@ import { defaultKeymap, history, historyKeymap, indentWithTab } from '@codemirro
 import { defaultHighlightStyle, syntaxHighlighting, indentOnInput } from '@codemirror/language'
 import { languages } from '@codemirror/language-data';
 import wysiwyg from "~/editor/wysiwyg";
-import {Table} from "@lezer/markdown";
 
 const doc = defineModel<string>()
 const props = defineProps<{class?: string}>()
@@ -56,7 +55,7 @@ function iterate() {
 <template>
     <div :class="props.class ? props.class : 'w-full h-full'">
         <ClientOnly>
-            <div class="cm-prose">
+            <div class="w-full">
                 <CodeMirror
                     v-model="doc"
                     placeholder="Start typing your markdown content here..."
@@ -68,7 +67,7 @@ function iterate() {
                     @change="log('change', $event)"
                     @focus="log('focus', $event)"
                     @blur="log('blur', $event)"
-                    class="w-full h-full cm-prose"
+                    class="w-full h-full"
                  />
             </div>
             <UButton label="Iterate" @click="iterate"/>
@@ -99,6 +98,6 @@ div[contenteditable='true']:focus {
 }
 
 .cm-placeholder {
-    @apply font-sans text-sm text-muted;
+    @apply font-editor text-muted;
 }
 </style>

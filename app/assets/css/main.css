@@ -3,13 +3,49 @@
 @import "@nuxt/ui";
 
 @theme static {
-    --font-sans: 'Public Sans', sans-serif;
+    --font-sans: 'Public Sans', 'Segoe UI Variable Static Display', 'Inter', sans-serif;
 
     --font-editor: 'Segoe UI Variable Static Display', var(--font-sans);
 }
 
-.cm-prose {
+.cm-content {
     @apply font-editor;
+
+    .cm-meta {
+        @apply text-dimmed!;
+    }
+
+    .cm-heading {
+        text-decoration: none !important;
+    }
+
+    .cm-mono {
+        @apply font-mono bg-muted px-1 rounded;
+    }
+
+    .cm-hashtag {
+        @apply bg-primary/20! ring ring-primary/70! px-1.5 py-0.5 rounded text-primary!;
+    }
+
+    .cm-heading-1 {
+        @apply text-4xl! text-highlighted scroll-mt-[calc(45px+var(--ui-header-height))];
+    }
+
+    .cm-heading-2 {
+        @apply text-2xl! text-highlighted scroll-mt-[calc(45px+var(--ui-header-height))];
+    }
+
+    .cm-heading-3 {
+        @apply text-xl! text-highlighted scroll-mt-[calc(45px+var(--ui-header-height))];
+    }
+
+    .cm-heading-4 {
+        @apply text-lg! text-highlighted scroll-mt-[calc(45px+var(--ui-header-height))];
+    }
+
+    .cm-blockquote .cm-quote blockquote {
+        @apply border-s-4 border-accented ps-4 italic;
+    }
 
     .cm-obsidian-hidden {
         @apply hidden;

@@ -1,5 +1,6 @@
 import { HighlightStyle } from '@codemirror/language';
 import { tags as t } from '@lezer/highlight';
+import {lezerHighlightHashtag} from "~/editor/lezer-parsers/lezerHashtagParser";
 
 export default HighlightStyle.define([
     { tag: t.heading1, class: 'cm-heading cm-heading-1', textDecoration: 'none' },
@@ -12,4 +13,6 @@ export default HighlightStyle.define([
     { tag: t.monospace, class: 'cm-mono' },
     { tag: t.content, class: 'cm-content' },
     { tag: t.meta, class: 'cm-meta' },
+    { tag: t.strikethrough, class: 'cm-strikethrough' },
+    { tag: lezerHighlightHashtag, class: 'cm-hashtag' },
 ]);
