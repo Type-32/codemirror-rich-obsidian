@@ -1,0 +1,9 @@
+@import url('https://fonts.cdnfonts.com/css/segoe-ui-variable-static-display');
+@import "tailwindcss";
+@import "@nuxt/ui";
+
+@theme static {
+  --font-sans: 'Public Sans', sans-serif;
+
+  --font-editor: 'Segoe UI Variable Static Display', var(--font-sans);
+}
