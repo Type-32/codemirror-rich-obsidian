@@ -17,7 +17,6 @@ onMounted(() => {
     const wysiwygPlugin = wysiwyg({
         lezer: {
             codeLanguages: languages,
-            extensions: [Table]
         }
     })
     extensions.value = [
@@ -93,5 +92,13 @@ function iterate() {
 
 div[contenteditable='true']:focus {
     @apply outline-none border-none h-full shadow-none;
+}
+
+.cm-focused {
+    @apply outline-none!;
+}
+
+.cm-placeholder {
+    @apply font-sans text-sm text-muted;
 }
 </style>

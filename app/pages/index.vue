@@ -2,7 +2,7 @@
 </script>
 
 <template>
-    <div class="w-full min-h-screen">
+    <div class="w-full">
         <Editor class="w-full h-full"/>
     </div>
 </template>

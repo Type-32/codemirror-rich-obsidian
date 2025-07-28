@@ -4,7 +4,7 @@ import {markdown} from "@codemirror/lang-markdown";
 
 import RichEditPlugin from "~/editor/plugins/richTextPlugin";
 import proseStylesPlugin from "~/editor/plugins/proseStylesPlugin";
-import {GFM} from "@lezer/markdown";
+import {GFM, Table} from "@lezer/markdown";
 import {Extensions as OFM} from "lezer-markdown-obsidian"
 import {languages} from "@codemirror/language-data";
 
@@ -14,12 +14,11 @@ export type WysiwygPlugin = {
 
 export default function (config?: WysiwygPlugin) {
     const mergedConfig = {
-        ...config?.lezer ?? {
-            codeLanguages: languages,
-        }, // Spreads user-passed lezer config (like codeLanguages)
+        ...config?.lezer ?? [], // Spreads user-passed lezer config (like codeLanguages)
         extensions: [
             GFM,
             OFM,
+            Table,
             { remove: ["SetextHeading"] },
             ...(config?.lezer?.extensions ?? []) // Any other extensions passed in
         ],
@@ -30,7 +29,7 @@ export default function (config?: WysiwygPlugin) {
     };
 
     return ViewPlugin.fromClass(RichEditPlugin, {
-        decorations: value => value.decorations,
+        decorations: v => v.decorations,
         provide: value => [
             syntaxHighlighting(proseStylesPlugin),
             markdown(mergedConfig)
