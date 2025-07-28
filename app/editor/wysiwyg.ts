@@ -3,10 +3,12 @@ import { syntaxHighlighting } from '@codemirror/language';
 import {markdown} from "@codemirror/lang-markdown";
 
 import RichEditPlugin from "~/editor/plugins/richTextPlugin";
-import proseStylesPlugin from "~/editor/plugins/proseStylesPlugin";
+import proseStylesPlugin from "~/editor/plugins/lezerStylesHighlightingPlugin";
 import {GFM, Table} from "@lezer/markdown";
 import {Extensions as OFM} from "lezer-markdown-obsidian"
 import {languages} from "@codemirror/language-data";
+import {CustomOFM} from "~/editor/lezer-parsers/customOFMParsers";
+import {proseHashtagCodemirrorViewPlugin} from "~/editor/plugins/proses/proseHashtagCodemirrorViewPlugin";
 
 export type WysiwygPlugin = {
     lezer?: any
@@ -17,8 +19,7 @@ export default function (config?: WysiwygPlugin) {
         ...config?.lezer ?? [], // Spreads user-passed lezer config (like codeLanguages)
         extensions: [
             // GFM,
-            OFM,
-            Table,
+            CustomOFM,
             { remove: ["SetextHeading"] },
             ...(config?.lezer?.extensions ?? []) // Any other extensions passed in
         ],
@@ -31,6 +32,7 @@ export default function (config?: WysiwygPlugin) {
     return ViewPlugin.fromClass(RichEditPlugin, {
         decorations: v => v.decorations,
         provide: value => [
+            proseHashtagCodemirrorViewPlugin,
             syntaxHighlighting(proseStylesPlugin),
             markdown(mergedConfig)
         ]

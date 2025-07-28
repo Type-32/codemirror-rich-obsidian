@@ -54,6 +54,7 @@ const hideComponentMarkTokens = [
 * that the cursor selection IS NOT overlapping the currently iterated node (since it's running after part [^1]), adds the decoration to the iterated node.
 *
 * Then in the final processing results, it returns what Nodes shall be decorated and what shall not be decorated.
+* If you want a more thorough documentation of Decorations, read the official docs: https://codemirror.net/examples/decoration/
 *
 * All being said, there's one thing that must not be mistaken: Decorations are not Style Highlights. segphault's implementation
 * included using both the Decorations API from CodeMirror to hide Mark Nodes and render Component Nodes, and @lezer/highlight tags
@@ -92,9 +93,6 @@ export default class RichEditPlugin implements PluginValue {
 
                     if (nodeName === 'FencedCode')
                         widgets.push(decorationCode.range(nodeFrom, nodeTo));
-
-                    if (nodeName === 'Hashtag')
-                        widgets.push(decorationProseHashtag.range(nodeFrom, nodeTo));
 
                     // [^1]: the part to determine whether the current iterated node should be added a decoration.
                     if ((nodeName.startsWith('ATXHeading') || revealComponentMarkTokensOnCursor.includes(nodeName)) && cursorInNode(cursor?.from, cursor?.to, nodeFrom, nodeTo))

@@ -11,4 +11,5 @@
 - https://github.com/heavycircle/remark-obsidian
 - https://github.com/flowershow/remark-wiki-link
 - https://github.com/CTRL-Neo-Studios/simple-markdown-editor, my initial trial that quickly degraded into a shitslop because of overuse of AI
-
+- https://github.com/nothingislost/obsidian-codemirror-options
+- 
