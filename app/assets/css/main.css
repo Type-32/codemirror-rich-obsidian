@@ -3,7 +3,15 @@
 @import "@nuxt/ui";
 
 @theme static {
-  --font-sans: 'Public Sans', sans-serif;
+    --font-sans: 'Public Sans', sans-serif;
 
-  --font-editor: 'Segoe UI Variable Static Display', var(--font-sans);
+    --font-editor: 'Segoe UI Variable Static Display', var(--font-sans);
+}
+
+.cm-prose {
+    @apply font-editor;
+
+    .cm-obsidian-hidden {
+        @apply hidden;
+    }
 }
