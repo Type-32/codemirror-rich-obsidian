@@ -9,10 +9,11 @@ import {decorationProseHashtag} from "~/editor/utility/decorations";
 * To that I'll tell you calm the fuck down. I'll explain.
 *
 * There's 2 types of plugins here:
-* - The CodeMirror ViewPlugin
+* - The CodeMirror Plugins
 * - The Lezer-Parser "Plugin"
 *
-* This, right here, is a CodeMirror State Field View Plugin for adding decorations to Hashtag Nodes that styles inline markdown tags.
+* This, right here, is a CodeMirror State Field Plugin for adding decorations to Hashtag Nodes that styles inline markdown tags.
+* The richTextPlugin on the other hand is a View Plugin that basically packs up all of the CodeMirror plugins into one big rich-text-edit plugin.
 * */
 
 function buildHashtagWrappers(state: EditorState): EditorRange<Decoration>[] {
