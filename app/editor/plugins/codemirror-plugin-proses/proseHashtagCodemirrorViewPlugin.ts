@@ -20,7 +20,7 @@ function buildHashtagWrappers(state: EditorState): EditorRange<Decoration>[] {
     const decorations: EditorRange<Decoration>[] = [];
     syntaxTree(state).iterate({
         enter(node) {
-            if (node.name === 'Hashtag') {
+            if (node.name === 'HashtagTag') {
                 decorations.push(decorationProseHashtag.range(node.from, node.to));
             }
         }

@@ -3,9 +3,9 @@
 @import "@nuxt/ui";
 
 @theme static {
-    --font-sans: 'Public Sans', 'Segoe UI Variable Static Display', 'Inter', sans-serif;
+    --font-sans: 'Segoe UI Variable Static Display', 'Inter', sans-serif;
 
-    --font-editor: 'Segoe UI Variable Static Display', var(--font-sans);
+    --font-editor: 'Inter', 'Segoe UI Variable Static Display', var(--font-sans, sans-serif);
 }
 
 .cm-content {
@@ -24,7 +24,38 @@
     }
 
     .cm-hashtag {
-        @apply bg-primary/20! ring ring-primary/70! px-1.5 py-0.5 rounded text-primary!;
+        @apply bg-primary/20! ring ring-primary/70! px-1.5 text-sm rounded-4xl text-primary! inline-flex;
+
+        .cm-heading {
+            @apply text-primary!;
+        }
+    }
+
+    .cm-link, .cm-internal-link-path, .cm-internal-link-subpath, .cm-internal-link-display {
+        @apply text-primary;
+    }
+
+    .cm-codeblock, .cm-line-codeblock-begin, .cm-line-codeblock-end {
+        @apply font-mono py-0 my-0 text-sm! font-semibold border-x border-x-default mx-2 px-3 bg-muted relative;
+
+        .cm-codeblock-flair-container {
+            @apply absolute top-2 right-2 overflow-visible z-10;
+            .cm-codeblock-copy-button {
+                @apply rounded hover:bg-accented transition duration-200 cursor-pointer py-1.5 px-2 font-sans text-dimmed z-10;
+            }
+        }
+    }
+
+    .cm-line-codeblock-content {
+        @apply border-x border-x-accented;
+    }
+
+    .cm-line-codeblock-begin {
+        @apply rounded-t-lg border-t border-x border-t-accented border-x-accented pt-1 px-1;
+    }
+
+    .cm-line-codeblock-end {
+        @apply rounded-b-lg border-b border-x border-b-accented border-x-accented pb-1 px-1;
     }
 
     .cm-heading-1 {
@@ -43,7 +74,7 @@
         @apply text-lg! text-highlighted scroll-mt-[calc(45px+var(--ui-header-height))];
     }
 
-    .cm-blockquote .cm-quote blockquote {
+    .cm-blockquote, .cm-quote, blockquote {
         @apply border-s-4 border-accented ps-4 italic;
     }
 

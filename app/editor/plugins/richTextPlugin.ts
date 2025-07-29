@@ -18,6 +18,8 @@ const revealComponentMarkTokensOnCursor = [
     'FencedCode',
     'Strikethrough',
     'Link',
+    'Embed',
+    'InternalLink'
 ]; // The Mark Tokens to reveal when the cursor is over the node.
 
 const hideComponentMarkTokens = [
@@ -27,6 +29,8 @@ const hideComponentMarkTokens = [
     'CodeMark',
     'CodeInfo',
     'StrikethroughMark',
+    'EmbedMark',
+    'InternalMark',
     'URL',
 ];
 
@@ -91,8 +95,9 @@ export default class RichEditPlugin implements PluginValue {
                     const nodeFrom = node.from;
                     const nodeTo = node.to;
 
-                    if (nodeName === 'FencedCode')
-                        widgets.push(decorationCode.range(nodeFrom, nodeTo));
+                    // Handled by the Code Block Codemirror View Plugin
+                    // if (nodeName === 'FencedCode')
+                    //     widgets.push(decorationCode.range(nodeFrom, nodeTo));
 
                     // [^1]: the part to determine whether the current iterated node should be added a decoration.
                     if ((nodeName.startsWith('ATXHeading') || revealComponentMarkTokensOnCursor.includes(nodeName)) && cursorInNode(cursor?.from, cursor?.to, nodeFrom, nodeTo))

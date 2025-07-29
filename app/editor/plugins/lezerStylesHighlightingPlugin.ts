@@ -1,6 +1,11 @@
 import { HighlightStyle } from '@codemirror/language';
 import { tags as t } from '@lezer/highlight';
-import {lezerHighlightHashtag} from "~/editor/lezer-parsers/lezerHashtagParser";
+import {lezerHighlightHashtagTag} from "~/editor/lezer-parsers/lezerHashtagParser";
+import {
+    lezerHighlightEmbed, lezerHighlightEmbedMark, lezerHighlightInternalDisplay,
+    lezerHighlightInternalLink,
+    lezerHighlightInternalMark, lezerHighlightInternalPath, lezerHighlightInternalSubpath
+} from "~/editor/lezer-parsers/lezerInternalLinkParser";
 
 export default HighlightStyle.define([
     { tag: t.heading1, class: 'cm-heading cm-heading-1', textDecoration: 'none' },
@@ -11,8 +16,16 @@ export default HighlightStyle.define([
     { tag: t.emphasis, class: 'cm-emphasis' },
     { tag: t.strong, class: 'cm-strong' },
     { tag: t.monospace, class: 'cm-mono' },
-    { tag: t.content, class: 'cm-content' },
+    // { tag: t.content, class: 'cm-content' },
     { tag: t.meta, class: 'cm-meta' },
     { tag: t.strikethrough, class: 'cm-strikethrough' },
-    { tag: lezerHighlightHashtag, class: 'cm-hashtag' },
+    // { tag: lezerHighlightHashtagTag, class: 'cm-hashtag' },
+
+    { tag: lezerHighlightEmbed, class: 'cm-embed' },
+    { tag: lezerHighlightEmbedMark, class: 'cm-embed-mark cm-meta' },
+    { tag: lezerHighlightInternalLink, class: 'cm-internal-link' },
+    { tag: lezerHighlightInternalMark, class: 'cm-internal-link-mark cm-meta' },
+    { tag: lezerHighlightInternalPath, class: 'cm-internal-link-path' },
+    { tag: lezerHighlightInternalSubpath, class: 'cm-internal-link-subpath' },
+    { tag: lezerHighlightInternalDisplay, class: 'cm-internal-link-display' }
 ]);

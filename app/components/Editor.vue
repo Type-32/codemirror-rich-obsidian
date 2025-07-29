@@ -55,7 +55,7 @@ function iterate() {
 <template>
     <div :class="props.class ? props.class : 'w-full h-full'">
         <ClientOnly>
-            <div class="w-full">
+            <div class="w-full cm-content">
                 <CodeMirror
                     v-model="doc"
                     placeholder="Start typing your markdown content here..."
@@ -67,7 +67,7 @@ function iterate() {
                     @change="log('change', $event)"
                     @focus="log('focus', $event)"
                     @blur="log('blur', $event)"
-                    class="w-full h-full"
+                    class="w-full h-full cm-content"
                  />
             </div>
             <UButton label="Iterate" @click="iterate"/>
@@ -86,7 +86,7 @@ function iterate() {
 }
 
 .cm-selectionBackground {
-    @apply bg-primary/50! z-20;
+    @apply bg-primary/50! z-120!;
 }
 
 div[contenteditable='true']:focus {

@@ -4,24 +4,24 @@
 * */
 
 import {InlineContext, type MarkdownConfig} from "@lezer/markdown";
-import { Tag, tags as t } from '@lezer/highlight';
+import { Tag } from '@lezer/highlight';
 
 const hashtagRE =
     /^[^\u2000-\u206F\u2E00-\u2E7F'!"#$%&()*+,.:;<=>?@^`{|}~\[\]\\\s]+/;
 
-export const lezerHighlightHashtag = Tag.define();
-export const lezerHighlightHashtagMark = Tag.define(lezerHighlightHashtag);
-export const lezerHighlightHashtagLabel = Tag.define(lezerHighlightHashtag);
+export const lezerHighlightHashtagTag = Tag.define('HashtagTag');
+export const lezerHighlightHashtagTagMark = Tag.define('HashtagTagMark', lezerHighlightHashtagTag);
+export const lezerHighlightHashtagTagLabel = Tag.define('HashtagTagLabel', lezerHighlightHashtagTag);
 
 export const lezerHashtagParser: MarkdownConfig = {
     defineNodes: [
-        { name: "Hashtag", style: lezerHighlightHashtag },
-        "HashtagMark",
-        "HashtagLabel"
+        { name: "HashtagTag", style: lezerHighlightHashtagTag },
+        { name: "HashtagTagMark", style: lezerHighlightHashtagTagMark },
+        { name: "HashtagTagLabel", style: lezerHighlightHashtagTagLabel }
     ],
     parseInline: [
         {
-            name: "Hashtag",
+            name: "HashtagTag",
             parse(cx: InlineContext, next: number, pos: number) {
                 if (next != 35 /* # */) {
                     return -1;
@@ -32,9 +32,9 @@ export const lezerHashtagParser: MarkdownConfig = {
                 if (match && /\D/.test(match[0])) {
                     pos += match[0].length;
                     return cx.addElement(
-                        cx.elt("Hashtag", start, pos, [
-                            cx.elt("HashtagMark", start, start + 1),
-                            cx.elt("HashtagLabel", start + 1, pos),
+                        cx.elt("HashtagTag", start, pos, [
+                            cx.elt("HashtagTagMark", start, start + 1),
+                            cx.elt("HashtagTagLabel", start + 1, pos),
                         ])
                     );
                 }
