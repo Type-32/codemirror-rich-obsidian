@@ -35,6 +35,16 @@
         @apply text-primary;
     }
 
+    .cm-clickable-link {
+        @apply cursor-pointer;
+    }
+
+    .cm-unresolved-link {
+        .cm-link, .cm-internal-link-path, .cm-internal-link-subpath, .cm-internal-link-display {
+            @apply text-error/75! cursor-not-allowed;
+        }
+    }
+
     .cm-codeblock, .cm-line-codeblock-begin, .cm-line-codeblock-end {
         @apply font-mono py-0 my-0 text-sm! font-semibold border-x border-x-default mx-2 px-3 bg-muted relative;
 
@@ -58,6 +68,30 @@
         @apply rounded-b-lg border-b border-x border-b-accented border-x-accented pb-1 px-1;
     }
 
+    .cm-tooltip {
+        @apply rounded-lg bg-default/70 shadow-lg backdrop-blur-sm border border-default font-sans p-2;
+
+        ul {
+            @apply grid grid-cols-1 font-sans gap-2;
+
+            li {
+                @apply grid grid-cols-1 rounded font-sans gap-1;
+
+                .cm-completionLabel {
+                    @apply mx-1 mt-1 text-toned;
+                }
+
+                .cm-completionDetail {
+                    @apply text-xs font-mono bg-elevated w-fit rounded text-muted px-1 mb-1;
+                }
+            }
+
+            li[aria-selected="true"] {
+                @apply bg-accented/70 backdrop-blur-sm border border-accented drop-shadow-lg;
+            }
+        }
+    }
+
     .cm-heading-1 {
         @apply text-4xl! text-highlighted scroll-mt-[calc(45px+var(--ui-header-height))];
     }
@@ -79,6 +113,10 @@
     }
 
     .cm-obsidian-hidden {
+        @apply hidden;
+    }
+
+    .cm-hidden-latex {
         @apply hidden;
     }
 }

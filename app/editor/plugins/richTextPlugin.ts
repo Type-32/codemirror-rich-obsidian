@@ -18,20 +18,33 @@ const revealComponentMarkTokensOnCursor = [
     'FencedCode',
     'Strikethrough',
     'Link',
+    'Image',
     'Embed',
-    'InternalLink'
+    'InternalLink',
+    'Mark',
+    'Comment',
+    'Footnote',
+    'FootnoteReference',
+    // 'URL',
+    // 'LinkMark',
 ]; // The Mark Tokens to reveal when the cursor is over the node.
 
 const hideComponentMarkTokens = [
     'HardBreak',
-    'LinkMark',
+    // 'LinkMark',
     'EmphasisMark',
     'CodeMark',
     'CodeInfo',
     'StrikethroughMark',
     'EmbedMark',
     'InternalMark',
+    'MarkMarker',
+    'FootnoteMark',
+    'CommentMarker',
+    // 'TexMarker',
+    // 'URL',
     'URL',
+    'LinkMark',
 ];
 
 /* DOCUMENTATION TO SELF:
@@ -100,8 +113,10 @@ export default class RichEditPlugin implements PluginValue {
                     //     widgets.push(decorationCode.range(nodeFrom, nodeTo));
 
                     // [^1]: the part to determine whether the current iterated node should be added a decoration.
-                    if ((nodeName.startsWith('ATXHeading') || revealComponentMarkTokensOnCursor.includes(nodeName)) && cursorInNode(cursor?.from, cursor?.to, nodeFrom, nodeTo))
+                    if ((nodeName.startsWith('ATXHeading') || revealComponentMarkTokensOnCursor.includes(nodeName)) && cursorInNode(cursor?.from, cursor?.to, nodeFrom, nodeTo)) {
+                        // widgets.push(Decoration.replace({}).range(nodeFrom, nodeTo));
                         return false; // Returning false reveals the marks in the current line.
+                    }
 
                     if (nodeName === 'ListMark' && node.matchContext(['BulletList', 'ListItem']) && cursor?.from != nodeFrom && cursor?.from != nodeFrom + 1)
                         widgets.push(decorationBullet.range(nodeFrom, nodeTo));

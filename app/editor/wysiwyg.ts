@@ -12,6 +12,13 @@ import {
 import {
     proseCodeBlockCodemirrorViewPlugin
 } from "~/editor/plugins/codemirror-plugin-proses/proseCodeBlockCodemirrorViewPlugin";
+import {editorLinkClickPlugin} from "~/editor/plugins/codemirror-editor-plugins/editorLinkClickPlugin";
+import {proseLinkCodemirrorViewPlugin} from "~/editor/plugins/codemirror-plugin-proses/proseLinkCodemirrorViewPlugin";
+import {GFM} from "@lezer/markdown";
+import {proseLatexCodemirrorViewPlugin} from "~/editor/plugins/codemirror-plugin-proses/proseLatexCodemirrorViewPlugin";
+import {
+    editorInternalLinkAutocompletePlugin
+} from "~/editor/plugins/codemirror-editor-plugins/editorInternalLinkAutocompletePlugin";
 
 export type WysiwygPlugin = {
     lezer?: any
@@ -21,7 +28,7 @@ export default function (config?: WysiwygPlugin) {
     const mergedConfig = {
         ...config?.lezer ?? [], // Spreads user-passed lezer config (like codeLanguages)
         extensions: [
-            // GFM,
+            GFM,
             CustomOFM,
             { remove: ["SetextHeading"] },
             ...(config?.lezer?.extensions ?? []) // Any other extensions passed in
@@ -37,7 +44,12 @@ export default function (config?: WysiwygPlugin) {
         provide: value => [
             proseCodeBlockCodemirrorViewPlugin,
             proseInternalLinkCodemirrorViewPlugin,
+            proseLinkCodemirrorViewPlugin,
             proseHashtagCodemirrorViewPlugin,
+            proseLatexCodemirrorViewPlugin(),
+
+            editorLinkClickPlugin,
+            editorInternalLinkAutocompletePlugin,
             syntaxHighlighting(proseStylesPlugin),
             markdown(mergedConfig)
         ]

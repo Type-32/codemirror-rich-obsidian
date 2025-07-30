@@ -8,6 +8,9 @@ importers:
 
   .:
     dependencies:
+      '@codemirror/autocomplete':
+        specifier: ^6.18.6
+        version: 6.18.6
       '@codemirror/lang-json':
         specifier: ^6.0.2
         version: 6.0.2
@@ -23,6 +26,9 @@ importers:
       '@codemirror/language-data':
         specifier: ^6.5.1
         version: 6.5.1
+      '@hsorby/vue3-katex':
+        specifier: 0.6.0-rc.7
+        version: 0.6.0-rc.7(typescript@5.8.3)
       '@iconify-json/lucide':
         specifier: ^1.2.57
         version: 1.2.57
@@ -47,6 +53,9 @@ importers:
       codemirror:
         specifier: ^6.0.2
         version: 6.0.2
+      katex:
+        specifier: ^0.16.22
+        version: 0.16.22
       lezer-markdown-obsidian:
         specifier: ^0.0.3
         version: 0.0.3
@@ -677,6 +686,9 @@ packages:
 
   '@floating-ui/vue@1.1.7':
     resolution: {integrity: sha512-idmAtbAIigGXN2SI5gItiXYBYtNfDTP9yIiObxgu13dgtG7ARCHlNfnR29GxP4LI4o13oiwsJ8wVgghj1lNqcw==}
+
+  '@hsorby/vue3-katex@0.6.0-rc.7':
+    resolution: {integrity: sha512-4j3SHjPc8Ih6hSIysalItG84sGEP/6YtjBnOKP9NhAgdZnWtxWDqGJ0g7LzfwM8uIRHTY133uPtmO+s4/yCTFw==}
 
   '@humanfs/core@0.19.1':
     resolution: {integrity: sha512-5DyQ4+1JEUzejeK1JGICcideyfUbGixgS9jNgex5nqkW+cY7WZhxBigmieN5Qnw9ZosSNVC9KQKyb+GUaGyKUA==}
@@ -2243,6 +2255,10 @@ packages:
     resolution: {integrity: sha512-QrWXB+ZQSVPmIWIhtEO9H+gwHaMGYiF5ChvoJ+K9ZGHG/sVsa6yiesAD1GC/x46sET00Xlwo1u49RVVVzvcSkw==}
     engines: {node: '>= 10'}
 
+  commander@8.3.0:
+    resolution: {integrity: sha512-OkTL9umf+He2DZkUq8f8J9of7yL6RJKI24dVITBmNfZBmri9zYZQrKkuXiKhyfPSu8tUhnVBB1iKXevvnlR4Ww==}
+    engines: {node: '>= 12'}
+
   common-path-prefix@3.0.0:
     resolution: {integrity: sha512-QE33hToZseCH3jS0qN96O/bSh3kaw/h+Tq7ngyY9eWDUnTlTNUyqfqvCXioLe5Na5jFsL78ra/wuBU4iuEgd4w==}
 
@@ -2289,6 +2305,9 @@ packages:
   copy-file@11.0.0:
     resolution: {integrity: sha512-mFsNh/DIANLqFt5VHZoGirdg7bK5+oTWlhnGu6tgRhzBlnEKWaPX2xrFaLltii/6rmhqFMJqffUgknuRdpYlHw==}
     engines: {node: '>=18'}
+
+  core-js@3.44.0:
+    resolution: {integrity: sha512-aFCtd4l6GvAXwVEh3XbbVqJGHDJt0OZRa+5ePGx3LLwi12WfexqQxcsohb2wgsa/92xtl19Hd66G/L+TaAxDMw==}
 
   core-util-is@1.0.3:
     resolution: {integrity: sha512-ZQBvi1DcpJ4GDqanjucZ2Hj3wEO5pZDS89BWbkcrvdxksJorwUDDZamX9ldFkp9aw2lmBDLgkObEA4DWNJ9FYQ==}
@@ -3222,6 +3241,10 @@ packages:
   jwt-decode@4.0.0:
     resolution: {integrity: sha512-+KJGIyHgkGuIq3IEBNftfhW/LfWhXUIY6OmyVWjliu5KH1y0fw7VQ8YndE2O4qZdMSd9SqbnC8GOcZEy0Om7sA==}
     engines: {node: '>=18'}
+
+  katex@0.16.22:
+    resolution: {integrity: sha512-XCHRdUw4lf3SKBaJe4EvgqIuWwkPSo9XoeO8GjQW94Bp7TWv9hNhzZjZ+OH9yf1UmLygb7DIT5GSFQiyt16zYg==}
+    hasBin: true
 
   keyv@4.5.4:
     resolution: {integrity: sha512-oxVHkHR/EJf2CNXnWxRLW6mg7JyCCUcG0DtEGmL2ctUo1PNTin1PUil+r/+4r5MpVgC/fn1kjsx7mjSujKqIpw==}
@@ -5729,6 +5752,15 @@ snapshots:
       - '@vue/composition-api'
       - vue
 
+  '@hsorby/vue3-katex@0.6.0-rc.7(typescript@5.8.3)':
+    dependencies:
+      core-js: 3.44.0
+      deepmerge: 4.3.1
+      katex: 0.16.22
+      vue: 3.5.17(typescript@5.8.3)
+    transitivePeerDependencies:
+      - typescript
+
   '@humanfs/core@0.19.1':
     optional: true
 
@@ -7652,6 +7684,8 @@ snapshots:
   commander@7.2.0:
     optional: true
 
+  commander@8.3.0: {}
+
   common-path-prefix@3.0.0: {}
 
   commondir@1.0.1: {}
@@ -7691,6 +7725,8 @@ snapshots:
     dependencies:
       graceful-fs: 4.2.11
       p-event: 6.0.1
+
+  core-js@3.44.0: {}
 
   core-util-is@1.0.3: {}
 
@@ -8707,6 +8743,10 @@ snapshots:
   junk@4.0.1: {}
 
   jwt-decode@4.0.0: {}
+
+  katex@0.16.22:
+    dependencies:
+      commander: 8.3.0
 
   keyv@4.5.4:
     dependencies:

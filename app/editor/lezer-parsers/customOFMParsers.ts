@@ -5,6 +5,7 @@ import {lezerHashtagParser} from "~/editor/lezer-parsers/lezerHashtagParser";
 import {InternalLink, Mark, Comment, Footnote, TaskList, Tex} from "lezer-markdown-obsidian";
 import {lezerYamlFrontmatterParser} from "~/editor/lezer-parsers/lezerYamlFrontmatterParser";
 import {lezerInternalLinkParser} from "~/editor/lezer-parsers/lezerInternalLinkParser";
+import {lezerLatexParser} from "~/editor/lezer-parsers/lezerLatexParser";
 
 export const CustomOFM = [ // the array here must remain implicit because the version of @lezer/markdown that lezer-markdown-obsidian uses is different than the one this project is using.
     Comment,
@@ -15,6 +16,6 @@ export const CustomOFM = [ // the array here must remain implicit because the ve
     Strikethrough,
     Table,
     TaskList,
-    Tex,
+    lezerLatexParser,
     lezerYamlFrontmatterParser,
 ]

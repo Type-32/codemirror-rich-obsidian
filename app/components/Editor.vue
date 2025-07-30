@@ -3,14 +3,20 @@ import CodeMirror from 'vue-codemirror6';
 import { keymap, EditorView, drawSelection, rectangularSelection, highlightActiveLine } from "@codemirror/view";
 import { defaultKeymap, history, historyKeymap, indentWithTab } from '@codemirror/commands'
 import { defaultHighlightStyle, syntaxHighlighting, indentOnInput } from '@codemirror/language'
+import {Compartment} from "@codemirror/state";
 import { languages } from '@codemirror/language-data';
 import wysiwyg from "~/editor/wysiwyg";
+import {type InternalLink, internalLinkMapFacet} from "~/editor/plugins/linkMappingConfig";
+import {autocompletion, closeBracketsKeymap, completionKeymap} from "@codemirror/autocomplete";
 
 const doc = defineModel<string>()
-const props = defineProps<{class?: string}>()
+const props = defineProps<{class?: string, internalLinkMap?: InternalLink[]}>()
+const emit = defineEmits(['internal-link-click', 'external-link-click']);
 const extensions = shallowRef<any[]>([])
 const view = shallowRef<EditorView>()
 const ast = ref([])
+const internalLinkCompartment = new Compartment();
+const editorElement = ref<HTMLElement>()
 
 onMounted(() => {
     const wysiwygPlugin = wysiwyg({
@@ -20,15 +26,50 @@ onMounted(() => {
     })
     extensions.value = [
         EditorView.lineWrapping,
-        wysiwygPlugin,
+        autocompletion(),
         history(),
         drawSelection(),
         rectangularSelection(),
         indentOnInput(),
         syntaxHighlighting(defaultHighlightStyle),
-        keymap.of([indentWithTab, ...defaultKeymap, ...historyKeymap]),
+        keymap.of([
+            ...closeBracketsKeymap,
+            ...defaultKeymap,
+            ...historyKeymap,
+            ...completionKeymap,
+            indentWithTab
+        ]),
+        internalLinkCompartment.of(internalLinkMapFacet.of(props.internalLinkMap || [])),
+        wysiwygPlugin,
     ]
+    if (editorElement.value) {
+        editorElement.value.addEventListener('internal-link-click', handleInternalLinkClick as EventListener);
+        editorElement.value.addEventListener('external-link-click', handleExternalLinkClick as EventListener);
+    }
 })
+
+onBeforeUnmount(() => {
+    if (editorElement.value) {
+        editorElement.value.removeEventListener('internal-link-click', handleInternalLinkClick as EventListener);
+        editorElement.value.removeEventListener('external-link-click', handleExternalLinkClick as EventListener);
+    }
+});
+
+function handleInternalLinkClick(event: CustomEvent) {
+    emit('internal-link-click', event.detail);
+}
+
+function handleExternalLinkClick(event: CustomEvent) {
+    emit('external-link-click', event.detail);
+}
+
+watch(() => props.internalLinkMap, (newMap) => {
+    if (view.value) {
+        view.value.dispatch({
+            effects: internalLinkCompartment.reconfigure(internalLinkMapFacet.of(newMap || []))
+        });
+    }
+}, { deep: true });
 
 function handleReady(payload: any) {
     view.value = payload.view
@@ -53,7 +94,7 @@ function iterate() {
 </script>
 
 <template>
-    <div :class="props.class ? props.class : 'w-full h-full'">
+    <div :class="props.class ? props.class : 'w-full h-full'" ref="editorElement">
         <ClientOnly>
             <div class="w-full cm-content">
                 <CodeMirror
