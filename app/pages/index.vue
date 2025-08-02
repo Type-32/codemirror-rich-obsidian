@@ -40,7 +40,7 @@ const handleExternalLinkClick = (detail: { url: string, text?: string }) => {
 </script>
 
 <template>
-    <div class="w-full">
+    <div class="w-full overflow-visible">
         <Editor class="w-full h-full" :internal-link-map @internal-link-click="handleInternalLinkClick" @external-link-click="handleExternalLinkClick"/>
     </div>
 </template>

@@ -29,10 +29,12 @@
     "codemirror": "^6.0.2",
     "katex": "^0.16.22",
     "lezer-markdown-obsidian": "^0.0.3",
+    "markdown-it-obsidian-callouts": "^0.3.2",
     "nuxt": "^4.0.1",
     "vue-codemirror6": "^1.3.22"
   },
   "devDependencies": {
+    "@tailwindcss/language-server": "^0.14.26",
     "typescript": "^5.8.3"
   },
   "packageManager": "pnpm@10.13.1",
