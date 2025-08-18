@@ -108,8 +108,24 @@
         @apply text-lg! text-highlighted scroll-mt-[calc(45px+var(--ui-header-height))];
     }
 
-    .cm-blockquote, .cm-quote, blockquote {
-        @apply border-s-4 border-accented ps-4 italic;
+    .cm-quoteblock, blockquote {
+        @apply border-l-6 bg-muted border-accented ps-2 mx-2;
+
+        &.cm-quoteblock-start {
+            @apply rounded-t pt-2;
+        }
+
+        &.cm-quoteblock-end {
+            @apply rounded-b pb-2;
+        }
+
+        .cm-formatting-quote.cm-meta {
+            @apply invisible;
+        }
+
+        .cm-formatting-quote-active.cm-meta {
+            @apply visible!;
+        }
     }
 
     .cm-obsidian-hidden {

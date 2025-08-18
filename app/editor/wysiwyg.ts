@@ -19,6 +19,9 @@ import {proseLatexCodemirrorViewPlugin} from "~/editor/plugins/codemirror-plugin
 import {
     editorInternalLinkAutocompletePlugin
 } from "~/editor/plugins/codemirror-editor-plugins/editorInternalLinkAutocompletePlugin";
+import {
+    proseQuoteblockCodemirrorViewPlugin
+} from '~/editor/plugins/codemirror-plugin-proses/proseQuoteblockCodemirrorViewPlugin'
 
 export type WysiwygPlugin = {
     lezer?: any
@@ -47,6 +50,7 @@ export default function (config?: WysiwygPlugin) {
             proseLinkCodemirrorViewPlugin,
             proseHashtagCodemirrorViewPlugin,
             proseLatexCodemirrorViewPlugin(),
+            proseQuoteblockCodemirrorViewPlugin,
 
             editorLinkClickPlugin,
             editorInternalLinkAutocompletePlugin,
