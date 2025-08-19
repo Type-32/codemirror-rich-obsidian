@@ -10,13 +10,22 @@ import {type InternalLink, internalLinkMapFacet} from "~/editor/plugins/linkMapp
 import {autocompletion, closeBracketsKeymap, completionKeymap} from "@codemirror/autocomplete";
 
 const doc = defineModel<string>()
-const props = defineProps<{class?: string, internalLinkMap?: InternalLink[]}>()
+const props = defineProps<{class?: string, internalLinkMap?: InternalLink[], disabled?: boolean, debug?: boolean}>()
 const emit = defineEmits(['internal-link-click', 'external-link-click']);
 const extensions = shallowRef<any[]>([])
 const view = shallowRef<EditorView>()
 const ast = ref([])
 const internalLinkCompartment = new Compartment();
 const editorElement = ref<HTMLElement>()
+const keymaps = computed(() => {
+    return props.disabled ? keymap.of([]) : keymap.of([
+        ...closeBracketsKeymap,
+        ...defaultKeymap,
+        ...historyKeymap,
+        ...completionKeymap,
+        indentWithTab
+    ])
+})
 
 onMounted(() => {
     const wysiwygPlugin = wysiwyg({
@@ -34,15 +43,10 @@ onMounted(() => {
         syntaxHighlighting(defaultHighlightStyle),
         // highlightActiveLine(),
         // highlightActiveLineGutter(),
-        keymap.of([
-            ...closeBracketsKeymap,
-            ...defaultKeymap,
-            ...historyKeymap,
-            ...completionKeymap,
-            indentWithTab
-        ]),
+        unref(keymaps),
         internalLinkCompartment.of(internalLinkMapFacet.of(props.internalLinkMap || [])),
         wysiwygPlugin,
+        EditorView.editable.of(unref(!props.disabled)),
     ]
     if (editorElement.value) {
         editorElement.value.addEventListener('internal-link-click', handleInternalLinkClick as EventListener);
@@ -116,12 +120,16 @@ function iterate() {
                     @focus="log('focus', $event)"
                     @blur="log('blur', $event)"
                     class="w-full h-full cm-content overflow-visible"
+                    :disabled="props.disabled"
+                    :readonly="props.disabled"
                  />
             </div>
-            <UButton label="Iterate" @click="iterate"/>
-            <div class="grid grid-cols-1 gap-2 py-2">
-                <div v-for="(content, index) in ast" :key="index">{{content}}</div>
-            </div>
+            <template v-if="props.debug">
+                <UButton label="Iterate AST" @click="iterate"/>
+                <div class="grid grid-cols-1 gap-2 py-2">
+                    <div v-for="(content, index) in ast" :key="index">{{content}}</div>
+                </div>
+            </template>
         </ClientOnly>
     </div>
 </template>

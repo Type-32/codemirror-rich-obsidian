@@ -3,6 +3,7 @@ import ImageEmbedComponent from "~/components/Embeds/ImageEmbedComponent.vue";
 import type {InternalLink} from "~/editor/plugins/linkMappingConfig";
 
 const router = useRouter()
+const editorDisabled = ref(false)
 
 const internalLinkMap = ref<InternalLink[]>([
     {
@@ -41,6 +42,14 @@ const handleExternalLinkClick = (detail: { url: string, text?: string }) => {
 
 <template>
     <div class="w-full overflow-visible">
-        <Editor class="w-full h-full" :internal-link-map @internal-link-click="handleInternalLinkClick" @external-link-click="handleExternalLinkClick"/>
+        <Editor
+            class="w-full h-full"
+            :internal-link-map
+            @internal-link-click="handleInternalLinkClick"
+            @external-link-click="handleExternalLinkClick"
+            :disabled="editorDisabled"
+            debug
+        />
+        <USwitch v-model="editorDisabled" label="Disabled"/>
     </div>
 </template>
