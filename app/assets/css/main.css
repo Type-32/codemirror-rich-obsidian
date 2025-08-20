@@ -111,6 +111,10 @@
     .cm-quoteblock, blockquote {
         @apply border-l-6 bg-muted border-accented ps-2 mx-2;
 
+        &.cm-quoteblock-single {
+            @apply rounded py-2;
+        }
+
         &.cm-quoteblock-start {
             @apply rounded-t pt-2;
         }
