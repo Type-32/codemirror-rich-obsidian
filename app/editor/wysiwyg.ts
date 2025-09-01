@@ -19,6 +19,7 @@ import { editorKeymapPlugin } from '~/editor/plugins/codemirror-editor-plugins/e
 import { proseHighlightCodemirrorViewPlugin } from '~/editor/plugins/codemirror-plugin-proses/proseHighlightCodemirrorViewPlugin'
 import { closeBrackets, autocompletion } from '@codemirror/autocomplete'
 import { customBracketClosingPlugin } from '~/editor/plugins/codemirror-editor-plugins/customBracketClosingPlugin'
+import { customBracketClosingConfig } from '~/editor/plugins/customBracketClosingConfig'
 
 export type WysiwygPlugin = {
     lezer?: any
@@ -45,6 +46,7 @@ export default function (config?: WysiwygPlugin) {
         provide: (value) => [
             autocompletion(),
             customBracketClosingPlugin,
+            customBracketClosingConfig.of(true), // Default to enabled
             proseCodeBlockCodemirrorViewPlugin,
             proseHighlightCodemirrorViewPlugin,
             proseInternalLinkCodemirrorViewPlugin,

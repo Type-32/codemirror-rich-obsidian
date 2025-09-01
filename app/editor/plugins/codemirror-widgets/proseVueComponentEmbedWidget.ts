@@ -1,35 +1,39 @@
-import { WidgetType } from '@codemirror/view';
-import { createApp, type App, type Component } from 'vue';
+import { WidgetType, EditorView } from '@codemirror/view'
+import { createApp, type App, type Component } from 'vue'
 
 export class ProseVueComponentEmbedWidget extends WidgetType {
-    private app: App | null = null;
+    private app: App | null = null
 
-    constructor(
-        readonly component: Component,
-        readonly props: Record<string, any>,
-        readonly pos: number
-    ) {
-        super();
+    constructor(readonly component: Component, readonly props: Record<string, any>, readonly pos: number) {
+        super()
     }
 
-    toDOM() {
-        const container = document.createElement('div');
-        container.className = 'vue-embed-widget';
-        container.dataset.embedPos = String(this.pos);
+    toDOM(view: EditorView) {
+        const container = document.createElement('div')
+        container.className = 'vue-embed-widget'
+        container.dataset.embedPos = String(this.pos)
 
-        this.app = createApp(this.component, this.props);
-        this.app.mount(container);
+        container.addEventListener('mousedown', () => {
+            if (view.hasFocus) {
+                view.dom.blur()
+            }
+        })
 
-        return container;
+        this.app = createApp(this.component, this.props)
+        this.app.mount(container)
+
+        return container
     }
 
     override destroy() {
         if (this.app) {
-            this.app.unmount();
+            this.app.unmount()
         }
     }
 
     override ignoreEvent(event: Event): boolean {
-        return !(event instanceof MouseEvent && event.type === 'mousedown');
+        // Ignore mouse events to prevent the editor from re-focusing,
+        // but allow the Vue component to handle its own interactions.
+        return event instanceof MouseEvent
     }
 }

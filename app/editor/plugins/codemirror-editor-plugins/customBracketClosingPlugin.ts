@@ -1,5 +1,6 @@
-import { EditorView } from '@codemirror/view'
+import { EditorView, ViewPlugin, type ViewUpdate } from '@codemirror/view'
 import { EditorSelection } from '@codemirror/state'
+import { customBracketClosingConfig } from '~/editor/plugins/customBracketClosingConfig'
 
 const bracketMap: { [key: string]: string } = {
     '(': ')',
@@ -8,8 +9,10 @@ const bracketMap: { [key: string]: string } = {
     '"': '"',
 }
 
-export const customBracketClosingPlugin = EditorView.domEventHandlers({
+const bracketClosingEventHandlers = {
     keydown(event: KeyboardEvent, view: EditorView) {
+        if (!view.state.facet(customBracketClosingConfig)) return false
+
         // Handle opening brackets
         if (bracketMap[event.key]) {
             const closingBracket = bracketMap[event.key]
@@ -67,6 +70,8 @@ export const customBracketClosingPlugin = EditorView.domEventHandlers({
 
         // Handle Backspace
         if (event.key === 'Backspace') {
+            if (!view.state.facet(customBracketClosingConfig)) return false
+
             const { state, dispatch } = view
             const { selection } = state
 
@@ -90,4 +95,14 @@ export const customBracketClosingPlugin = EditorView.domEventHandlers({
 
         return false
     },
-})
+}
+
+export const customBracketClosingPlugin = ViewPlugin.fromClass(
+    class {
+        constructor(view: EditorView) {}
+        update(update: ViewUpdate) {}
+    },
+    {
+        eventHandlers: bracketClosingEventHandlers,
+    }
+)

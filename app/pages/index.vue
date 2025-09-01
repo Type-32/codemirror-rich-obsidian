@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import ImageEmbedComponent from "~/components/Embeds/ImageEmbedComponent.vue";
 import type {InternalLink} from "~/editor/plugins/linkMappingConfig";
+import type { SpecialCodeBlockMapping } from '~/editor/plugins/specialCodeBlockMappingConfig'
+import TestCustomCodeBlock from '~/components/SpecialCodeBlocks/TestCustomCodeBlock.vue'
 
 const router = useRouter()
 const editorDisabled = ref(false)
@@ -21,6 +23,13 @@ const internalLinkMap = ref<InternalLink[]>([
         embedComponent: ImageEmbedComponent,
     }
 ]);
+
+const specialCodeBlockMap = ref<SpecialCodeBlockMapping[]>([
+    {
+        codeInfo: 'test',
+        component: TestCustomCodeBlock
+    }
+])
 
 
 const handleInternalLinkClick = (detail: { path: string, subpath?: string, display?: string, type: 'internal-link' | 'embed' }) => {
@@ -45,6 +54,7 @@ const handleExternalLinkClick = (detail: { url: string, text?: string }) => {
         <Editor
             class="w-full h-full"
             :internal-link-map
+            :special-code-block-map
             @internal-link-click="handleInternalLinkClick"
             @external-link-click="handleExternalLinkClick"
             :disabled="editorDisabled"

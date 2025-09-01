@@ -1,35 +1,48 @@
 <script setup lang="ts">
-import CodeMirror from 'vue-codemirror6';
-import { keymap, EditorView, drawSelection, rectangularSelection, highlightActiveLine, highlightActiveLineGutter } from "@codemirror/view";
+import CodeMirror from 'vue-codemirror6'
+import {
+    keymap,
+    EditorView,
+    drawSelection,
+    rectangularSelection,
+    highlightActiveLine,
+    highlightActiveLineGutter,
+} from '@codemirror/view'
 import { standardKeymap, history, historyKeymap, indentWithTab } from '@codemirror/commands'
-import {defaultHighlightStyle, syntaxHighlighting, indentOnInput, indentUnit} from '@codemirror/language'
-import {Compartment} from "@codemirror/state";
-import { languages } from '@codemirror/language-data';
-import wysiwyg from "~/editor/wysiwyg";
-import {type InternalLink, internalLinkMapFacet} from "~/editor/plugins/linkMappingConfig";
+import { defaultHighlightStyle, syntaxHighlighting, indentOnInput, indentUnit } from '@codemirror/language'
+import { Compartment } from '@codemirror/state'
+import { languages } from '@codemirror/language-data'
+import wysiwyg from '~/editor/wysiwyg'
+import { type InternalLink, internalLinkMapFacet } from '~/editor/plugins/linkMappingConfig'
+import { specialCodeBlockMapFacet, type SpecialCodeBlockMapping } from '~/editor/plugins/specialCodeBlockMappingConfig'
+import { customBracketClosingConfig } from '~/editor/plugins/customBracketClosingConfig'
 
 const doc = defineModel<string>()
-const props = defineProps<{class?: string, internalLinkMap?: InternalLink[], disabled?: boolean, debug?: boolean}>()
-const emit = defineEmits(['internal-link-click', 'external-link-click']);
+const props = defineProps<{
+    class?: string
+    internalLinkMap?: InternalLink[]
+    specialCodeBlockMap?: SpecialCodeBlockMapping[]
+    bracketClosing?: boolean
+    disabled?: boolean
+    debug?: boolean
+}>()
+const emit = defineEmits(['internal-link-click', 'external-link-click'])
 const extensions = shallowRef<any[]>([])
 const view = shallowRef<EditorView>()
 const ast = ref([])
-const internalLinkCompartment = new Compartment();
+const internalLinkCompartment = new Compartment()
+const specialCodeBlockCompartment = new Compartment()
+const bracketClosingCompartment = new Compartment()
 const editorElement = ref<HTMLElement>()
 const keymaps = computed(() => {
-    return props.disabled ? keymap.of([]) : keymap.of([
-        ...standardKeymap,
-        ...historyKeymap,
-
-        indentWithTab
-    ])
+    return props.disabled ? keymap.of([]) : keymap.of([...standardKeymap, ...historyKeymap, indentWithTab])
 })
 
 onMounted(() => {
     const wysiwygPlugin = wysiwyg({
         lezer: {
             codeLanguages: languages,
-        }
+        },
     })
     extensions.value = [
         EditorView.lineWrapping,
@@ -42,37 +55,67 @@ onMounted(() => {
         // highlightActiveLineGutter(),
         unref(keymaps),
         internalLinkCompartment.of(internalLinkMapFacet.of(props.internalLinkMap || [])),
+        specialCodeBlockCompartment.of(specialCodeBlockMapFacet.of(props.specialCodeBlockMap || [])),
+        bracketClosingCompartment.of(customBracketClosingConfig.of(props.bracketClosing ?? true)),
         wysiwygPlugin,
         EditorView.editable.of(unref(!props.disabled)),
     ]
     if (editorElement.value) {
-        editorElement.value.addEventListener('internal-link-click', handleInternalLinkClick as EventListener);
-        editorElement.value.addEventListener('external-link-click', handleExternalLinkClick as EventListener);
+        editorElement.value.addEventListener('internal-link-click', handleInternalLinkClick as EventListener)
+        editorElement.value.addEventListener('external-link-click', handleExternalLinkClick as EventListener)
     }
 })
 
 onBeforeUnmount(() => {
     if (editorElement.value) {
-        editorElement.value.removeEventListener('internal-link-click', handleInternalLinkClick as EventListener);
-        editorElement.value.removeEventListener('external-link-click', handleExternalLinkClick as EventListener);
+        editorElement.value.removeEventListener('internal-link-click', handleInternalLinkClick as EventListener)
+        editorElement.value.removeEventListener('external-link-click', handleExternalLinkClick as EventListener)
     }
-});
+})
 
 function handleInternalLinkClick(event: CustomEvent) {
-    emit('internal-link-click', event.detail);
+    emit('internal-link-click', event.detail)
 }
 
 function handleExternalLinkClick(event: CustomEvent) {
-    emit('external-link-click', event.detail);
+    emit('external-link-click', event.detail)
 }
 
-watch(() => props.internalLinkMap, (newMap) => {
-    if (view.value) {
-        view.value.dispatch({
-            effects: internalLinkCompartment.reconfigure(internalLinkMapFacet.of(newMap || []))
-        });
-    }
-}, { deep: true });
+watch(
+    () => props.internalLinkMap,
+    (newMap) => {
+        if (view.value) {
+            view.value.dispatch({
+                effects: internalLinkCompartment.reconfigure(internalLinkMapFacet.of(newMap || [])),
+            })
+        }
+    },
+    { deep: true }
+)
+
+watch(
+    () => props.specialCodeBlockMap,
+    (newMap) => {
+        if (view.value) {
+            view.value.dispatch({
+                effects: specialCodeBlockCompartment.reconfigure(specialCodeBlockMapFacet.of(newMap || [])),
+            })
+        }
+    },
+    { deep: true }
+)
+
+watch(
+    () => props.bracketClosing,
+    (newValue) => {
+        if (view.value) {
+            view.value.dispatch({
+                effects: bracketClosingCompartment.reconfigure(customBracketClosingConfig.of(newValue ?? true)),
+            })
+        }
+    },
+    { deep: true }
+)
 
 function handleReady(payload: any) {
     view.value = payload.view
@@ -92,7 +135,12 @@ function iterate() {
             //@ts-ignore
             enter(node) {
                 //@ts-ignore
-                ast.value.push(`Node: ${node.name}, From: ${node.from}, To: ${node.to}, Text: "${view.value?.state.doc.sliceString(node.from, node.to)}"`)
+                ast.value.push(
+                    `Node: ${node.name}, From: ${node.from}, To: ${node.to}, Text: "${view.value?.state.doc.sliceString(
+                        node.from,
+                        node.to
+                    )}"`
+                )
                 // To see highlight tags (more advanced, may need to inspect CM internals or a debug extension)
                 // For now, node.name is the most critical.
             },
@@ -123,12 +171,12 @@ function iterate() {
                     class="w-full h-full cm-content overflow-visible"
                     :disabled="props.disabled"
                     :readonly="props.disabled"
-                 />
+                />
             </div>
             <template v-if="props.debug">
-                <UButton label="Iterate AST" @click="iterate"/>
+                <UButton label="Iterate AST" @click="iterate" />
                 <div class="grid grid-cols-1 gap-2 py-2 w-full">
-                    <div v-for="(content, index) in ast" :key="index">{{content}}</div>
+                    <div v-for="(content, index) in ast" :key="index">{{ content }}</div>
                 </div>
             </template>
         </ClientOnly>
