@@ -1,13 +1,12 @@
 <script setup lang="ts">
 import CodeMirror from 'vue-codemirror6';
 import { keymap, EditorView, drawSelection, rectangularSelection, highlightActiveLine, highlightActiveLineGutter } from "@codemirror/view";
-import { defaultKeymap, history, historyKeymap, indentWithTab } from '@codemirror/commands'
+import { standardKeymap, history, historyKeymap, indentWithTab } from '@codemirror/commands'
 import {defaultHighlightStyle, syntaxHighlighting, indentOnInput, indentUnit} from '@codemirror/language'
 import {Compartment} from "@codemirror/state";
 import { languages } from '@codemirror/language-data';
 import wysiwyg from "~/editor/wysiwyg";
 import {type InternalLink, internalLinkMapFacet} from "~/editor/plugins/linkMappingConfig";
-import {autocompletion, closeBracketsKeymap, completionKeymap} from "@codemirror/autocomplete";
 
 const doc = defineModel<string>()
 const props = defineProps<{class?: string, internalLinkMap?: InternalLink[], disabled?: boolean, debug?: boolean}>()
@@ -19,10 +18,9 @@ const internalLinkCompartment = new Compartment();
 const editorElement = ref<HTMLElement>()
 const keymaps = computed(() => {
     return props.disabled ? keymap.of([]) : keymap.of([
-        ...closeBracketsKeymap,
-        ...defaultKeymap,
+        ...standardKeymap,
         ...historyKeymap,
-        ...completionKeymap,
+
         indentWithTab
     ])
 })
@@ -35,7 +33,6 @@ onMounted(() => {
     })
     extensions.value = [
         EditorView.lineWrapping,
-        autocompletion(),
         history(),
         drawSelection(),
         rectangularSelection(),
@@ -87,18 +84,22 @@ function log(...args: any[]) {
 
 function iterate() {
     ast.value = []
-    //@ts-ignore
-    view.value?.state?.tree.iterate({
-        from: 0,
-        to: view.value.state.doc.length,
+    try {
         //@ts-ignore
-        enter(node) {
+        view.value?.state?.tree.iterate({
+            from: 0,
+            to: view.value.state.doc.length,
             //@ts-ignore
-            ast.value.push(`Node: ${node.name}, From: ${node.from}, To: ${node.to}, Text: "${view.value?.state.doc.sliceString(node.from, node.to)}"`)
-            // To see highlight tags (more advanced, may need to inspect CM internals or a debug extension)
-            // For now, node.name is the most critical.
-        }
-    });
+            enter(node) {
+                //@ts-ignore
+                ast.value.push(`Node: ${node.name}, From: ${node.from}, To: ${node.to}, Text: "${view.value?.state.doc.sliceString(node.from, node.to)}"`)
+                // To see highlight tags (more advanced, may need to inspect CM internals or a debug extension)
+                // For now, node.name is the most critical.
+            },
+        })
+    } catch (e) {
+        console.log(e)
+    }
 }
 </script>
 
@@ -126,7 +127,7 @@ function iterate() {
             </div>
             <template v-if="props.debug">
                 <UButton label="Iterate AST" @click="iterate"/>
-                <div class="grid grid-cols-1 gap-2 py-2">
+                <div class="grid grid-cols-1 gap-2 py-2 w-full">
                     <div v-for="(content, index) in ast" :key="index">{{content}}</div>
                 </div>
             </template>

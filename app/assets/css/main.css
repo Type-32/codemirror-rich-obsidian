@@ -1,7 +1,7 @@
 @import url('https://fonts.cdnfonts.com/css/segoe-ui-variable-static-display');
 @import 'katex/dist/katex.min.css';
-@import "tailwindcss";
-@import "@nuxt/ui";
+@import 'tailwindcss';
+@import '@nuxt/ui';
 
 @theme static {
     --font-sans: 'Inter', 'Segoe UI Variable Static Display', sans-serif;
@@ -32,7 +32,14 @@
         }
     }
 
-    .cm-link, .cm-internal-link-path, .cm-internal-link-subpath, .cm-internal-link-display {
+    .cm-highlighted {
+        @apply bg-primary text-inverted px-0.5 rounded-sm;
+    }
+
+    .cm-link,
+    .cm-internal-link-path,
+    .cm-internal-link-subpath,
+    .cm-internal-link-display {
         @apply text-primary;
     }
 
@@ -41,7 +48,10 @@
     }
 
     .cm-unresolved-link {
-        .cm-link, .cm-internal-link-path, .cm-internal-link-subpath, .cm-internal-link-display {
+        .cm-link,
+        .cm-internal-link-path,
+        .cm-internal-link-subpath,
+        .cm-internal-link-display {
             @apply text-error/75! cursor-not-allowed;
         }
     }
@@ -73,7 +83,7 @@
         @apply rounded-lg bg-default/70 shadow-lg backdrop-blur-sm border border-default font-sans p-2;
 
         ul {
-            @apply grid grid-cols-1 font-sans gap-2;
+            @apply grid grid-cols-1 font-sans;
 
             li {
                 @apply grid grid-cols-1 rounded font-sans gap-1;
@@ -87,8 +97,8 @@
                 }
             }
 
-            li[aria-selected="true"] {
-                @apply bg-accented/70 backdrop-blur-sm border border-accented drop-shadow-lg;
+            li[aria-selected='true'] {
+                @apply bg-accented/70 backdrop-blur-sm border border-accented;
             }
         }
     }
