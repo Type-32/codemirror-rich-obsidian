@@ -1,9 +1,10 @@
 @import url('https://fonts.cdnfonts.com/css/segoe-ui-variable-static-display');
+@import 'katex/dist/katex.min.css';
 @import "tailwindcss";
 @import "@nuxt/ui";
 
 @theme static {
-    --font-sans: 'Segoe UI Variable Static Display', 'Inter', sans-serif;
+    --font-sans: 'Inter', 'Segoe UI Variable Static Display', sans-serif;
 
     --font-editor: 'Inter', 'Segoe UI Variable Static Display', var(--font-sans, sans-serif);
 }
