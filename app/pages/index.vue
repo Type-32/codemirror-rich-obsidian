@@ -50,9 +50,9 @@ const handleExternalLinkClick = (detail: { url: string, text?: string }) => {
 </script>
 
 <template>
-    <div class="w-full overflow-visible">
+    <div class="w-full overflow-visible flex-col flex">
         <Editor
-            class="w-full h-full"
+            class="h-full w-2xl justify-center items-center"
             :internal-link-map
             :special-code-block-map
             @internal-link-click="handleInternalLinkClick"

@@ -36,23 +36,6 @@
         @apply bg-primary/20 text-primary px-0.5 rounded-sm;
     }
 
-    .cm-fold-widget {
-        @apply absolute -left-0.5 pt-1;
-    }
-
-    .cm-gutter,
-    .cm-gutters {
-        @apply bg-transparent! border-none;
-    }
-
-    .cm-foldPlaceholder {
-        @apply bg-accented! text-dimmed! border border-none ml-0.5 h-fit inline-flex items-center justify-center align-middle;
-    }
-
-    .cm-gutterElement {
-        @apply inline-flex justify-center items-center;
-    }
-
     .cm-link,
     .cm-internal-link-path,
     .cm-internal-link-subpath,
@@ -73,7 +56,9 @@
         }
     }
 
-    .cm-codeblock, .cm-line-codeblock-begin, .cm-line-codeblock-end {
+    .cm-codeblock,
+    .cm-line-codeblock-begin,
+    .cm-line-codeblock-end {
         @apply font-mono py-0 my-0 text-sm! font-semibold border-x border-x-default mx-2 px-3 bg-muted relative;
 
         .cm-codeblock-flair-container {
@@ -120,6 +105,27 @@
         }
     }
 
+    .cm-fold-widget {
+        @apply absolute -left-0.5 pt-1;
+    }
+
+    .cm-gutter,
+    .cm-gutters {
+        @apply bg-transparent! border-none;
+    }
+
+    .cm-ig-tab {
+        @apply border-l border-l-muted py-0.5;
+    }
+
+    .cm-foldPlaceholder {
+        @apply bg-accented! text-dimmed! border border-none ml-0.5 h-fit inline-flex items-center justify-center align-middle;
+    }
+
+    .cm-gutterElement {
+        @apply inline-flex justify-center items-center;
+    }
+
     .cm-heading-1 {
         @apply text-4xl! text-highlighted scroll-mt-[calc(45px+var(--ui-header-height))];
     }
@@ -136,7 +142,8 @@
         @apply text-lg! text-highlighted scroll-mt-[calc(45px+var(--ui-header-height))];
     }
 
-    .cm-quoteblock, blockquote {
+    .cm-quoteblock,
+    blockquote {
         @apply border-l-6 bg-muted border-accented ps-2 mx-2;
 
         &.cm-quoteblock-single {
@@ -157,6 +164,19 @@
 
         .cm-formatting-quote-active.cm-meta {
             @apply visible!;
+        }
+    }
+
+    .cm-obsidian-bullet {
+        @apply text-transparent;
+
+        .cm-meta {
+            @apply invisible;
+        }
+
+        &::before {
+            content: '•';
+            @apply text-dimmed absolute;
         }
     }
 

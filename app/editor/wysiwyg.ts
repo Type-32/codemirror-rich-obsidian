@@ -22,6 +22,7 @@ import { customBracketClosingPlugin } from '~/editor/plugins/codemirror-editor-p
 import { customBracketClosingConfig } from '~/editor/plugins/customBracketClosingConfig'
 import { editorAttributesPlugin } from '~/editor/plugins/codemirror-editor-plugins/editorAttributesPlugin'
 import { basicSetup } from 'codemirror'
+import { indentationGuides } from '~/editor/plugins/codemirror-editor-plugins/indentationGuidesPlugin'
 
 export type WysiwygPlugin = {
     lezer?: any
@@ -60,6 +61,7 @@ export default function (config?: WysiwygPlugin) {
             editorLinkClickPlugin,
             editorInternalLinkAutocompletePlugin,
             editorKeymapPlugin,
+            indentationGuides(),
             // editorAttributesPlugin,
             syntaxHighlighting(proseStylesPlugin),
             markdown(mergedConfig),
