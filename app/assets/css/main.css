@@ -81,6 +81,23 @@
         @apply rounded-b-lg border-b border-x border-b-accented border-x-accented pb-1 px-1;
     }
 
+    .cm-task-checkbox-wrapper {
+        @apply size-4 mb-0.5 rounded-xl border border-default bg-default inline-flex items-center justify-center align-middle cursor-pointer;
+
+        &[data-checked='true'] {
+            @apply  bg-primary border border-primary;
+        }
+
+        &[data-checked='true']::before {
+            content: '✔';
+            @apply text-xs text-inverted;
+        }
+
+        &[data-special] {
+            @apply font-mono text-xs text-highlighted;
+        }
+    }
+
     .cm-tooltip {
         @apply rounded-lg bg-default/70 shadow-lg backdrop-blur-sm border border-default font-sans p-2;
 

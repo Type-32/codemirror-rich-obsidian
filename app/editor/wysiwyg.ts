@@ -23,6 +23,10 @@ import { customBracketClosingConfig } from '~/editor/plugins/customBracketClosin
 import { editorAttributesPlugin } from '~/editor/plugins/codemirror-editor-plugins/editorAttributesPlugin'
 import { basicSetup } from 'codemirror'
 import { indentationGuides } from '~/editor/plugins/codemirror-editor-plugins/indentationGuidesPlugin'
+import {
+    proseTaskListPlugin,
+    editorLivePreviewField,
+} from '~/editor/plugins/codemirror-plugin-proses/proseTaskListPlugin'
 
 export type WysiwygPlugin = {
     lezer?: any
@@ -57,6 +61,8 @@ export default function (config?: WysiwygPlugin) {
             proseHashtagCodemirrorViewPlugin,
             proseLatexCodemirrorViewPlugin(),
             proseQuoteblockCodemirrorViewPlugin,
+            proseTaskListPlugin,
+            editorLivePreviewField.init(() => true),
 
             editorLinkClickPlugin,
             editorInternalLinkAutocompletePlugin,
