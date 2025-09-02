@@ -58,6 +58,7 @@ const handleExternalLinkClick = (detail: { url: string, text?: string }) => {
             @internal-link-click="handleInternalLinkClick"
             @external-link-click="handleExternalLinkClick"
             :disabled="editorDisabled"
+            :fold-gutter="false"
             debug
         />
         <USwitch v-model="editorDisabled" label="Disabled"/>

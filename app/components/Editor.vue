@@ -9,7 +9,7 @@ import {
     highlightActiveLineGutter,
 } from '@codemirror/view'
 import { standardKeymap, history, historyKeymap, indentWithTab } from '@codemirror/commands'
-import { defaultHighlightStyle, syntaxHighlighting, indentOnInput, indentUnit } from '@codemirror/language'
+import { defaultHighlightStyle, syntaxHighlighting, indentOnInput, foldGutter } from '@codemirror/language'
 import { Compartment } from '@codemirror/state'
 import { languages } from '@codemirror/language-data'
 import wysiwyg from '~/editor/wysiwyg'
@@ -23,6 +23,7 @@ const props = defineProps<{
     internalLinkMap?: InternalLink[]
     specialCodeBlockMap?: SpecialCodeBlockMapping[]
     bracketClosing?: boolean
+    foldGutter?: boolean
     disabled?: boolean
     debug?: boolean
 }>()
@@ -33,6 +34,7 @@ const ast = ref([])
 const internalLinkCompartment = new Compartment()
 const specialCodeBlockCompartment = new Compartment()
 const bracketClosingCompartment = new Compartment()
+const foldGutterCompartment = new Compartment()
 const editorElement = ref<HTMLElement>()
 const keymaps = computed(() => {
     return props.disabled ? keymap.of([]) : keymap.of([...standardKeymap, ...historyKeymap, indentWithTab])
@@ -57,6 +59,7 @@ onMounted(() => {
         internalLinkCompartment.of(internalLinkMapFacet.of(props.internalLinkMap || [])),
         specialCodeBlockCompartment.of(specialCodeBlockMapFacet.of(props.specialCodeBlockMap || [])),
         bracketClosingCompartment.of(customBracketClosingConfig.of(props.bracketClosing ?? true)),
+        foldGutterCompartment.of(props.foldGutter ?? true ? foldGutter() : []),
         wysiwygPlugin,
         EditorView.editable.of(unref(!props.disabled)),
     ]
@@ -117,6 +120,18 @@ watch(
     { deep: true }
 )
 
+watch(
+    () => props.foldGutter,
+    (newValue) => {
+        if (view.value) {
+            view.value.dispatch({
+                effects: foldGutterCompartment.reconfigure(newValue ?? true ? foldGutter() : []),
+            })
+        }
+    },
+    { deep: true }
+)
+
 function handleReady(payload: any) {
     view.value = payload.view
 }
@@ -134,13 +149,8 @@ function iterate() {
             to: view.value.state.doc.length,
             //@ts-ignore
             enter(node) {
-                //@ts-ignore
-                ast.value.push(
-                    `Node: ${node.name}, From: ${node.from}, To: ${node.to}, Text: "${view.value?.state.doc.sliceString(
-                        node.from,
-                        node.to
-                    )}"`
-                )
+                // @ts-ignore
+                ast.value.push(`Node: ${node.name}, From: ${node.from}, To: ${node.to}, Text: "${view.value?.state.doc.sliceString(node.from, node.to)}"`)
                 // To see highlight tags (more advanced, may need to inspect CM internals or a debug extension)
                 // For now, node.name is the most critical.
             },

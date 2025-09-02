@@ -33,7 +33,24 @@
     }
 
     .cm-highlighted {
-        @apply bg-primary text-inverted px-0.5 rounded-sm;
+        @apply bg-primary/20 text-primary px-0.5 rounded-sm;
+    }
+
+    .cm-fold-widget {
+        @apply absolute -left-0.5 pt-1;
+    }
+
+    .cm-gutter,
+    .cm-gutters {
+        @apply bg-transparent! border-none;
+    }
+
+    .cm-foldPlaceholder {
+        @apply bg-accented! text-dimmed! border border-none ml-0.5 h-fit inline-flex items-center justify-center align-middle;
+    }
+
+    .cm-gutterElement {
+        @apply inline-flex justify-center items-center;
     }
 
     .cm-link,
