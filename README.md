@@ -3,15 +3,18 @@
 ## Credits and References, first of all
 ### Primary Credits
 - https://github.com/erykwalder/lezer-markdown-obsidian, for OFM Lezer Parsers.
-- https://github.com/surmon-china/vue-codemirror, for CodeMirror component in Vue.
+- https://github.com/surmon-china/vue-codemirror, for the CodeMirror 6 component in Vue.
 - https://github.com/segphault/codemirror-rich-markdoc, for the foundation of this entire project.
-- https://github.com/escwxyz/remark-obsidian-callout, for his awesome markdown-to-html callouts remark plugin
+- https://github.com/ebullient/markdown-it-obsidian-callouts, for his awesome markdown-to-html callouts markdown-it plugin
+- Markdown-It
+- https://github.com/mgmeyers/obsidian-indentation-guides, for indentation guides
 
 ### Related References & Resources
-- https://github.com/heavycircle/remark-obsidian
-- https://github.com/flowershow/remark-wiki-link
+- https://github.com/heavycircle/remark-obsidian, for mostly wiki link alias & highlights & callouts parsing
+- https://github.com/flowershow/remark-wiki-link, for wiki link parsing
 - https://github.com/CTRL-Neo-Studios/simple-markdown-editor, my initial trial that quickly degraded into a shitslop because of overuse of AI
 - https://github.com/nothingislost/obsidian-codemirror-options
+- https://github.com/nothingislost/obsidian-cm6-attributes
 
 ## Disclaimer
 I have used Gemini 2.5 Pro in the process of developing this editor numerous times, so do expect errors or inconsistencies in some parts of the code.
@@ -27,13 +30,18 @@ That being said, please do note that:
 - When using this editor, you may feel that some small user experiences does not mach the UX of Obsidian's markdown editor. Yes, this is a known issue, and we're trying to "fix" them.
 
 ## Known Issues
-- In Obsidian, the hidden marks of nodes are revealed at mouse-up, whereas in this implementation, they're revealed at mouse-down.
+- Same as `segphault/codemirror-rich-markdoc`, the rendered block replacement code is not yet optimized, so it recomputes all of the replaced regions on every operation instead of only updating them as needed.
+- In Obsidian, the hidden marks of nodes are revealed at `mouseup`, whereas in this implementation, they're revealed at `mousedown`.
 - The editor errs when trying to parse nested callouts, to the extent where you might loose your data.
 - Ordered List sequencing is different than that of Obsidian. We think that they probably use a sort of counter to keep track of lists of the same level beneath the hood, but we don't know for sure.
 - Indents are currently tabs. In Obsidian, they seem to be parsed as nodes judging from their raw HTML. We suspect that this node may be accounted for some of the weird fuckery with leveled list, but we don't know for sure.
 - Task lists doesn't work for now.
-- (Not much of an issue but still kept track of) YAML Frontmatter is parsed as raw text instead of TOML. We're currently determining whether to leave this as it is or try to add our own implementation to imitate how Obsidian parses and modifies their markdown files' Frontmatter.
-- Support for embedded videos, notes, bases, and canvases are currently lacking. Though we already have the foundational framework done to implement these.
-- Support for code-block mermaid graph rendering is lacking.
-- Support for code-block bases is lacking.
+- ~~(Not much of an issue but still kept track of) YAML Frontmatter is parsed as raw text instead of TOML. We're currently determining whether to leave this as it is or try to add our own implementation to imitate how Obsidian parses and modifies their markdown files' Frontmatter.~~
+  - **We've decided to leave it alone for people who want to implement their own YAML Frontmatter parsing logic.**
+- Support for embedded videos, notes, bases, and canvases are currently lacking; _though, we have a mapping prop that allows developers to add their own link-to-file implementations. (Specific to Vue/Nuxt)_
+- Support for code-block mermaid graph rendering & bases is lacking; _though, we have a mapping prop that allows developers to add their own custom codeblock widgets. (Specific to Vue/Nuxt)_
 - Light/Dark themes are not yet supported in code-block syntax highlighting.
+
+## Contributions
+- To anyone who wants to fork this, **make sure you preserve the original credits and references to the libraries that are used in this project. It means a lot to them and to us.**
+- To anyone who wants to fork this project into another framework - such as React, Angular, Svelte, or PHP - **best of luck. We don't have react/solidjs/Angular/Svelte/PHP developers on the team so we can't help with that. This project is developed is mostly just Vue/Nuxt in mind.**

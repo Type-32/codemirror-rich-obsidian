@@ -239,7 +239,27 @@
             }
         }
 
-        &[data-callout='warning'] {
+        &[data-callout='success'],
+        &[data-callout='check'],
+        &[data-callout='done'] {
+            @apply bg-success/20 border-success/20;
+
+            .callout-fold {
+                @apply text-success-400;
+            }
+
+            .callout-title {
+                .callout-title-icon,
+                .callout-title-inner {
+                    @apply text-success;
+                }
+            }
+        }
+
+        &[data-callout='warning'],
+        &[data-callout='help'],
+        &[data-callout='faq'],
+        &[data-callout='question'] {
             @apply bg-warning/20 border-warning/20;
 
             .callout-fold {
@@ -254,7 +274,9 @@
             }
         }
 
-        &[data-callout='error'] {
+        &[data-callout='error'],
+        &[data-callout='failure'],
+        &[data-callout='bug'] {
             @apply bg-error/20 border-error/20;
 
             .callout-fold {
@@ -269,8 +291,26 @@
             }
         }
 
-        &[data-callout='highlight'] {
-            @apply bg-accented/50 border-accented/50;
+        &[data-callout='highlight'],
+        &[data-callout='example'],
+        &[data-callout='tip'] {
+            @apply bg-secondary/20 border-secondary/20;
+
+            .callout-fold {
+                @apply text-secondary;
+            }
+
+            .callout-title {
+                .callout-title-icon,
+                .callout-title-inner {
+                    @apply text-secondary;
+                }
+            }
+        }
+
+        &[data-callout='quote'],
+        &[data-callout='neutral'] {
+            @apply bg-accented/30 border-accented/30;
 
             .callout-fold {
                 @apply text-highlighted;
