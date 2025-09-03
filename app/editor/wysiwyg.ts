@@ -53,6 +53,7 @@ export default function (config?: WysiwygPlugin) {
         decorations: (v) => v.decorations,
         provide: (value) => [
             autocompletion(),
+            closeBrackets(),
             proseCodeBlockCodemirrorViewPlugin,
             proseHighlightCodemirrorViewPlugin,
             proseInternalLinkCodemirrorViewPlugin,
