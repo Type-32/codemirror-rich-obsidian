@@ -34,7 +34,7 @@ function internalLinkSource(context: CompletionContext): CompletionResult | null
         .map(link => ({
             label: link.internalLinkName,
             detail: link.redirectToPath,
-            apply: `${link.internalLinkName}]]`
+            apply: `${link.internalLinkName}`
         }));
 
     if (options.length === 0) return null;

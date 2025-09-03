@@ -63,8 +63,8 @@ export default function (config?: WysiwygPlugin) {
             proseQuoteblockCodemirrorViewPlugin,
             proseCalloutPlugin,
             proseTaskListPlugin,
-            editorLivePreviewField.init(() => true),
 
+            editorLivePreviewField.init(() => true),
             editorLinkClickPlugin,
             editorInternalLinkAutocompletePlugin,
             editorKeymapPlugin,
