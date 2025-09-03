@@ -27,6 +27,7 @@ import {
     proseTaskListPlugin,
     editorLivePreviewField,
 } from '~/editor/plugins/codemirror-plugin-proses/proseTaskListPlugin'
+import { proseCalloutPlugin } from '~/editor/plugins/codemirror-plugin-proses/proseCalloutPlugin'
 
 export type WysiwygPlugin = {
     lezer?: any
@@ -52,8 +53,6 @@ export default function (config?: WysiwygPlugin) {
         decorations: (v) => v.decorations,
         provide: (value) => [
             autocompletion(),
-            customBracketClosingPlugin,
-            customBracketClosingConfig.of(true), // Default to enabled
             proseCodeBlockCodemirrorViewPlugin,
             proseHighlightCodemirrorViewPlugin,
             proseInternalLinkCodemirrorViewPlugin,
@@ -61,12 +60,15 @@ export default function (config?: WysiwygPlugin) {
             proseHashtagCodemirrorViewPlugin,
             proseLatexCodemirrorViewPlugin(),
             proseQuoteblockCodemirrorViewPlugin,
+            proseCalloutPlugin,
             proseTaskListPlugin,
             editorLivePreviewField.init(() => true),
 
             editorLinkClickPlugin,
             editorInternalLinkAutocompletePlugin,
             editorKeymapPlugin,
+            customBracketClosingPlugin,
+            customBracketClosingConfig.of(true), // Default to enabled
             indentationGuides(),
             // editorAttributesPlugin,
             syntaxHighlighting(proseStylesPlugin),

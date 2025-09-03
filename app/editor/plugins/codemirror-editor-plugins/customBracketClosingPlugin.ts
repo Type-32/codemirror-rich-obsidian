@@ -7,6 +7,7 @@ const bracketMap: { [key: string]: string } = {
     '{': '}',
     "'": "'",
     '"': '"',
+    '[': ']',
 }
 
 const bracketClosingEventHandlers = {

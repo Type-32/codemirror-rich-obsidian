@@ -3,6 +3,7 @@ import { syntaxTree } from '@codemirror/language'
 import {type EditorState, type Extension, StateField} from '@codemirror/state'
 import katex from 'katex'
 import {BlockLatexWidget, InlineLatexWidget} from "~/editor/plugins/codemirror-widgets/proseLatexWidgets";
+import { cursorSelectionCoveredNode, toCursorNodePositions } from '~/editor/utility/tools'
 
 function decorate (state: EditorState): DecorationSet {
     const decorations: any[] = []
@@ -19,7 +20,8 @@ function decorate (state: EditorState): DecorationSet {
                     }
                 }
 
-                if (isNodeRangeActive(node.from, node.to)) {
+                const poses = toCursorNodePositions(state, node)
+                if (isNodeRangeActive(node.from, node.to) || cursorSelectionCoveredNode(poses.cursorFrom, poses.cursorTo, poses.nodeFrom, poses.nodeTo)) {
                     return
                 }
 

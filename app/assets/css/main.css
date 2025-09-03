@@ -197,6 +197,138 @@
         }
     }
 
+    .cm-callout-widget,
+    .callout {
+        @apply p-3 relative flex flex-col h-fit mx-2 my-2 rounded-lg border border-primary/20 bg-primary/20; /* Removed transition-all from parent to be more specific */
+
+        summary {
+            @apply inline-flex;
+        }
+
+        .callout-title {
+            @apply flex gap-1.5 items-center;
+            .callout-title-icon {
+                @apply flex size-4 items-center justify-center fill-primary text-primary;
+            }
+
+            .callout-title-inner {
+                @apply text-primary text-lg font-bold flex-grow;
+            }
+
+            .edit-block-button {
+                @apply rounded hover:bg-elevated transition duration-200 cursor-pointer p-1 font-sans right-0 top-0 text-dimmed;
+            }
+        }
+
+        .callout-content {
+            @apply flex flex-col gap-1;
+        }
+
+        &[data-callout='info'] {
+            @apply bg-info/20 border-info/20;
+
+            .callout-fold {
+                @apply text-info-400;
+            }
+
+            .callout-title {
+                .callout-title-icon,
+                .callout-title-inner {
+                    @apply text-info;
+                }
+            }
+        }
+
+        &[data-callout='warning'] {
+            @apply bg-warning/20 border-warning/20;
+
+            .callout-fold {
+                @apply text-warning-400;
+            }
+
+            .callout-title {
+                .callout-title-icon,
+                .callout-title-inner {
+                    @apply text-warning;
+                }
+            }
+        }
+
+        &[data-callout='error'] {
+            @apply bg-error/20 border-error/20;
+
+            .callout-fold {
+                @apply text-error-400;
+            }
+
+            .callout-title {
+                .callout-title-icon,
+                .callout-title-inner {
+                    @apply text-error;
+                }
+            }
+        }
+
+        &[data-callout='highlight'] {
+            @apply bg-accented/50 border-accented/50;
+
+            .callout-fold {
+                @apply text-highlighted;
+            }
+
+            .callout-title {
+                .callout-title-icon,
+                .callout-title-inner {
+                    @apply text-highlighted;
+                }
+            }
+        }
+
+        .callout-fold {
+            @apply rounded hover:bg-elevated transition duration-200 cursor-pointer text-primary font-sans text-center align-middle p-1 size-6;
+
+            svg {
+                @apply transition-transform duration-300 ease-in-out w-full h-full;
+            }
+        }
+
+        &[open] {
+            .callout-fold {
+                svg {
+                    @apply transition-transform duration-300 ease-in-out rotate-90 w-full h-full;
+                }
+            }
+        }
+
+        &[data-fold-state='closed'] {
+            .callout-content {
+                @apply max-h-0 opacity-0 p-0;
+            }
+        }
+
+        &[data-fold-state='open'] {
+            .callout-content {
+                @apply max-h-none opacity-100 py-1 mt-1;
+            }
+        }
+
+        .edit-block-button {
+            /* Tailwind's `transition` utility adds transition-property: all; by default if not specified. */
+            /* duration-200 is already good for hover */
+            @apply rounded hover:bg-elevated transition duration-200 cursor-pointer p-1 font-sans text-dimmed;
+        }
+
+        .editing-utils-container {
+            @apply top-2 right-2 font-sans text-dimmed absolute flex items-center justify-center gap-1 p-1;
+        }
+    }
+
+    details {
+        .callout-content {
+            @apply -mt-11;
+        }
+    }
+
     .cm-obsidian-hidden {
         @apply hidden;
     }

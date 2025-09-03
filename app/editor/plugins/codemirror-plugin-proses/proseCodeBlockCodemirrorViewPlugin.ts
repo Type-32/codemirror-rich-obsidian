@@ -6,7 +6,7 @@ import type { DecorationSet } from '@codemirror/view'
 import { EndFenceWidget, LanguageFlairWidget } from '~/editor/plugins/codemirror-widgets/proseCodeBlockWidgets'
 import { specialCodeBlockMapFacet, type SpecialCodeBlockMapping } from '~/editor/plugins/specialCodeBlockMappingConfig'
 import { ProseVueComponentEmbedWidget } from '~/editor/plugins/codemirror-widgets/proseVueComponentEmbedWidget'
-import { isNodeRangeActive } from '~/editor/utility/tools'
+import { cursorSelectionCoveredNode, isNodeRangeActive, toCursorNodePositions } from '~/editor/utility/tools'
 
 function buildCodeBlockDecorations(state: EditorState): EditorRange<Decoration>[] {
     const decorations: EditorRange<Decoration>[] = []
@@ -40,17 +40,20 @@ function buildCodeBlockDecorations(state: EditorState): EditorRange<Decoration>[
                 }
                 // --- End of code content extraction ---
 
-                if (specialMapping && !isNodeRangeActive(state, node.from, node.to)) {
-                    decorations.push(
-                        Decoration.replace({
-                            widget: new ProseVueComponentEmbedWidget(
-                                specialMapping.component,
-                                { codeContent: codeText },
-                                node.from
-                            ),
-                            block: true,
-                        }).range(node.from, node.to)
-                    )
+                const poses = toCursorNodePositions(state, node)
+
+                if (specialMapping != undefined && !(isNodeRangeActive(state, node.from, node.to) || cursorSelectionCoveredNode(poses.cursorFrom, poses.cursorTo, poses.nodeFrom, poses.nodeTo))) {
+                    if (specialMapping)
+                        decorations.push(
+                            Decoration.replace({
+                                widget: new ProseVueComponentEmbedWidget(
+                                    specialMapping.component,
+                                    { codeContent: codeText },
+                                    node.from
+                                ),
+                                block: true,
+                            }).range(node.from, node.to)
+                        )
                     return false
                 }
 
@@ -63,7 +66,7 @@ function buildCodeBlockDecorations(state: EditorState): EditorRange<Decoration>[
                 ) {
                     const line = state.doc.line(currentLineNum)
                     let lineClasses = ['cm-codeblock']
-                    const cursorFocusedOnThisLine = cursor.anchor >= line.from && cursor.anchor <= line.to
+                    const cursorFocusedOnThisLine = (cursor.anchor >= line.from && cursor.anchor <= line.to) || cursorSelectionCoveredNode(poses.cursorFrom, poses.cursorTo, poses.nodeFrom, poses.nodeTo)
 
                     if (currentLineNum === firstLineNode.number) {
                         lineClasses.push('cm-line-codeblock-begin')

@@ -5,6 +5,7 @@ import type { EditorState, Range as EditorRange } from '@codemirror/state';
 import type { SyntaxNode } from '@lezer/common';
 import {internalLinkMapFacet} from "~/editor/plugins/linkMappingConfig";
 import {ProseVueComponentEmbedWidget} from "~/editor/plugins/codemirror-widgets/proseVueComponentEmbedWidget";
+import { cursorSelectionCoveredNode, toCursorNodePositions } from '~/editor/utility/tools'
 
 function isNodeRangeActive(state: EditorState, nodeFrom: number, nodeTo: number): boolean {
     const cursor = state.selection.main;
@@ -41,7 +42,8 @@ function buildInternalLinkDecorations(state: EditorState): EditorRange<Decoratio
                             side: 1
                         }).range(line.to));
 
-                        if (!isNodeRangeActive(state, node.from, node.to)) {
+                        const poses = toCursorNodePositions(state, node)
+                        if (!(isNodeRangeActive(state, node.from, node.to) || cursorSelectionCoveredNode(poses.cursorFrom, poses.cursorTo, poses.nodeFrom, poses.nodeTo))) {
                             decorations.push(Decoration.replace({}).range(node.from, node.to));
                         }
                         return false;

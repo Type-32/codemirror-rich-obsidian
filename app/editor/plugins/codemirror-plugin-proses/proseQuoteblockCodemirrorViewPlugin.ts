@@ -3,6 +3,7 @@ import { StateField, RangeSet } from '@codemirror/state';
 import { syntaxTree } from '@codemirror/language';
 import type { EditorState, Range as EditorRange } from '@codemirror/state';
 import type { DecorationSet } from '@codemirror/view';
+import { cursorInNode, cursorSelectionCoveredNode } from '~/editor/utility/tools'
 
 function isCursorOnLine(state: EditorState, lineStart: number, lineEnd: number): boolean {
     const cursor = state.selection.main;
@@ -19,6 +20,12 @@ function buildQuoteblockDecorations(state: EditorState): EditorRange<Decoration>
                 const firstLine = state.doc.lineAt(node.from);
                 const lastLine = state.doc.lineAt(node.to);
                 const lineCount = lastLine.number - firstLine.number + 1;
+
+                const [cursor] = state.selection.ranges
+                const cursorFrom = cursor?.from || 0,
+                    cursorTo = cursor?.to || 0,
+                    nodeFrom = node.from || 0,
+                    nodeTo = node.to || 0
 
                 // Process each line in the blockquote
                 for (let i = firstLine.number; i <= lastLine.number; i++) {
@@ -44,7 +51,7 @@ function buildQuoteblockDecorations(state: EditorState): EditorRange<Decoration>
                     );
 
                     // Check if cursor is on this line
-                    const isCursorActive = isCursorOnLine(state, line.from, line.to);
+                    const isCursorActive = isCursorOnLine(state, line.from, line.to) || cursorSelectionCoveredNode(cursorFrom, cursorTo, nodeFrom, nodeTo);
 
                     // Style the quote marks and content on this line
                     const lineText = line.text;

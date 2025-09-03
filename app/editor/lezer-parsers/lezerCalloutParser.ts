@@ -9,7 +9,7 @@ export const lezerHighlightCalloutTitle = Tag.define(lezerHighlightCallout);
 
 const calloutRegex = /^\[!(?<type>[^\]]+)\](?<fold>[+-])?(?<title>.*)/;
 
-export const calloutParser: MarkdownConfig = {
+export const lezerCalloutParser: MarkdownConfig = {
     defineNodes: [
         { name: "Callout", style: lezerHighlightCallout },
         { name: "CalloutMark", style: lezerHighlightCalloutMark },

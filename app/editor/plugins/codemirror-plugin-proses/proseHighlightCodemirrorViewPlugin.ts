@@ -2,7 +2,7 @@ import { Decoration, type DecorationSet, EditorView } from '@codemirror/view'
 import { StateField, RangeSet } from '@codemirror/state'
 import { syntaxTree } from '@codemirror/language'
 import type { EditorState, Range as EditorRange } from '@codemirror/state'
-import { isNodeRangeActive } from '~/editor/utility/tools'
+import { cursorSelectionCoveredNode, isNodeRangeActive, toCursorNodePositions } from '~/editor/utility/tools'
 
 function buildHighlightDecorations(state: EditorState): EditorRange<Decoration>[] {
     const decorations: EditorRange<Decoration>[] = []
@@ -22,7 +22,8 @@ function buildHighlightDecorations(state: EditorState): EditorRange<Decoration>[
                 )
                 if (closeMark !== '==') return
 
-                if (isNodeRangeActive(state, node.from, node.to)) {
+                const poses = toCursorNodePositions(state, node)
+                if (isNodeRangeActive(state, node.from, node.to) || cursorSelectionCoveredNode(poses.cursorFrom, poses.cursorTo, poses.nodeFrom, poses.nodeTo)) {
                     return
                 }
 

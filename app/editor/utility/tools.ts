@@ -1,7 +1,7 @@
 import { EditorView } from '@codemirror/view'
 import { EditorState } from '@codemirror/state'
 import { syntaxTree } from '@codemirror/language'
-import { type SyntaxNode } from '@lezer/common'
+import { type SyntaxNode, type SyntaxNodeRef } from '@lezer/common'
 
 export function cursorInNode(
     cursorFrom: number | undefined,
@@ -9,10 +9,28 @@ export function cursorInNode(
     nodeFrom: number | undefined,
     nodeTo: number | undefined
 ) {
-    return (
-        !((cursorFrom || 0) <= (nodeFrom || 0) && (cursorTo || 0) <= (nodeFrom || 0)) ||
-        ((cursorFrom || 0) >= (nodeTo || 0) && (cursorTo || 0) >= (nodeTo || 0))
-    )
+    const cf = cursorFrom || 0, ct = cursorTo || 0, nf = nodeFrom || 0, nt = nodeTo || 0
+    return (cf >= nf && cf <= nt) || (ct >= nf && ct <= nt) || (cf <= nf && ct >= nt)
+}
+
+export function cursorSelectionCoveredNode(
+    cursorFrom: number | undefined,
+    cursorTo: number | undefined,
+    nodeFrom: number | undefined,
+    nodeTo: number | undefined
+) {
+    const cf = cursorFrom || 0, ct = cursorTo || 0, nf = nodeFrom || 0, nt = nodeTo || 0
+    return (cf <= nf && ct >= nt)
+}
+
+export function toCursorNodePositions(state: EditorState, node?: SyntaxNodeRef) {
+    const [cursor] = state.selection.ranges
+    return {
+        cursorFrom: cursor?.from || 0,
+        cursorTo: cursor?.to || 0,
+        nodeFrom: node?.from || 0,
+        nodeTo: node?.to || 0
+    }
 }
 
 export function isNodeRangeActive(state: EditorState, nodeFrom: number, nodeTo: number): boolean {
@@ -21,21 +39,6 @@ export function isNodeRangeActive(state: EditorState, nodeFrom: number, nodeTo: 
         return cursor.from >= nodeFrom && cursor.from <= nodeTo
     } else {
         return Math.max(nodeFrom, cursor.from) < Math.min(nodeTo, cursor.to)
-    }
-}
-
-export function iterateTreeInVisibleRanges(
-    view: EditorView,
-    callbacks: {
-        enter: (node: { type: SyntaxNode['type']; from: number; to: number }) => void
-    }
-) {
-    for (const { from, to } of view.visibleRanges) {
-        syntaxTree(view.state).iterate({
-            ...callbacks,
-            from,
-            to,
-        })
     }
 }
 

@@ -2,7 +2,7 @@ import {Decoration, type DecorationSet, EditorView} from '@codemirror/view';
 import {StateField, RangeSet} from '@codemirror/state';
 import {syntaxTree} from '@codemirror/language';
 import type {EditorState, Range as EditorRange} from '@codemirror/state';
-import {isNodeRangeActive} from "~/editor/utility/tools";
+import { cursorSelectionCoveredNode, isNodeRangeActive, toCursorNodePositions } from '~/editor/utility/tools'
 import {ProseVueComponentEmbedWidget} from "~/editor/plugins/codemirror-widgets/proseVueComponentEmbedWidget";
 import ImageEmbedComponent from "~/components/Embeds/ImageEmbedComponent.vue";
 
@@ -27,7 +27,8 @@ function buildLinkDecorations(state: EditorState): EditorRange<Decoration>[] {
             }
 
             if (node.name === 'Link') {
-                const isActive = isNodeRangeActive(state, node.from, node.to);
+                const poses = toCursorNodePositions(state, node)
+                const isActive = isNodeRangeActive(state, node.from, node.to) || cursorSelectionCoveredNode(poses.cursorFrom, poses.cursorTo, poses.nodeFrom, poses.nodeTo);
                 if (!isActive) {
                     const allMarks = node.getChildren('LinkMark');
                     const urlNode = node.getChild('URL');
