@@ -2,12 +2,12 @@
 
 ## Credits and References, first of all
 ### Primary Credits
+- https://github.com/segphault/codemirror-rich-markdoc, **_for the foundation of this entire project._**
 - https://github.com/erykwalder/lezer-markdown-obsidian, for OFM Lezer Parsers.
 - https://github.com/surmon-china/vue-codemirror, for the CodeMirror 6 component in Vue.
-- https://github.com/segphault/codemirror-rich-markdoc, for the foundation of this entire project.
 - https://github.com/ebullient/markdown-it-obsidian-callouts, for his awesome markdown-to-html callouts markdown-it plugin
-- Markdown-It
 - https://github.com/mgmeyers/obsidian-indentation-guides, for indentation guides
+- Markdown-It
 
 ### Related References & Resources
 - https://github.com/heavycircle/remark-obsidian, for mostly wiki link alias & highlights & callouts parsing
