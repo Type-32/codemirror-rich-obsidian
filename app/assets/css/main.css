@@ -403,6 +403,13 @@
         @apply top-0;
     }
 
+    .cm-list-internal[style*="--indent-level"] {
+        @apply border-primary;
+        text-indent: calc(var(--indent-level) * var(--list-indent));
+        padding-inline-start: calc(var(--indent-level) * var(--list-indent));
+
+    }
+
     .cm-indent-list-bullet::before {
         content: '•';
         @apply text-dimmed border-none absolute;

@@ -22,7 +22,7 @@ function getLineIndent(line: Line) {
 
     if (!match) return 0
 
-    return (match[1]?.split(/(?:\t| {4})/).length || 0) - 1
+    return Math.max(match[1]?.split(/(?:\t| {4})/).length || 0, 1)
 }
 
 const tabMark = Decoration.mark({
@@ -63,8 +63,9 @@ const tabDecoration = (getSettings: () => IndentationGuidesSettings) => {
                             return tabMark
                         }
 
-                        const currentIndent = view.state.field(activeIndentField)
+                        const currentIndent = Math.max(view.state.field(activeIndentField), 1)
                         const thisIndent = match.index / match[0].length + 1
+                        console.log(thisIndent, currentIndent)
 
                         return thisIndent === currentIndent ? indentGroupMark : tabMark
                     },

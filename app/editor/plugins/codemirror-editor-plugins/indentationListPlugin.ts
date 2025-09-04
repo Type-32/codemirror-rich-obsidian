@@ -23,7 +23,10 @@ function decorate(view: EditorView) {
                         line.from,
                         line.from,
                         Decoration.line({
-                            attributes: { class: `cm-list-line cm-list-line-${indentLevel}` },
+                            attributes: {
+                                class: `cm-list-line cm-list-line-${indentLevel}`,
+                                style: `--indent-level: ${indentLevel}`
+                            }
                         })
                     )
                     
@@ -40,7 +43,8 @@ function decorate(view: EditorView) {
                             contentFrom,
                             contentTo,
                             Decoration.mark({
-                                class: `cm-list-${indentLevel}`,
+                                class: `cm-list-internal cm-list-${indentLevel}`,
+                                style: `--indent-level: ${indentLevel}`,
                             })
                         )
                     }
