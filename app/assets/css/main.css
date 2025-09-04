@@ -13,7 +13,7 @@
     @apply font-editor;
 
     .cm-meta {
-        @apply text-dimmed!;
+        @apply text-dimmed! no-underline!;
     }
 
     .cm-heading {
@@ -40,7 +40,10 @@
     .cm-internal-link-path,
     .cm-internal-link-subpath,
     .cm-internal-link-display {
-        @apply text-primary;
+        @apply text-primary underline;
+        &[data-type="internal-link"] {
+            @apply cursor-pointer;
+        }
     }
 
     .cm-clickable-link {

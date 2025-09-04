@@ -43,9 +43,8 @@ const hideComponentMarkTokens = [
     'CommentMarker',
     // 'TexMarker',
     // 'URL',
-    'URL',
     'LinkMark',
-]
+];
 
 /* DOCUMENTATION TO SELF:
 * The syntaxTree.iterate function iterates through all the nodes the editor has parsed. For my future understanding,
