@@ -41,6 +41,7 @@ That being said, please do note that:
   - We've implemented `mgmeyers/obsidian-indentation-guides` for indentation styling. Indents doesn't seem to be nodes.
 - ~~Task lists doesn't work for now.~~
   - Task lists are working, but customization is sparse.
+- List indents are a pain.
 - ~~(Not much of an issue but still kept track of) YAML Frontmatter is parsed as raw text instead of TOML. We're currently determining whether to leave this as it is or try to add our own implementation to imitate how Obsidian parses and modifies their markdown files' Frontmatter.~~
   - **We've decided to leave it alone for people who want to implement their own YAML Frontmatter parsing logic.**
 - ~~Support for embedded videos, notes, bases, and canvases are currently lacking~~
