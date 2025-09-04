@@ -34,13 +34,19 @@ That being said, please do note that:
   - Progress is being made on this issue: we've optimized the Rich Text Plugin to update based on only the updated ranges instead of the entire document.
 - In Obsidian, the hidden marks of nodes are revealed at `mouseup`, whereas in this implementation, they're revealed at `mousedown`.
 - The editor errs when trying to parse nested callouts, to the extent where you might loose your data.
+  - Regular Callouts works fine.
 - Ordered List sequencing is different than that of Obsidian. We think that they probably use a sort of counter to keep track of lists of the same level beneath the hood, but we don't know for sure.
-- Indents are currently tabs. In Obsidian, they seem to be parsed as nodes judging from their raw HTML. We suspect that this node may be accounted for some of the weird fuckery with leveled list, but we don't know for sure.
-- Task lists doesn't work for now.
+  - It might be how CodeMirror keeps track of tabs in lists. The issue is not being worked on right now.
+- ~~Indents are currently tabs. In Obsidian, they seem to be parsed as nodes judging from their raw HTML. We suspect that this node may be accounted for some of the weird fuckery with leveled list, but we don't know for sure.~~
+  - We've implemented `mgmeyers/obsidian-indentation-guides` for indentation styling. Indents doesn't seem to be nodes.
+- ~~Task lists doesn't work for now.~~
+  - Task lists are working, but customization is sparse.
 - ~~(Not much of an issue but still kept track of) YAML Frontmatter is parsed as raw text instead of TOML. We're currently determining whether to leave this as it is or try to add our own implementation to imitate how Obsidian parses and modifies their markdown files' Frontmatter.~~
   - **We've decided to leave it alone for people who want to implement their own YAML Frontmatter parsing logic.**
-- Support for embedded videos, notes, bases, and canvases are currently lacking; _though, we have a mapping prop that allows developers to add their own link-to-file implementations. (Specific to Vue/Nuxt)_
-- Support for code-block mermaid graph rendering & bases is lacking; _though, we have a mapping prop that allows developers to add their own custom codeblock widgets. (Specific to Vue/Nuxt)_
+- ~~Support for embedded videos, notes, bases, and canvases are currently lacking~~
+  - We have a mapping prop that allows developers to add their own link-to-file implementations. (Specific to Vue/Nuxt)
+- ~~Support for code-block mermaid graph rendering & bases is lacking.~~
+  - We have a mapping prop that allows developers to add their own custom codeblock widgets. (Specific to Vue/Nuxt)
 - Light/Dark themes are not yet supported in code-block syntax highlighting.
 
 ## Contributions
