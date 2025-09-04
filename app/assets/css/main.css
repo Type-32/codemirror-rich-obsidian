@@ -7,6 +7,8 @@
     --font-sans: 'Inter', 'Segoe UI Variable Static Display', sans-serif;
 
     --font-editor: 'Inter', 'Segoe UI Variable Static Display', var(--font-sans, sans-serif);
+
+    --list-indent: 1.5rem;
 }
 
 .cm-content {
@@ -136,10 +138,6 @@
     .cm-gutter,
     .cm-gutters {
         @apply bg-transparent! border-none;
-    }
-
-    .cm-ig-tab {
-        @apply border-l border-l-muted py-0.5;
     }
 
     .cm-foldPlaceholder {
@@ -374,6 +372,45 @@
         .callout-content {
             @apply -mt-11;
         }
+    }
+
+    .cm-indent {
+        min-width: var(--list-indent, 1.5rem);
+        @apply relative inline-block;
+
+        &::before {
+            /* Create the pseudo-element and stretch it to the line's full height */
+            @apply content-['\200B'] absolute top-0 bottom-0 pr-1;
+            
+            /* This creates the vertical line */
+            @apply border-r border-r-muted; /* Use border-r for a 1px right border */
+
+            /* 
+            * Position the line. We use an arbitrary value here.
+            * This positions the guide line towards the end of the indent area.
+            * You'll need to tweak this value to get the alignment you want.
+            */
+            @apply left-[var(--indentation-guide-source-indent,1.5rem)];
+        }
+    }
+
+    .cm-indent-group .cm-active-indent::before {
+        /* Use a more prominent color for the active guide */
+        @apply border-primary;
+    }
+
+    .cm-list-line .cm-indent::before {
+        @apply top-0;
+    }
+
+    .cm-indent-list-bullet::before {
+        content: '•';
+        @apply text-dimmed border-none absolute;
+        left: 1rem;
+    }
+    
+    .cm-indent-list-bullet + .cm-obsidian-bullet {
+        @apply hidden;
     }
 
     .cm-obsidian-hidden {

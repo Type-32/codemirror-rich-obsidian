@@ -28,6 +28,7 @@ import {
     editorLivePreviewField,
 } from '~/editor/plugins/codemirror-plugin-proses/proseTaskListPlugin'
 import { proseCalloutPlugin } from '~/editor/plugins/codemirror-plugin-proses/proseCalloutPlugin'
+import { indentationListPlugin } from '~/editor/plugins/codemirror-editor-plugins/indentationListPlugin'
 
 export type WysiwygPlugin = {
     lezer?: any
@@ -71,6 +72,7 @@ export default function (config?: WysiwygPlugin) {
             customBracketClosingPlugin,
             customBracketClosingConfig.of(true), // Default to enabled
             indentationGuides(),
+            indentationListPlugin,
             // editorAttributesPlugin,
             syntaxHighlighting(proseStylesPlugin),
             markdown(mergedConfig),

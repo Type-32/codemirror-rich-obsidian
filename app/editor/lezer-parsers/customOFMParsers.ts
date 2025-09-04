@@ -7,6 +7,7 @@ import {lezerYamlFrontmatterParser} from "~/editor/lezer-parsers/lezerYamlFrontm
 import {lezerInternalLinkParser} from "~/editor/lezer-parsers/lezerInternalLinkParser";
 import {lezerLatexParser} from "~/editor/lezer-parsers/lezerLatexParser";
 import { lezerCalloutParser } from '~/editor/lezer-parsers/lezerCalloutParser'
+import {lezerIndentationParser} from "~/editor/lezer-parsers/lezerIndentationParser";
 
 export const CustomOFM = [ // the array here must remain implicit because the version of @lezer/markdown that lezer-markdown-obsidian uses is different than the one this project is using.
     Comment,
@@ -20,4 +21,5 @@ export const CustomOFM = [ // the array here must remain implicit because the ve
     lezerLatexParser,
     lezerYamlFrontmatterParser,
     lezerCalloutParser,
+    lezerIndentationParser,
 ]

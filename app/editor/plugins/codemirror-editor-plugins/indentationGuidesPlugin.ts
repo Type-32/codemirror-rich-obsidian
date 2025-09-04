@@ -26,15 +26,15 @@ function getLineIndent(line: Line) {
 }
 
 const tabMark = Decoration.mark({
-    class: 'cm-ig-tab',
+    class: 'cm-indent',
 })
 
 const indentGroupMark = Decoration.mark({
-    class: 'cm-ig-tab cm-ig-indent-group-level',
+    class: 'cm-indent cm-active-indent',
 })
 
 const indentationGroupDecoration = Decoration.line({
-    attributes: { class: 'ig-indent-group' },
+    attributes: { class: 'cm-indent-group' },
 })
 
 const activeIndentField = StateField.define<number>({

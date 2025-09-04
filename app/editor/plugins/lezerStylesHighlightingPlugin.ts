@@ -16,6 +16,7 @@ import {
     lezerHighlightLatexInline,
     lezerHighlightLatexMarker
 } from "~/editor/lezer-parsers/lezerLatexParser";
+import {lezerHighlightIndentation} from "~/editor/lezer-parsers/lezerIndentationParser";
 
 export default HighlightStyle.define([
     { tag: t.heading1, class: 'cm-heading cm-heading-1', textDecoration: 'none' },
@@ -48,4 +49,5 @@ export default HighlightStyle.define([
     { tag: lezerHighlightLatexBlock, class: 'cm-tex-block cm-mono' }, // Style block math
     { tag: lezerHighlightLatexInline, class: 'cm-tex-inline cm-mono' },// Style inline math
     { tag: lezerHighlightLatexMarker, class: 'cm-tex-marker cm-meta' }, // Style "$" or "$$"
+    { tag: lezerHighlightIndentation, class: 'cm-indent' },
 ]);
