@@ -31,6 +31,7 @@ That being said, please do note that:
 
 ## Known Issues
 - Same as `segphault/codemirror-rich-markdoc`, the rendered block replacement code is not yet optimized, so it recomputes all of the replaced regions on every operation instead of only updating them as needed.
+  - Progress is being made on this issue: we've optimized the Rich Text Plugin to update based on only the updated ranges instead of the entire document.
 - In Obsidian, the hidden marks of nodes are revealed at `mouseup`, whereas in this implementation, they're revealed at `mousedown`.
 - The editor errs when trying to parse nested callouts, to the extent where you might loose your data.
 - Ordered List sequencing is different than that of Obsidian. We think that they probably use a sort of counter to keep track of lists of the same level beneath the hood, but we don't know for sure.
