@@ -1,15 +1,15 @@
-import type {DecorationSet, EditorView, ViewUpdate} from '@codemirror/view'
-import {Decoration, type PluginValue} from '@codemirror/view';
-import {syntaxTree} from '@codemirror/language';
-import type {Range} from '@codemirror/state';
-import {cursorInNode} from "~/editor/utility/tools";
+import type { DecorationSet, EditorView, ViewUpdate } from '@codemirror/view'
+import { Decoration, type PluginValue } from '@codemirror/view'
+import { syntaxTree } from '@codemirror/language'
+import type { Range } from '@codemirror/state'
+import { cursorInNode } from '~/editor/utility/tools'
 import {
     decorationBullet,
     decorationCode,
     decorationHidden,
     decorationProseHashtag,
-    decorationTag
-} from "~/editor/utility/decorations";
+    decorationTag,
+} from '~/editor/utility/decorations'
 
 const revealComponentMarkTokensOnCursor = [
     'InlineCode',
@@ -27,7 +27,7 @@ const revealComponentMarkTokensOnCursor = [
     'FootnoteReference',
     // 'URL',
     // 'LinkMark',
-]; // The Mark Tokens to reveal when the cursor is over the node.
+] // The Mark Tokens to reveal when the cursor is over the node.
 
 const hideComponentMarkTokens = [
     'HardBreak',
@@ -45,7 +45,7 @@ const hideComponentMarkTokens = [
     // 'URL',
     'URL',
     'LinkMark',
-];
+]
 
 /* DOCUMENTATION TO SELF:
 * The syntaxTree.iterate function iterates through all the nodes the editor has parsed. For my future understanding,
@@ -92,13 +92,33 @@ export default class RichEditPlugin implements PluginValue {
     }
 
     update(update: ViewUpdate): void {
-        if (update.docChanged || update.viewportChanged || update.selectionSet)
-            this.decorations = this.process(update.view);
+        if (update.docChanged) {
+            let decorations = this.decorations.map(update.changes)
+            update.changes.iterChangedRanges((fromA, toA, fromB, toB) => {
+                const newWidgets = this.processRange(update.view, fromB, toB)
+                decorations = decorations.update({
+                    filter: (f, t) => f < fromB || t > toB,
+                    add: newWidgets,
+                    sort: true,
+                })
+            })
+            this.decorations = decorations
+        } else if (update.viewportChanged || update.selectionSet) {
+            this.decorations = this.process(update.view)
+        }
     }
 
     process(view: EditorView): DecorationSet {
-        let widgets: Range<Decoration>[] = [];
-        let [cursor] = view.state.selection.ranges;
+        const widgets: Range<Decoration>[] = []
+        for (const { from, to } of view.visibleRanges) {
+            widgets.push(...this.processRange(view, from, to))
+        }
+        return Decoration.set(widgets, true)
+    }
+
+    processRange(view: EditorView, from: number, to: number): Range<Decoration>[] {
+        const widgets: Range<Decoration>[] = []
+        const [cursor] = view.state.selection.ranges
 
         for (let {from, to} of view.visibleRanges) {
             syntaxTree(view.state).iterate({
@@ -132,7 +152,6 @@ export default class RichEditPlugin implements PluginValue {
             });
         }
 
-        return Decoration.set(widgets, true);
+        return widgets;
     }
 }
-
