@@ -101,18 +101,88 @@ const latexInlinePlugin = ViewPlugin.fromClass(
     class {
         decorations: DecorationSet
 
-        constructor (view: EditorView) {
-            this.decorations = decorateInline(view)
+        constructor(view: EditorView) {
+            this.decorations = this.buildDecorations(view)
         }
 
-        update (update: ViewUpdate) {
-            if (update.docChanged || update.viewportChanged || update.selectionSet) {
-                this.decorations = decorateInline(update.view)
+        update(update: ViewUpdate) {
+            if (update.docChanged) {
+                this.decorations = this.decorations.map(update.changes)
+                update.changes.iterChangedRanges((fromA, toA, fromB, toB) => {
+                    const newWidgets = this.buildDecorationsForRange(
+                        update.view,
+                        fromB,
+                        toB,
+                    )
+                    this.decorations = this.decorations.update({
+                        filter: (f, t) => f < fromB || t > toB,
+                        add: newWidgets,
+                        sort: true,
+                    })
+                })
+            } else if (update.viewportChanged || update.selectionSet) {
+                this.decorations = this.buildDecorations(update.view)
             }
+        }
+
+        private buildDecorations(view: EditorView) {
+            const decorations: any[] = []
+            for (const { from, to } of view.visibleRanges) {
+                decorations.push(...this.buildDecorationsForRange(view, from, to))
+            }
+            return Decoration.set(decorations)
+        }
+
+        private buildDecorationsForRange(
+            view: EditorView,
+            from: number,
+            to: number,
+        ) {
+            const decorations: any[] = []
+            const tree = syntaxTree(view.state)
+            const cursor = view.state.selection.main
+            tree.iterate({
+                from,
+                to,
+                enter: (node) => {
+                    if (node.name === 'TexInline') {
+                        const isNodeRangeActive = (
+                            nodeFrom: number,
+                            nodeTo: number,
+                        ): boolean => {
+                            if (cursor.empty) {
+                                return (
+                                    cursor.from >= nodeFrom &&
+                                    cursor.from <= nodeTo
+                                )
+                            } else {
+                                return (
+                                    Math.max(nodeFrom, cursor.from) <
+                                    Math.min(nodeTo, cursor.to)
+                                )
+                            }
+                        }
+
+                        if (isNodeRangeActive(node.from, node.to)) {
+                            return
+                        }
+
+                        const content = view.state.doc.sliceString(
+                            node.from + 1,
+                            node.to - 1,
+                        )
+                        const deco = Decoration.replace({
+                            widget: new InlineLatexWidget(content),
+                        })
+                        decorations.push(deco.range(node.from, node.to))
+                    }
+                },
+            })
+            return decorations
         }
     },
     {
-        decorations: v => v.decorations
+        decorations: (v) => v.decorations,
     }
 )
 
