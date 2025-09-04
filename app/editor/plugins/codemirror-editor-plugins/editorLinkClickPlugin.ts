@@ -39,14 +39,10 @@ export const editorLinkClickPlugin = EditorView.domEventHandlers({
             }));
         } else if (anchor.dataset.externalLink === 'true') {
             event.preventDefault();
-            view.dom.dispatchEvent(new CustomEvent('external-link-click', {
-                bubbles: true,
-                composed: true,
-                detail: {
-                    url: anchor.dataset.url,
-                    text: anchor.dataset.text
-                }
-            }));
+            const url = anchor.dataset.url;
+            if (url) {
+                window.open(url, '_blank');
+            }
         }
 
         return true;

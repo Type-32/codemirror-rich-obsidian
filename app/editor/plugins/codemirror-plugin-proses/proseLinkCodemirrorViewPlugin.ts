@@ -13,15 +13,17 @@ function buildLinkDecorations(state: EditorState): EditorRange<Decoration>[] {
     syntaxTree(state).iterate({
         enter({node}) {
             if (node.name === 'Image') {
-                const urlNode = node.getChild('URL');
-                if (urlNode) {
-                    const url = state.doc.sliceString(urlNode.from, urlNode.to);
-                    const line = state.doc.lineAt(node.from);
-                    widgets.push(Decoration.widget({
-                        widget: new ProseVueComponentEmbedWidget(ImageEmbedComponent, { filePath: url }, node.from),
-                        block: true,
-                        side: 1
-                    }).range(line.to));
+                const poses = toCursorNodePositions(state, node);
+                const isActive = isNodeRangeActive(state, node.from, node.to) || cursorSelectionCoveredNode(poses.cursorFrom, poses.cursorTo, poses.nodeFrom, poses.nodeTo);
+                if (!isActive) {
+                    const urlNode = node.getChild('URL');
+                    if (urlNode) {
+                        const url = state.doc.sliceString(urlNode.from, urlNode.to);
+                        decorations.push(Decoration.replace({
+                            widget: new ProseVueComponentEmbedWidget(ImageEmbedComponent, { filePath: url }, node.from),
+                            block: true,
+                        }).range(node.from, node.to));
+                    }
                 }
                 return false;
             }
