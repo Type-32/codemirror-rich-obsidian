@@ -101,6 +101,10 @@
         }
     }
 
+    .cm-task-checked {
+        @apply line-through text-dimmed;
+    }
+
     .cm-tooltip {
         @apply rounded-lg bg-default/70 shadow-lg backdrop-blur-sm border border-default font-sans p-2;
 

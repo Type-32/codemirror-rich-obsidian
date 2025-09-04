@@ -89,6 +89,22 @@ export const proseTaskListPlugin = ViewPlugin.fromClass(
                         const taskMarker = node.node.getChild('TaskMarker')
                         if (!taskMarker) return
 
+                        const checkedChar = state.doc.sliceString(
+                            taskMarker.from + 1,
+                            taskMarker.to - 1,
+                        )
+                        const isChecked =
+                            checkedChar && checkedChar.toLowerCase() === 'x'
+
+                        if (isChecked) {
+                            const line = state.doc.lineAt(listItem.from)
+                            decorations.add(
+                                Decoration.line({
+                                    attributes: { class: 'cm-task-checked' },
+                                }).range(line.from),
+                            )
+                        }
+
                         if (
                             isLivePreview &&
                             (isCursorInRange(state, [listMark.from, listMark.to]) ||
