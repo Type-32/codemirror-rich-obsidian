@@ -380,7 +380,7 @@
 
         &::before {
             /* Create the pseudo-element and stretch it to the line's full height */
-            @apply content-['\200B'] absolute top-0 bottom-0 pr-1;
+            @apply content-['\200B'] absolute top-0 bottom-0 w-1;
             
             /* This creates the vertical line */
             @apply border-r border-r-muted; /* Use border-r for a 1px right border */
@@ -390,7 +390,7 @@
             * This positions the guide line towards the end of the indent area.
             * You'll need to tweak this value to get the alignment you want.
             */
-            @apply left-[var(--indentation-guide-source-indent,1.5rem)];
+            @apply left-[var(--indentation-guide-source-indent)];
         }
     }
 
