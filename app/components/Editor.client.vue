@@ -13,9 +13,10 @@ import { defaultHighlightStyle, syntaxHighlighting, indentOnInput, foldGutter } 
 import { Compartment } from '@codemirror/state'
 import { languages } from '@codemirror/language-data'
 import wysiwyg from '~/editor/wysiwyg'
-import { type InternalLink, internalLinkMapFacet } from '~/editor/plugins/linkMappingConfig'
-import { specialCodeBlockMapFacet, type SpecialCodeBlockMapping } from '~/editor/plugins/specialCodeBlockMappingConfig'
+import { internalLinkMapFacet } from '~/editor/plugins/linkMappingConfig'
+import { specialCodeBlockMapFacet } from '~/editor/plugins/specialCodeBlockMappingConfig'
 import { customBracketClosingConfig } from '~/editor/plugins/customBracketClosingConfig'
+import type { InternalLink, SpecialCodeBlockMapping } from '~/editor/types'
 
 const doc = defineModel<string>()
 const props = defineProps<{

@@ -4,9 +4,10 @@ import { syntaxTree } from '@codemirror/language'
 import type { EditorState, Range as EditorRange } from '@codemirror/state'
 import type { DecorationSet } from '@codemirror/view'
 import { EndFenceWidget, LanguageFlairWidget } from '~/editor/plugins/codemirror-widgets/proseCodeBlockWidgets'
-import { specialCodeBlockMapFacet, type SpecialCodeBlockMapping } from '~/editor/plugins/specialCodeBlockMappingConfig'
+import { specialCodeBlockMapFacet } from '~/editor/plugins/specialCodeBlockMappingConfig'
 import { ProseVueComponentEmbedWidget } from '~/editor/plugins/codemirror-widgets/proseVueComponentEmbedWidget'
 import { cursorSelectionCoveredNode, isNodeRangeActive, toCursorNodePositions } from '~/editor/utility/tools'
+import type { SpecialCodeBlockMapping } from '~/editor/types'
 
 function buildCodeBlockDecorations(state: EditorState): EditorRange<Decoration>[] {
     const decorations: EditorRange<Decoration>[] = []

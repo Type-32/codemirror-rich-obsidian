@@ -1,8 +1,7 @@
 <script setup lang="ts">
 import ImageEmbedComponent from "~/components/Embeds/ImageEmbedComponent.vue";
-import type {InternalLink} from "~/editor/plugins/linkMappingConfig";
-import type { SpecialCodeBlockMapping } from '~/editor/plugins/specialCodeBlockMappingConfig'
 import TestCustomCodeBlock from '~/components/SpecialCodeBlocks/TestCustomCodeBlock.vue'
+import type { InternalLink, SpecialCodeBlockMapping } from '~/editor/types'
 
 const router = useRouter()
 const editorDisabled = ref(false)
