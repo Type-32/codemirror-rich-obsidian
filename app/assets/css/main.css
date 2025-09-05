@@ -6,13 +6,13 @@
 @theme static {
     --font-sans: 'Inter', 'Segoe UI Variable Static Display', sans-serif;
 
-    --font-editor: 'Inter', 'Segoe UI Variable Static Display', var(--font-sans, sans-serif);
+    /*--font-editor: 'Inter', 'Segoe UI Variable Static Display', var(--font-sans, sans-serif);*/
 
     --list-indent: 1.5rem;
 }
 
 .cm-content {
-    font-family: var(--font-editor), serif, sans-serif;
+    font-family: var(--font-editor, --font-sans), serif, sans-serif;
 
     .cm-meta {
         @apply text-dimmed! no-underline!;
