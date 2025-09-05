@@ -17,7 +17,7 @@ import { internalLinkMapFacet } from '~/editor/plugins/linkMappingConfig'
 import { specialCodeBlockMapFacet } from '~/editor/plugins/specialCodeBlockMappingConfig'
 import { customBracketClosingConfig } from '~/editor/plugins/customBracketClosingConfig'
 import type { InternalLink, SpecialCodeBlockMapping } from '~/editor/types'
-import '~/assets/css/main.css';
+// import '~/assets/css/main.css';
 
 const doc = defineModel<string>()
 const props = defineProps<{
