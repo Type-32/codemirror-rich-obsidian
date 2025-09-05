@@ -12,7 +12,7 @@
 }
 
 .cm-content {
-    @apply font-editor;
+    font-family: var(--font-editor), serif, sans-serif;
 
     .cm-meta {
         @apply text-dimmed! no-underline!;
