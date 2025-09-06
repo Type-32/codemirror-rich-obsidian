@@ -4,6 +4,11 @@
 @import '@nuxt/ui';
 
 @theme static {
+	--font-sans: 'Inter', 'SF Pro Display', 'Segoe UI Variable Static Display', sans-serif;
+
+	--font-editor: 'SF Pro Display', 'Segoe UI Variable Static Display', var(--font-sans, sans-serif);
+
+	--font-editor-code: 'Google Sans Code', 'JetBrains Mono', 'Consolas', var(--font-mono, ui-monospace);
 
 	--list-indent: 1.5rem;
 
@@ -11,9 +16,4 @@
 }
 
 :root {
-	--font-sans: 'Inter', 'SF Pro Display', 'Segoe UI Variable Static Display', sans-serif;
-
-	--font-editor: 'SF Pro Display', 'Segoe UI Variable Static Display', var(--font-sans, sans-serif);
-
-	--font-editor-code: 'Google Sans Code', 'JetBrains Mono', 'Consolas', var(--font-mono, ui-monospace);
 }

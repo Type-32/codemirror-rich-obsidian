@@ -23,7 +23,7 @@ export default defineNuxtModule<ModuleOptions>({
 			'./runtime/assets/css',
 		)
 
-		_nuxt.options.css.push(resolver.resolve('./runtime/assets/css/editor.css'))
+		_nuxt.options.css.unshift(resolver.resolve('./runtime/assets/css/editor.css'))
 
 		addComponentsDir({
 			path: resolver.resolve('./runtime/components')

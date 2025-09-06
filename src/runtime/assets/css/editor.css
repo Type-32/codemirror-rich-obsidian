@@ -30,7 +30,7 @@
     }
 
     .cm-mono {
-        @apply font-editor-code bg-muted px-1 rounded;
+        @apply font-editor-code bg-muted px-1 rounded-lg border border-default text-toned!;
     }
 
     .cm-hashtag {
@@ -79,6 +79,10 @@
                 @apply rounded hover:bg-accented transition duration-200 cursor-pointer py-1.5 px-2 font-sans text-dimmed z-10;
             }
         }
+
+		.cm-mono {
+			@apply border-none bg-none text-default;
+		}
     }
 
     .cm-line-codeblock-content {

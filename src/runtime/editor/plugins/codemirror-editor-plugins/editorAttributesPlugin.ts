@@ -50,7 +50,7 @@ function foldExists(state: EditorState, from: number, to: number) {
 function announceFold(view: EditorView, range: { from: number; to: number }, fold = true) {
     let lineFrom = view.state.doc.lineAt(range.from).number,
         lineTo = view.state.doc.lineAt(range.to).number
-    console.log('announceFold', lineFrom, lineTo)
+    // console.log('announceFold', lineFrom, lineTo)
     return EditorView.announce.of(
         `${view.state.phrase(fold ? 'Folded lines' : 'Unfolded lines')} ${lineFrom} ${view.state.phrase(
             'to'

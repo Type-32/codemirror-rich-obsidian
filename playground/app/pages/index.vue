@@ -31,7 +31,7 @@ const specialCodeBlockMap = ref<SpecialCodeBlockMapping[]>([
 
 
 const handleInternalLinkClick = (detail: { path: string, subpath?: string, display?: string, type: 'internal-link' | 'embed' }) => {
-    console.log("Internal link clicked:", detail);
+    // console.log("Internal link clicked:", detail);
     const link = internalLinkMap.value.find(l => l.internalLinkName === detail.path);
     if (link) {
         router.push(link.redirectToPath);
