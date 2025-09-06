@@ -1,0 +1,32 @@
+import { defineNuxtModule, addPlugin, createResolver, addComponentsDir } from '@nuxt/kit'
+
+// Module options TypeScript interface definition
+export interface ModuleOptions {
+}
+
+export default defineNuxtModule<ModuleOptions>({
+	meta: {
+		name: '@type32/codemirror-rich-obsidian-editor',
+		configKey: 'cmOfmEditor',
+	},
+	// Default configuration options of the Nuxt module
+	defaults: {},
+	setup(_options, _nuxt) {
+		// @ts-ignore
+		const resolver = createResolver(import.meta.url)
+
+		_nuxt.options.alias['#codemirror-rich-obsidian-editor'] = resolver.resolve(
+			'./runtime/editor/types',
+		)
+
+		_nuxt.options.alias['#codemirror-rich-obsidian-editor#css'] = resolver.resolve(
+			'./runtime/assets/css',
+		)
+
+		_nuxt.options.css.push(resolver.resolve('./runtime/assets/css/editor.css'))
+
+		addComponentsDir({
+			path: resolver.resolve('./runtime/components')
+		})
+	},
+})

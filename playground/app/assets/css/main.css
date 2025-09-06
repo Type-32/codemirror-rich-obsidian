@@ -1,0 +1,19 @@
+@import url('https://fonts.cdnfonts.com/css/segoe-ui-variable-static-display');
+@import 'katex/dist/katex.min.css';
+@import 'tailwindcss';
+@import '@nuxt/ui';
+
+@theme static {
+
+	--list-indent: 1.5rem;
+
+	--indent-level: 0;
+}
+
+:root {
+	--font-sans: 'Inter', 'SF Pro Display', 'Segoe UI Variable Static Display', sans-serif;
+
+	--font-editor: 'SF Pro Display', 'Segoe UI Variable Static Display', var(--font-sans, sans-serif);
+
+	--font-editor-code: 'Google Sans Code', 'JetBrains Mono', 'Consolas', var(--font-mono, ui-monospace);
+}

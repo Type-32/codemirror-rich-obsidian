@@ -1,0 +1,437 @@
+@import url('https://fonts.cdnfonts.com/css/segoe-ui-variable-static-display');
+@import url('https://fonts.cdnfonts.com/css/sf-pro-display');
+@import 'katex/dist/katex.min.css';
+@import 'tailwindcss';
+@import '@nuxt/ui';
+
+@theme {
+    --font-sans: 'Public Sans', 'Inter', 'SF Pro Display', 'Segoe UI Variable Static Display', sans-serif;
+
+    --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+
+    --font-editor: 'Inter', 'SF Pro Display', 'Segoe UI Variable Static Display', var(--font-sans, sans-serif);
+
+    --font-editor-code: 'Google Sans Code', 'JetBrains Mono', 'Consolas', var(--font-mono, ui-monospace);
+
+    --list-indent: 1.5rem;
+
+    --indent-level: 0;
+}
+
+.cm-content {
+    @apply font-editor;
+
+    .cm-meta {
+        @apply text-dimmed! no-underline!;
+    }
+
+    .cm-heading {
+        text-decoration: none !important;
+    }
+
+    .cm-mono {
+        @apply font-editor-code bg-muted px-1 rounded;
+    }
+
+    .cm-hashtag {
+        @apply bg-primary/20! ring ring-primary/70! px-1.5 text-sm rounded-4xl text-primary! inline-flex;
+
+        .cm-heading {
+            @apply text-primary!;
+        }
+    }
+
+    .cm-highlighted {
+        @apply bg-primary/20 text-primary px-0.5 rounded-sm;
+    }
+
+    .cm-link,
+    .cm-internal-link-path,
+    .cm-internal-link-subpath,
+    .cm-internal-link-display {
+        @apply text-primary underline;
+        &[data-type="internal-link"] {
+            @apply cursor-pointer;
+        }
+    }
+
+    .cm-clickable-link {
+        @apply cursor-pointer;
+    }
+
+    .cm-unresolved-link {
+        .cm-link,
+        .cm-internal-link-path,
+        .cm-internal-link-subpath,
+        .cm-internal-link-display {
+            @apply text-error/75! cursor-not-allowed;
+        }
+    }
+
+    .cm-codeblock,
+    .cm-line-codeblock-begin,
+    .cm-line-codeblock-end {
+        @apply font-editor-code py-0 my-0 text-sm! font-semibold border-x border-x-default mx-2 px-3 bg-muted relative;
+
+        .cm-codeblock-flair-container {
+            @apply absolute top-2 right-2 overflow-visible z-10;
+            .cm-codeblock-copy-button {
+                @apply rounded hover:bg-accented transition duration-200 cursor-pointer py-1.5 px-2 font-sans text-dimmed z-10;
+            }
+        }
+    }
+
+    .cm-line-codeblock-content {
+        @apply border-x border-x-accented;
+    }
+
+    .cm-line-codeblock-begin {
+        @apply rounded-t-lg border-t border-x border-t-accented border-x-accented pt-1 px-1;
+    }
+
+    .cm-line-codeblock-end {
+        @apply rounded-b-lg border-b border-x border-b-accented border-x-accented pb-1 px-1;
+    }
+
+    .cm-task-checkbox-wrapper {
+        @apply size-4 mb-0.5 rounded-xl border border-default bg-default inline-flex items-center justify-center align-middle cursor-pointer;
+
+        &[data-checked='true'] {
+            @apply  bg-primary border border-primary;
+        }
+
+        &[data-checked='true']::before {
+            content: '✔';
+            @apply text-xs text-inverted;
+        }
+
+        &[data-special] {
+            @apply font-editor-code text-xs text-highlighted;
+        }
+    }
+
+    .cm-task-checked {
+        @apply line-through text-dimmed;
+    }
+
+    .cm-tooltip {
+        @apply rounded-lg bg-default/70 shadow-lg backdrop-blur-sm border border-default font-sans p-2;
+
+        ul {
+            @apply grid grid-cols-1 font-sans;
+
+            li {
+                @apply grid grid-cols-1 rounded font-sans gap-1;
+
+                .cm-completionLabel {
+                    @apply mx-1 mt-1 text-toned;
+                }
+
+                .cm-completionDetail {
+                    @apply text-xs font-editor-code bg-elevated w-fit rounded text-muted px-1 mb-1;
+                }
+            }
+
+            li[aria-selected='true'] {
+                @apply bg-accented/70 backdrop-blur-sm border border-accented;
+            }
+        }
+    }
+
+    .cm-fold-widget {
+        @apply absolute -left-0.5 pt-1;
+    }
+
+    .cm-gutter,
+    .cm-gutters {
+        @apply bg-transparent! border-none;
+    }
+
+    .cm-foldPlaceholder {
+        @apply bg-accented! text-dimmed! border border-none ml-0.5 h-fit inline-flex items-center justify-center align-middle;
+    }
+
+    .cm-gutterElement {
+        @apply inline-flex justify-center items-center;
+    }
+
+    .cm-heading-1 {
+        @apply text-4xl! text-highlighted scroll-mt-[calc(45px+var(--ui-header-height))];
+    }
+
+    .cm-heading-2 {
+        @apply text-2xl! text-highlighted scroll-mt-[calc(45px+var(--ui-header-height))];
+    }
+
+    .cm-heading-3 {
+        @apply text-xl! text-highlighted scroll-mt-[calc(45px+var(--ui-header-height))];
+    }
+
+    .cm-heading-4 {
+        @apply text-lg! text-highlighted scroll-mt-[calc(45px+var(--ui-header-height))];
+    }
+
+    .cm-quoteblock,
+    blockquote {
+        @apply border-l-6 bg-muted border-accented ps-2 mx-2;
+
+        &.cm-quoteblock-single {
+            @apply rounded py-2;
+        }
+
+        &.cm-quoteblock-start {
+            @apply rounded-t pt-2;
+        }
+
+        &.cm-quoteblock-end {
+            @apply rounded-b pb-2;
+        }
+
+        .cm-formatting-quote.cm-meta {
+            @apply invisible;
+        }
+
+        .cm-formatting-quote-active.cm-meta {
+            @apply visible!;
+        }
+    }
+
+    .cm-obsidian-bullet {
+        @apply text-transparent;
+
+        .cm-meta {
+            @apply invisible;
+        }
+
+        &::before {
+            content: '•';
+            @apply text-dimmed absolute;
+        }
+    }
+
+    .cm-callout-widget,
+    .callout {
+        @apply p-3 relative flex flex-col h-fit mx-2 my-2 rounded-lg border border-primary/20 bg-primary/20; /* Removed transition-all from parent to be more specific */
+
+        summary {
+            @apply inline-flex;
+        }
+
+        .callout-title {
+            @apply flex gap-1.5 items-center;
+            .callout-title-icon {
+                @apply flex size-4 items-center justify-center fill-primary text-primary;
+            }
+
+            .callout-title-inner {
+                @apply text-primary text-lg font-bold flex-grow;
+            }
+
+            .edit-block-button {
+                @apply rounded hover:bg-elevated transition duration-200 cursor-pointer p-1 font-sans right-0 top-0 text-dimmed;
+            }
+        }
+
+        .callout-content {
+            @apply flex flex-col gap-1;
+        }
+
+        &[data-callout='info'] {
+            @apply bg-info/20 border-info/20;
+
+            .callout-fold {
+                @apply text-info-400;
+            }
+
+            .callout-title {
+                .callout-title-icon,
+                .callout-title-inner {
+                    @apply text-info;
+                }
+            }
+        }
+
+        &[data-callout='success'],
+        &[data-callout='check'],
+        &[data-callout='done'] {
+            @apply bg-success/20 border-success/20;
+
+            .callout-fold {
+                @apply text-success-400;
+            }
+
+            .callout-title {
+                .callout-title-icon,
+                .callout-title-inner {
+                    @apply text-success;
+                }
+            }
+        }
+
+        &[data-callout='warning'],
+        &[data-callout='help'],
+        &[data-callout='faq'],
+        &[data-callout='question'] {
+            @apply bg-warning/20 border-warning/20;
+
+            .callout-fold {
+                @apply text-warning-400;
+            }
+
+            .callout-title {
+                .callout-title-icon,
+                .callout-title-inner {
+                    @apply text-warning;
+                }
+            }
+        }
+
+        &[data-callout='error'],
+        &[data-callout='failure'],
+        &[data-callout='bug'] {
+            @apply bg-error/20 border-error/20;
+
+            .callout-fold {
+                @apply text-error-400;
+            }
+
+            .callout-title {
+                .callout-title-icon,
+                .callout-title-inner {
+                    @apply text-error;
+                }
+            }
+        }
+
+        &[data-callout='highlight'],
+        &[data-callout='example'],
+        &[data-callout='tip'] {
+            @apply bg-secondary/20 border-secondary/20;
+
+            .callout-fold {
+                @apply text-secondary;
+            }
+
+            .callout-title {
+                .callout-title-icon,
+                .callout-title-inner {
+                    @apply text-secondary;
+                }
+            }
+        }
+
+        &[data-callout='quote'],
+        &[data-callout='neutral'] {
+            @apply bg-accented/30 border-accented/30;
+
+            .callout-fold {
+                @apply text-highlighted;
+            }
+
+            .callout-title {
+                .callout-title-icon,
+                .callout-title-inner {
+                    @apply text-highlighted;
+                }
+            }
+        }
+
+        .callout-fold {
+            @apply rounded hover:bg-elevated transition duration-200 cursor-pointer text-primary font-sans text-center align-middle p-1 size-6;
+
+            svg {
+                @apply transition-transform duration-300 ease-in-out w-full h-full;
+            }
+        }
+
+        &[open] {
+            .callout-fold {
+                svg {
+                    @apply transition-transform duration-300 ease-in-out rotate-90 w-full h-full;
+                }
+            }
+        }
+
+        &[data-fold-state='closed'] {
+            .callout-content {
+                @apply max-h-0 opacity-0 p-0;
+            }
+        }
+
+        &[data-fold-state='open'] {
+            .callout-content {
+                @apply max-h-none opacity-100 py-1 mt-1;
+            }
+        }
+
+        .edit-block-button {
+            /* Tailwind's `transition` utility adds transition-property: all; by default if not specified. */
+            /* duration-200 is already good for hover */
+            @apply rounded hover:bg-elevated transition duration-200 cursor-pointer p-1 font-sans text-dimmed;
+        }
+
+        .editing-utils-container {
+            @apply top-2 right-2 font-sans text-dimmed absolute flex items-center justify-center gap-1 p-1;
+        }
+    }
+
+    details {
+        .callout-content {
+            @apply -mt-11;
+        }
+    }
+
+    .cm-indent {
+        min-width: var(--list-indent, 1.5rem);
+        @apply relative inline-block;
+
+        &::before {
+            /* Create the pseudo-element and stretch it to the line's full height */
+            @apply content-['\200B'] absolute top-0 bottom-0 w-1;
+
+            /* This creates the vertical line */
+            @apply border-r border-r-muted; /* Use border-r for a 1px right border */
+
+            /*
+            * Position the line. We use an arbitrary value here.
+            * This positions the guide line towards the end of the indent area.
+            * You'll need to tweak this value to get the alignment you want.
+            */
+            @apply left-[var(--indentation-guide-source-indent)];
+        }
+    }
+
+    .cm-indent-group .cm-active-indent::before {
+        /* Use a more prominent color for the active guide */
+        @apply border-primary;
+    }
+
+    .cm-list-line .cm-indent::before {
+        @apply top-0;
+    }
+
+    .cm-list-internal[style*="--indent-level"] {
+        @apply border-primary;
+        text-indent: calc(var(--indent-level) * var(--list-indent));
+        padding-inline-start: calc(var(--indent-level) * var(--list-indent));
+
+    }
+
+    .cm-indent-list-bullet::before {
+        content: '•';
+        @apply text-dimmed border-none absolute;
+        left: 1rem;
+    }
+
+    .cm-indent-list-bullet + .cm-obsidian-bullet {
+        @apply hidden;
+    }
+
+    .cm-obsidian-hidden {
+        @apply hidden;
+    }
+
+    .cm-hidden-latex {
+        @apply hidden;
+    }
+}
