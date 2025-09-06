@@ -24,15 +24,15 @@
 		"dist"
 	],
 	"scripts": {
-		"prepack": "nuxt-module-build build",
-		"dev": "bun run dev:prepare && nuxi dev playground",
-		"dev:build": "nuxi build playground",
-		"dev:prepare": "nuxt-module-build build --stub && nuxt-module-build prepare && nuxi prepare playground",
-		"release": "bun run prepack && changelogen --release && bun publish && git push --follow-tags",
-		"lint": "eslint .",
-		"test": "vitest run",
-		"test:watch": "vitest watch",
-		"test:types": "vue-tsc --noEmit && cd playground && vue-tsc --noEmit"
+		"prepack": "bunx nuxt-module-build build",
+		"dev": "bun run dev:prepare && bunx nuxi dev playground",
+		"dev:build": "bunx nuxi build playground",
+		"dev:prepare": "bunx nuxt-module-build build --stub && bunx nuxt-module-build prepare && bunx nuxi prepare playground",
+		"release": "bun run prepack && bunx changelogen --release && bun publish && git push --follow-tags",
+		"lint": "bunx eslint .",
+		"test": "bunx vitest run",
+		"test:watch": "bunx vitest watch",
+		"test:types": "bunx vue-tsc --noEmit && cd playground && bunx vue-tsc --noEmit"
 	},
 	"dependencies": {
 		"@nuxt/kit": "^4.1.0"
