@@ -124,8 +124,7 @@ export const proseTaskListPlugin = ViewPlugin.fromClass(
                     },
                 })
             }
-
-            //@ts-ignore
+			
             return Decoration.set([...decorations])
         }
     },
