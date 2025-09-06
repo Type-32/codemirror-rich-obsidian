@@ -66,7 +66,7 @@ export const proseTaskListPlugin = ViewPlugin.fromClass(
             }
         }
 
-        private buildDecorations(view: EditorView) {
+        buildDecorations(view: EditorView) {
             const decorations = new Set<any>()
             const { state } = view
             const isLivePreview = state.field(editorLivePreviewField)

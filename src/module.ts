@@ -12,7 +12,6 @@ export default defineNuxtModule<ModuleOptions>({
 	// Default configuration options of the Nuxt module
 	defaults: {},
 	setup(_options, _nuxt) {
-		// @ts-ignore
 		const resolver = createResolver(import.meta.url)
 
 		_nuxt.options.alias['#codemirror-rich-obsidian-editor'] = resolver.resolve(
