@@ -1,6 +1,18 @@
 # Changelog
 
 
+## v0.0.3
+
+[compare changes](https://github.com/Type-32/codemirror-rich-obsidian/compare/v0.0.2...v0.0.3)
+
+### 🏡 Chore
+
+- Package.json ([0bc0cc9](https://github.com/Type-32/codemirror-rich-obsidian/commit/0bc0cc9))
+
+### ❤️ Contributors
+
+- Type-32 ([@Type-32](https://github.com/Type-32))
+
 ## v0.0.2
 
 
