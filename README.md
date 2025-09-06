@@ -29,6 +29,48 @@ That being said, please do note that:
 - The CodeMirror implementation is not a one-on-one replica. Since we don't have access to Obsidian's AST, we don't know how they parse markdown into node-marks and decorating them with CodeMirror. We could only try to imitate how they parse and decorate their markdowns judging from the class styling in their raw HTML.
 - When using this editor, you may feel that some small user experiences does not mach the UX of Obsidian's markdown editor. Yes, this is a known issue, and we're trying to "fix" them.
 
+## Installation
+
+Run with your preferred package manager:
+```shell
+bun add @type32/codemirror-rich-obsidian-editor
+```
+
+Add modules in Nuxt Config:
+
+```ts
+export default defineNuxtConfig({
+	// Your config...
+	modules: [
+		// Your other modules...
+		'@type32/codemirror-rich-obsidian-editor',
+	],
+})
+```
+
+Customize the editor fonts:
+
+```css
+@import 'tailwindcss';
+@import '@nuxt/ui';
+
+@theme static {
+	/* Your Config Here... */
+	
+	--font-sans: /* Your Config Here... */;
+
+	--font-editor: 'SF Pro Display', 'Segoe UI Variable Static Display', var(--font-sans, sans-serif);
+
+	--font-editor-code: 'Google Sans Code', 'JetBrains Mono', 'Consolas', var(--font-mono, ui-monospace);
+
+	--list-indent: 1.5rem;
+
+	--indent-level: 0;
+
+	/* Your Config Here... */
+}
+```
+
 ## Known Issues
 - Same as `segphault/codemirror-rich-markdoc`, the rendered block replacement code is not yet optimized, so it recomputes all of the replaced regions on every operation instead of only updating them as needed.
   - Progress is being made on this issue: we've optimized the Rich Text Plugin to update based on only the updated ranges instead of the entire document.
