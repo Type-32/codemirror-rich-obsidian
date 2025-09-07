@@ -161,6 +161,10 @@ function iterate() {
         console.log(e)
     }
 }
+
+defineExpose({
+    view,
+})
 </script>
 
 <template>

@@ -4,6 +4,8 @@ import { EditorImageEmbedComponent, EditorTestCustomCodeBlock } from '#component
 
 const router = useRouter()
 const editorDisabled = ref(false)
+const editor = ref()
+const $eutils = useEditorUtils(editor)
 
 const internalLinkMap = ref<InternalLink[]>([
     {
@@ -44,12 +46,16 @@ const handleExternalLinkClick = (detail: { url: string, text?: string }) => {
     }
 };
 
+function test() {
+	console.log($eutils.getDocAst())
+}
 
 </script>
 
 <template>
     <div class="w-full overflow-visible flex flex-col justify-start items-center my-10">
         <Editor
+			ref="editor"
             class="h-full w-2xl"
             :internal-link-map
             :special-code-block-map
@@ -60,5 +66,6 @@ const handleExternalLinkClick = (detail: { url: string, text?: string }) => {
             debug
         />
         <USwitch v-model="editorDisabled" label="Disabled"/>
+		<UButton @click="test" label="Test"/>
     </div>
 </template>

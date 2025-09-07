@@ -49,7 +49,7 @@
     .cm-internal-link-path,
     .cm-internal-link-subpath,
     .cm-internal-link-display {
-        @apply text-primary underline;
+        @apply text-primary! underline;
         &[data-type="internal-link"] {
             @apply cursor-pointer;
         }
