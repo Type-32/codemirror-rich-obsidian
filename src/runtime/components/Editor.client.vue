@@ -7,10 +7,14 @@ import {
     rectangularSelection,
     highlightActiveLine,
     highlightActiveLineGutter,
+    ViewPlugin,
+    Decoration,
+    ViewUpdate,
 } from '@codemirror/view'
+import type { DecorationSet } from '@codemirror/view'
 import { standardKeymap, history, historyKeymap, indentWithTab } from '@codemirror/commands'
-import { defaultHighlightStyle, syntaxHighlighting, indentOnInput, foldGutter } from '@codemirror/language'
-import { Compartment } from '@codemirror/state'
+import { defaultHighlightStyle, syntaxHighlighting, indentOnInput, foldGutter, syntaxTree } from '@codemirror/language'
+import { Compartment, RangeSetBuilder } from '@codemirror/state'
 import { languages } from '@codemirror/language-data'
 import wysiwyg from '../editor/wysiwyg'
 import { internalLinkMapFacet } from '../editor/plugins/linkMappingConfig'
@@ -37,6 +41,7 @@ const internalLinkCompartment = new Compartment()
 const specialCodeBlockCompartment = new Compartment()
 const bracketClosingCompartment = new Compartment()
 const foldGutterCompartment = new Compartment()
+const showFrontmatterCompartment = new Compartment()
 const editorElement = ref<HTMLElement>()
 const keymaps = computed(() => {
     return props.disabled ? keymap.of([]) : keymap.of([...standardKeymap, ...historyKeymap, indentWithTab])
@@ -119,7 +124,6 @@ watch(
             })
         }
     },
-    { deep: true }
 )
 
 watch(
@@ -131,7 +135,6 @@ watch(
             })
         }
     },
-    { deep: true }
 )
 
 function handleReady(payload: any) {

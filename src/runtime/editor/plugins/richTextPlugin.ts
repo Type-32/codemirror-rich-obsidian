@@ -12,21 +12,21 @@ import {
 } from '../utility/decorations'
 
 const revealComponentMarkTokensOnCursor = [
-    'InlineCode',
-    'Emphasis',
-    'StrongEmphasis',
-    'FencedCode',
-    'Strikethrough',
-    'Link',
-    'Image',
-    'Embed',
-    'InternalLink',
-    'Mark',
-    'Comment',
-    'Footnote',
-    'FootnoteReference',
-    // 'URL',
-    // 'LinkMark',
+	'InlineCode',
+	'Emphasis',
+	'StrongEmphasis',
+	'FencedCode',
+	'Strikethrough',
+	'Link',
+	'Image',
+	'Embed',
+	'InternalLink',
+	'Mark',
+	'Comment',
+	'Footnote',
+	'FootnoteReference',
+	// 'URL',
+	// 'LinkMark',
 ] // The Mark Tokens to reveal when the cursor is over the node.
 
 const hideComponentMarkTokens = [
@@ -44,6 +44,8 @@ const hideComponentMarkTokens = [
     // 'TexMarker',
     // 'URL',
     'LinkMark',
+    // 'YAMLContent',
+    // 'YAMLMarker' // Don't do this. Weird shit happens when you try to hide YAMLContent and YAMLMarker.
 ];
 
 /* DOCUMENTATION TO SELF:
@@ -126,6 +128,19 @@ export default class RichEditPlugin implements PluginValue {
                     const nodeName = node.name;
                     const nodeFrom = node.from;
                     const nodeTo = node.to;
+
+                    if (nodeName === 'HorizontalRule') {
+                        // When cursor is on the rule, reveal the text for editing.
+                        if (cursorInNode(cursor?.from, cursor?.to, nodeFrom, nodeTo)) {
+                            return;
+                        }
+                        const line = view.state.doc.lineAt(nodeFrom);
+                        // Hide the '---' text
+                        widgets.push(decorationHidden.range(nodeFrom, nodeTo));
+                        // Add a class to the line to style it as an <hr>
+                        widgets.push(Decoration.line({ attributes: { class: 'hr' } }).range(line.from));
+                        return;
+                    }
 
                     // Handled by the Code Block Codemirror View Plugin
                     // if (nodeName === 'FencedCode')

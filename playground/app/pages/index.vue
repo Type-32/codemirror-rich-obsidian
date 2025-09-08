@@ -3,7 +3,7 @@ import type { InternalLink, SpecialCodeBlockMapping } from '#codemirror-rich-obs
 import { EditorImageEmbedComponent, EditorTestCustomCodeBlock } from '#components'
 
 const router = useRouter()
-const editorDisabled = ref(false)
+const editorDisabled = ref(false), showFrontmatter = ref(false)
 const editor = ref()
 const $eutils = useEditorUtils(editor)
 
@@ -63,6 +63,7 @@ function test() {
             @external-link-click="handleExternalLinkClick"
             :disabled="editorDisabled"
             :fold-gutter="false"
+			:show-frontmatter
             debug
         />
         <USwitch v-model="editorDisabled" label="Disabled"/>

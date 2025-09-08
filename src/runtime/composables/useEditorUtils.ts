@@ -58,6 +58,12 @@ export function useEditorUtils(editor: Ref<any>) {
         return findNodesByType(getDocAst(), nodeTypeName)
     }
 
+    function hasFrontmatter(): boolean {
+        const ast = getDocAst()
+        if (!ast) return false
+        return ast.topNode.firstChild?.name === 'YAMLFrontMatter'
+    }
+
 	return {
 		getDoc,
 		setDoc,
@@ -68,5 +74,6 @@ export function useEditorUtils(editor: Ref<any>) {
 		getDocAst,
 		findNodesByType,
 		getDocNodesByType,
+		hasFrontmatter,
 	}
 }

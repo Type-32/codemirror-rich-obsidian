@@ -438,4 +438,18 @@
     .cm-hidden-latex {
         @apply hidden;
     }
+
+    .cm-yaml-marker,
+    .cm-yaml-content {
+        @apply font-editor-code text-muted px-1;
+    }
+
+    .cm-line.hr {
+        @apply h-8 flex items-center;
+    }
+
+    .cm-line.hr::after {
+        content: '';
+        @apply block w-full h-px bg-accented;
+    }
 }
