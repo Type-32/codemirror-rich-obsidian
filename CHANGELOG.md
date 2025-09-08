@@ -1,6 +1,20 @@
 # Changelog
 
 
+## v0.0.5
+
+[compare changes](https://github.com/Type-32/codemirror-rich-obsidian/compare/v0.0.4...v0.0.5)
+
+### 🏡 Chore
+
+- Readme installation update ([340cbd5](https://github.com/Type-32/codemirror-rich-obsidian/commit/340cbd5))
+- Readme installation update ([d486ed4](https://github.com/Type-32/codemirror-rich-obsidian/commit/d486ed4))
+- Updated module dependencies ([5a87b09](https://github.com/Type-32/codemirror-rich-obsidian/commit/5a87b09))
+
+### ❤️ Contributors
+
+- Type-32 ([@Type-32](https://github.com/Type-32))
+
 ## v0.0.4
 
 [compare changes](https://github.com/Type-32/codemirror-rich-obsidian/compare/v0.0.3...v0.0.4)
