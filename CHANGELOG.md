@@ -1,6 +1,18 @@
 # Changelog
 
 
+## v0.0.7
+
+[compare changes](https://github.com/Type-32/codemirror-rich-obsidian/compare/v0.0.6...v0.0.7)
+
+### 🚀 Enhancements
+
+- **editor:** Added styled horizontal rule decoration and changed yaml frontmatter stlyes, and added functions in composable ([3e28077](https://github.com/Type-32/codemirror-rich-obsidian/commit/3e28077))
+
+### ❤️ Contributors
+
+- Type-32 ([@Type-32](https://github.com/Type-32))
+
 ## v0.0.6
 
 [compare changes](https://github.com/Type-32/codemirror-rich-obsidian/compare/v0.0.5...v0.0.6)
