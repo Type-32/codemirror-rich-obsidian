@@ -33,10 +33,10 @@ That being said, please do note that:
 
 Run with your preferred package manager:
 ```shell
-bun add @type32/codemirror-rich-obsidian-editor
+bun add @type32/codemirror-rich-obsidian-editor katex
 ```
 
-Add modules in Nuxt Config:
+Add module in Nuxt Config:
 
 ```ts
 export default defineNuxtConfig({
