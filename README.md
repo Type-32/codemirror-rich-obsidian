@@ -33,7 +33,7 @@ That being said, please do note that:
 
 Run with your preferred package manager:
 ```shell
-bun add @type32/codemirror-rich-obsidian-editor katex vue-codemirror6
+bun add @type32/codemirror-rich-obsidian-editor
 ```
 
 Add module in Nuxt Config:
