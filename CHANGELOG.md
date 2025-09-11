@@ -1,6 +1,18 @@
 # Changelog
 
 
+## v0.0.8
+
+[compare changes](https://github.com/Type-32/codemirror-rich-obsidian/compare/v0.0.7...v0.0.8)
+
+### 🏡 Chore
+
+- **frontmatter:** Added utility function to parse frontmatter ([807a13d](https://github.com/Type-32/codemirror-rich-obsidian/commit/807a13d))
+
+### ❤️ Contributors
+
+- Type-32 ([@Type-32](https://github.com/Type-32))
+
 ## v0.0.7
 
 [compare changes](https://github.com/Type-32/codemirror-rich-obsidian/compare/v0.0.6...v0.0.7)
