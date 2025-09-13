@@ -33,7 +33,7 @@ function internalLinkSource(context: CompletionContext): CompletionResult | null
         .filter(link => link.internalLinkName.toLowerCase().includes(textBefore.toLowerCase()))
         .map(link => ({
             label: link.internalLinkName,
-            detail: link.redirectToPath,
+            detail: link.filePath,
             apply: `${link.internalLinkName}`
         }));
 
