@@ -20,7 +20,12 @@ import wysiwyg from '../editor/wysiwyg'
 import { internalLinkMapFacet } from '../editor/plugins/linkMappingConfig'
 import { specialCodeBlockMapFacet } from '../editor/plugins/specialCodeBlockMappingConfig'
 import { customBracketClosingConfig } from '../editor/plugins/customBracketClosingConfig'
-import type { InternalLink, SpecialCodeBlockMapping } from '#codemirror-rich-obsidian-editor/editor-types'
+import type {
+    InternalLink,
+    SpecialCodeBlockMapping,
+    InternalLinkClickDetail,
+    ExternalLinkClickDetail
+} from '#codemirror-rich-obsidian-editor/editor-types'
 import {ref, shallowRef, computed, onMounted, onBeforeUnmount, unref, watch} from 'vue';
 
 const doc = defineModel<string>()
@@ -33,7 +38,10 @@ const props = defineProps<{
     disabled?: boolean
     debug?: boolean
 }>()
-const emit = defineEmits(['internal-link-click', 'external-link-click'])
+const emit = defineEmits<{
+    'internal-link-click': [detail: InternalLinkClickDetail]
+    'external-link-click': [detail: ExternalLinkClickDetail]
+}>()
 const extensions = shallowRef<any[]>([])
 const view = shallowRef<EditorView>()
 const ast = ref([])
@@ -83,11 +91,11 @@ onBeforeUnmount(() => {
     }
 })
 
-function handleInternalLinkClick(event: CustomEvent) {
+function handleInternalLinkClick(event: CustomEvent<InternalLinkClickDetail>) {
     emit('internal-link-click', event.detail)
 }
 
-function handleExternalLinkClick(event: CustomEvent) {
+function handleExternalLinkClick(event: CustomEvent<ExternalLinkClickDetail>) {
     emit('external-link-click', event.detail)
 }
 

@@ -1,5 +1,7 @@
 import {EditorView} from "@codemirror/view";
 import {syntaxTree} from "@codemirror/language";
+import {internalLinkMapFacet} from "../linkMappingConfig";
+import type {ExternalLinkClickDetail, InternalLinkClickDetail} from "../../types/editor-types";
 
 export const editorLinkClickPlugin = EditorView.domEventHandlers({
     mousedown(event, view) {
@@ -27,21 +29,40 @@ export const editorLinkClickPlugin = EditorView.domEventHandlers({
 
         if (anchor.dataset.internalLink === 'true') {
             event.preventDefault();
+
+            const path = anchor.dataset.path;
+            if (!path) return true;
+
+            const linkMap = view.state.facet(internalLinkMapFacet);
+            const linkInfo = linkMap.find(l => l.internalLinkName === path);
+            const type = anchor.dataset.type as 'embed' | 'internal-link' | undefined;
+
+            const detail: InternalLinkClickDetail = {
+                path: path,
+                subpath: anchor.dataset.subpath,
+                display: anchor.dataset.display,
+                type: type || 'internal-link',
+                redirectToPath: linkInfo?.redirectToPath,
+            }
+
             view.dom.dispatchEvent(new CustomEvent('internal-link-click', {
                 bubbles: true,
                 composed: true,
-                detail: {
-                    path: anchor.dataset.path,
-                    subpath: anchor.dataset.subpath,
-                    display: anchor.dataset.display,
-                    type: anchor.dataset.type,
-                },
+                detail: detail,
             }));
         } else if (anchor.dataset.externalLink === 'true') {
             event.preventDefault();
             const url = anchor.dataset.url;
             if (url) {
-                window.open(url, '_blank');
+                const detail: ExternalLinkClickDetail = {
+                    url: url,
+                    text: anchor.textContent,
+                }
+                view.dom.dispatchEvent(new CustomEvent('external-link-click', {
+                    bubbles: true,
+                    composed: true,
+                    detail: detail,
+                }));
             }
         }
 
