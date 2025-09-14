@@ -15,6 +15,7 @@ import type { DecorationSet } from '@codemirror/view'
 import { standardKeymap, history, historyKeymap, indentWithTab } from '@codemirror/commands'
 import { defaultHighlightStyle, syntaxHighlighting, indentOnInput, foldGutter, syntaxTree } from '@codemirror/language'
 import { Compartment, RangeSetBuilder } from '@codemirror/state'
+import { LanguageSupport, LRLanguage } from '@codemirror/language'
 import { languages } from '@codemirror/language-data'
 import wysiwyg from '../editor/wysiwyg'
 import { internalLinkMapFacet } from '../editor/plugins/linkMappingConfig'
@@ -55,10 +56,18 @@ const keymaps = computed(() => {
     return props.disabled ? keymap.of([]) : keymap.of([...standardKeymap, ...historyKeymap, indentWithTab])
 })
 
+async function loadLanguage(info: string): Promise<LanguageSupport> {
+    const lang = languages.find(l => l.name.toLowerCase() === info.toLowerCase() || l.alias.map(a => a.toLowerCase()).includes(info.toLowerCase()))
+    if (lang) {
+        return await lang.load()
+    }
+    throw new Error(`Language ${info} not found`);
+}
+
 onMounted(() => {
     const wysiwygPlugin = wysiwyg({
         lezer: {
-            codeLanguages: languages,
+            codeLanguages: loadLanguage,
         },
     })
     extensions.value = [

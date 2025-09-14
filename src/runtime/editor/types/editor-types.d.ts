@@ -1,4 +1,5 @@
 import type { Component } from 'vue'
+import type { LanguageSupport } from '@codemirror/language'
 
 export interface InternalLink {
     internalLinkName: string;
@@ -26,5 +27,8 @@ export interface SpecialCodeBlockMapping {
 }
 
 export type WysiwygPlugin = {
-  lezer?: any
+  lezer?: {
+      codeLanguages?: (info: string) => LanguageSupport | Promise<LanguageSupport> | null
+      [key: string]: any
+  }
 }

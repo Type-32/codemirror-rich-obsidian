@@ -37,8 +37,11 @@ import { indentationListPlugin } from './plugins/codemirror-editor-plugins/inden
 import type { WysiwygPlugin } from './types/editor-types'
 
 export default function (config?: WysiwygPlugin) {
+    const { codeLanguages, ...lezerRest } = config?.lezer ?? {}
+
     const mergedConfig = {
-        ...(config?.lezer ?? []), // Spreads user-passed lezer config (like codeLanguages)
+        ...(lezerRest ?? []),
+        codeLanguages: codeLanguages,
         extensions: [
             GFM,
             CustomOFM,
