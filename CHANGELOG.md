@@ -1,6 +1,18 @@
 # Changelog
 
 
+## v0.0.10
+
+[compare changes](https://github.com/Type-32/codemirror-rich-obsidian/compare/v0.0.9...v0.0.10)
+
+### 🚀 Enhancements
+
+- **links:** Added link clicking event payloads to be strongly typed ([3ddc6f3](https://github.com/Type-32/codemirror-rich-obsidian/commit/3ddc6f3))
+
+### ❤️ Contributors
+
+- Type-32 ([@Type-32](https://github.com/Type-32))
+
 ## v0.0.9
 
 [compare changes](https://github.com/Type-32/codemirror-rich-obsidian/compare/v0.0.8...v0.0.9)
