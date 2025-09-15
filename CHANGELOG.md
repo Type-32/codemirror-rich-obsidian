@@ -1,6 +1,22 @@
 # Changelog
 
 
+## v0.0.11
+
+[compare changes](https://github.com/Type-32/codemirror-rich-obsidian/compare/v0.0.10...v0.0.11)
+
+### 🚀 Enhancements
+
+- **composable:** Added new composable useDocumentUtils.ts for some document info-related utilities ([1b725f7](https://github.com/Type-32/codemirror-rich-obsidian/commit/1b725f7))
+
+### 🏡 Chore
+
+- Updated readme ([f1c666e](https://github.com/Type-32/codemirror-rich-obsidian/commit/f1c666e))
+
+### ❤️ Contributors
+
+- Type-32 ([@Type-32](https://github.com/Type-32))
+
 ## v0.0.10
 
 [compare changes](https://github.com/Type-32/codemirror-rich-obsidian/compare/v0.0.9...v0.0.10)
