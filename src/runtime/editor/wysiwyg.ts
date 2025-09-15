@@ -80,6 +80,7 @@ export default function (config?: WysiwygPlugin) {
             indentationListPlugin,
             // editorAttributesPlugin,
             syntaxHighlighting(proseStylesPlugin),
+			//@ts-ignore
             markdown(mergedConfig),
         ],
     })

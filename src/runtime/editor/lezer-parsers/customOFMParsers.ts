@@ -1,6 +1,6 @@
 // this basically just puts all lezer parsers into one array of them, for ease of imports
 
-import {Strikethrough, Table} from "@lezer/markdown";
+import { Strikethrough, Table } from '@lezer/markdown'
 import {lezerHashtagParser} from './lezerHashtagParser';
 import {InternalLink, Mark, Comment, Footnote, TaskList, Tex} from "lezer-markdown-obsidian";
 import {lezerYamlFrontmatterParser} from "./lezerYamlFrontmatterParser";

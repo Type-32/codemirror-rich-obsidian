@@ -4,6 +4,8 @@ import { markdown } from '@codemirror/lang-markdown'
 import type { SyntaxNode, Tree } from '@lezer/common'
 import type { Ref } from 'vue'
 import type { TransactionSpec } from '@codemirror/state'
+import { CustomOFM } from '../../runtime/editor/lezer-parsers/customOFMParsers'
+import { GFM, type MarkdownExtension } from '@lezer/markdown'
 
 export function useEditorUtils(editor: Ref<any>) {
 	const view = computed(() => {
@@ -35,7 +37,13 @@ export function useEditorUtils(editor: Ref<any>) {
 	}
 
 	function parseMarkdownToAST(markdownText: string): Tree {
-		return markdown().language.parser.parse(markdownText)
+		return markdown({
+			extensions: [
+				GFM,
+				CustomOFM as MarkdownExtension[],
+				{ remove: ['SetextHeading'] }
+			]
+		}).language.parser.parse(markdownText)
 	}
 
     function getDocAst(): Tree {
