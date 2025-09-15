@@ -8,6 +8,7 @@
 - https://github.com/ebullient/markdown-it-obsidian-callouts, for his awesome markdown-to-html callouts markdown-it plugin
 - https://github.com/mgmeyers/obsidian-indentation-guides, for indentation guides
 - Markdown-It
+- https://github.com/thecodrr/alfaaz, for insanely fast word/line-counting functions
 
 ### Related References & Resources
 - https://github.com/heavycircle/remark-obsidian, for mostly wiki link alias & highlights & callouts parsing
