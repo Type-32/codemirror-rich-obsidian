@@ -1,6 +1,18 @@
 # Changelog
 
 
+## v0.0.20
+
+[compare changes](https://github.com/Type-32/codemirror-rich-obsidian/compare/v0.0.19...v0.0.20)
+
+### 🩹 Fixes
+
+- **line breaks:** Line breaks break when being decorated. ([c3d2062](https://github.com/Type-32/codemirror-rich-obsidian/commit/c3d2062))
+
+### ❤️ Contributors
+
+- Type-32 ([@Type-32](https://github.com/Type-32))
+
 ## v0.0.19
 
 [compare changes](https://github.com/Type-32/codemirror-rich-obsidian/compare/v0.0.18...v0.0.19)
