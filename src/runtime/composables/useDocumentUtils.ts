@@ -1,12 +1,12 @@
-import { countWords, countLines } from "alfaaz";
+import * as alfaaz from "alfaaz";
 
 export function useDocumentUtils() {
 	function getWordCount(text: string) {
-		return countWords(text)
+		return alfaaz.countWords(text)
 	}
 
 	function getLineCount(text: string) {
-		return countLines(text)
+		return alfaaz.countLines(text)
 	}
 
 	function getCharacters(text: string) {
@@ -14,7 +14,7 @@ export function useDocumentUtils() {
 	}
 
 	function getReadingTime(text: string, wordsPerMinute = 200) {
-		const wordCount = countWords(text);
+		const wordCount = alfaaz.countWords(text)
 		return Math.ceil(wordCount / wordsPerMinute);
 	}
 

@@ -14,7 +14,13 @@ export default defineNuxtModule<ModuleOptions>({
 	setup(_options, _nuxt) {
 		const resolver = createResolver(import.meta.url)
 
-		// Add dependencies to transpile
+		addComponentsDir({
+			path: resolver.resolve('runtime/components')
+		})
+
+		addImportsDir(resolver.resolve('runtime/composables'))
+		addImportsDir(resolver.resolve('runtime/utils'))
+
 		_nuxt.options.build.transpile.push('alfaaz', 'js-yaml')
 
 		_nuxt.options.alias['#codemirror-rich-obsidian-editor'] = resolver.resolve(
@@ -26,12 +32,5 @@ export default defineNuxtModule<ModuleOptions>({
 		)
 
 		_nuxt.options.css.unshift(resolver.resolve('./runtime/assets/css/editor.css'))
-
-		addComponentsDir({
-			path: resolver.resolve('./runtime/components')
-		})
-
-		addImportsDir(resolver.resolve('./runtime/composables'))
-		addImportsDir(resolver.resolve('./runtime/utils'))
 	},
 })
