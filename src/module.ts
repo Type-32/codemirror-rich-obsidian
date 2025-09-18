@@ -14,6 +14,9 @@ export default defineNuxtModule<ModuleOptions>({
 	setup(_options, _nuxt) {
 		const resolver = createResolver(import.meta.url)
 
+		// Add alfaaz to transpile
+		_nuxt.options.build.transpile.push('alfaaz')
+
 		_nuxt.options.alias['#codemirror-rich-obsidian-editor'] = resolver.resolve(
 			'./runtime/editor/types',
 		)
