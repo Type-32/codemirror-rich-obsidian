@@ -30,7 +30,7 @@ const revealComponentMarkTokensOnCursor = [
 ] // The Mark Tokens to reveal when the cursor is over the node.
 
 const hideComponentMarkTokens = [
-    'HardBreak',
+    // 'HardBreak',
     // 'LinkMark',
     'EmphasisMark',
     'CodeMark',
