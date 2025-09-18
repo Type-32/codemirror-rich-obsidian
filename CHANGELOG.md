@@ -1,6 +1,18 @@
 # Changelog
 
 
+## v0.0.17
+
+[compare changes](https://github.com/Type-32/codemirror-rich-obsidian/compare/v0.0.16...v0.0.17)
+
+### 🩹 Fixes
+
+- **alfaaz:** Still not being imported for some reason ([2ce77c8](https://github.com/Type-32/codemirror-rich-obsidian/commit/2ce77c8))
+
+### ❤️ Contributors
+
+- Type-32 ([@Type-32](https://github.com/Type-32))
+
 ## v0.0.16
 
 [compare changes](https://github.com/Type-32/codemirror-rich-obsidian/compare/v0.0.15...v0.0.16)
