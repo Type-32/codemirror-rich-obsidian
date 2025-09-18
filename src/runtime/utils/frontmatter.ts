@@ -1,31 +1,37 @@
 import { load } from 'js-yaml'
+import { markdown } from '@codemirror/lang-markdown'
+import { GFM, type MarkdownExtension } from '@lezer/markdown'
+import { CustomOFM } from '../editor/lezer-parsers/customOFMParsers'
+import type { Frontmatter } from '../editor/types/editor-types';
 
-const frontmatterRegex = /^---\r?\n([\s\S]+?)\r?\n---/
-
-export function parseFrontmatter(markdown: string): { data?: Record<string, any>; error?: Error } {
-    if (!markdown) {
+export function parseFrontmatter(markdownText: string): { data?: Frontmatter; error?: Error } {
+    if (!markdownText) {
         return {}
     }
 
-    const match = markdown.match(frontmatterRegex)
+    const tree = markdown({
+        extensions: [GFM, CustomOFM as MarkdownExtension[], { remove: ['SetextHeading'] }],
+    }).language.parser.parse(markdownText)
 
-    if (!match) {
-        // If the string starts with --- but doesn't match, it's incomplete.
-        if (markdown.startsWith('---')) {
-            return { error: new Error('Incomplete frontmatter block.') }
-        }
-        // Otherwise, there's just no frontmatter.
+    const firstNode = tree.topNode.firstChild
+    if (!firstNode || firstNode.name !== 'YAMLFrontMatter') {
         return {}
     }
 
-    const yamlContent = match[1]
+    const contentNode = firstNode.getChild('YAMLContent')
+    const yamlContent = contentNode ? markdownText.slice(contentNode.from, contentNode.to) : ''
 
     try {
-        const data = load(yamlContent || '')
-        if (typeof data === 'object' && data !== null) {
-            return { data: data as Record<string, any> }
+        const data = load(yamlContent)
+
+        if (data === null || data === undefined) {
+            return { data: {} }
         }
-        // The YAML is valid but not an object (e.g., a single string)
+
+        if (typeof data === 'object') {
+            return { data: data as Frontmatter }
+        }
+
         return { error: new Error('Frontmatter is not a valid object.') }
     } catch (e: any) {
         return { error: e }

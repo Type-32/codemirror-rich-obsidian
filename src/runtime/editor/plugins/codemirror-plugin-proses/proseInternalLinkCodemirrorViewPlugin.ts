@@ -32,7 +32,10 @@ function buildInternalLinkDecorations(state: EditorState): EditorRange<Decoratio
                         const line = state.doc.lineAt(node.from);
                         const props: Record<string, any> = { linkData: linkInfo };
                         if (linkInfo.filePath) {
+							const displayNode = node.node.getChild('InternalLink')?.getChild('InternalDisplay')
                             props.filePath = linkInfo.filePath;
+							if (displayNode?.from && displayNode?.to)
+								props.display = state.doc.sliceString(displayNode.from, displayNode.to)
                         }
 
                         widgets.push(Decoration.widget({

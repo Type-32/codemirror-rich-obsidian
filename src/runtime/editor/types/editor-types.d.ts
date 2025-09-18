@@ -8,6 +8,12 @@ export interface InternalLink {
     embedComponent?: Component;
 }
 
+export interface InternalLinkNode {
+	path: string
+	subpath?: string
+	display?: string
+}
+
 export interface InternalLinkClickDetail {
     path: string;
     subpath?: string;
@@ -32,3 +38,15 @@ export type WysiwygPlugin = {
       [key: string]: any
   }
 }
+
+export type Frontmatter<T extends object = {}> = {
+    title?: string;
+    description?: string;
+    date?: Date;
+    draft?: boolean;
+    tags?: string[];
+    categories?: string[];
+    image?: string;
+    slug?: string;
+    [key: string]: any;
+} & T

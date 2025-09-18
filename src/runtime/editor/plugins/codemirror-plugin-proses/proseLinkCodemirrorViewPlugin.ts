@@ -19,8 +19,9 @@ function buildLinkDecorations(state: EditorState): EditorRange<Decoration>[] {
                     const urlNode = node.getChild('URL');
                     if (urlNode) {
                         const url = state.doc.sliceString(urlNode.from, urlNode.to);
+						const displayString = state.doc.sliceString(2, urlNode.from - 2)
                         decorations.push(Decoration.replace({
-                            widget: new ProseVueComponentEmbedWidget(ImageEmbedComponent, { filePath: url }, node.from),
+                            widget: new ProseVueComponentEmbedWidget(ImageEmbedComponent, { filePath: url, display: displayString }, node.from),
                             block: true,
                         }).range(node.from, node.to));
                     }
