@@ -32,6 +32,7 @@ export default HighlightStyle.define([
     { tag: t.meta, class: 'cm-meta' },
     { tag: t.strikethrough, class: 'cm-strikethrough' },
     { tag: t.contentSeparator, class: 'cm-horizontal-rule' },
+	{ tag: t.escape, class: 'cm-escape' },
     // { tag: lezerHighlightHashtagTag, class: 'cm-hashtag' },
 
     { tag: lezerHighlightEmbed, class: 'cm-embed' },

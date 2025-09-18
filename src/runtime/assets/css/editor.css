@@ -21,7 +21,7 @@
 .cm-content {
     @apply font-editor;
 
-    .cm-meta {
+    .cm-meta, .cm-escape {
         @apply text-dimmed! no-underline!;
     }
 
@@ -34,7 +34,7 @@
     }
 
     .cm-hashtag {
-        @apply bg-primary/20! ring ring-primary/70! px-1.5 text-sm rounded-4xl text-primary! inline-flex;
+        @apply bg-gradient-to-t from-primary/20! to-primary/10! ring ring-primary/50! px-1.5 text-sm rounded-4xl text-primary! inline-flex;
 
         .cm-heading {
             @apply text-primary!;
@@ -177,18 +177,18 @@
 
     .cm-quoteblock,
     blockquote {
-        @apply border-l-6 bg-muted border-accented ps-2 mx-2;
+        @apply bg-muted border-accented ps-2 mx-2 before:ml-0.5 before:rounded-lg before:px-0.5 before:bg-accented before:py-1;
 
         &.cm-quoteblock-single {
-            @apply rounded py-2;
+            @apply rounded-lg py-2 before:py-0.5;
         }
 
         &.cm-quoteblock-start {
-            @apply rounded-t pt-2;
+            @apply rounded-t-lg pt-2 before:pt-0;
         }
 
         &.cm-quoteblock-end {
-            @apply rounded-b pb-2;
+            @apply rounded-b-lg pb-2 before:pb-0;
         }
 
         .cm-formatting-quote.cm-meta {
@@ -215,7 +215,7 @@
 
     .cm-callout-widget,
     .callout {
-        @apply p-3 relative flex flex-col h-fit mx-2 my-2 rounded-lg border border-primary/20 bg-primary/20; /* Removed transition-all from parent to be more specific */
+        @apply p-3 relative flex flex-col h-fit mx-2 my-2 rounded-xl border border-primary/20 from-primary/10 to-primary/20 bg-gradient-to-b; /* Removed transition-all from parent to be more specific */
 
         summary {
             @apply inline-flex;
@@ -241,7 +241,7 @@
         }
 
         &[data-callout='info'] {
-            @apply bg-info/20 border-info/20;
+            @apply from-info/10 to-info/20 bg-gradient-to-b border-info/20;
 
             .callout-fold {
                 @apply text-info-400;
@@ -258,7 +258,7 @@
         &[data-callout='success'],
         &[data-callout='check'],
         &[data-callout='done'] {
-            @apply bg-success/20 border-success/20;
+            @apply from-success/10 to-success/20 bg-gradient-to-b border-success/20;
 
             .callout-fold {
                 @apply text-success-400;
@@ -276,7 +276,7 @@
         &[data-callout='help'],
         &[data-callout='faq'],
         &[data-callout='question'] {
-            @apply bg-warning/20 border-warning/20;
+            @apply from-warning/10 to-warning/20 bg-gradient-to-b border-warning/20;
 
             .callout-fold {
                 @apply text-warning-400;
@@ -293,7 +293,7 @@
         &[data-callout='error'],
         &[data-callout='failure'],
         &[data-callout='bug'] {
-            @apply bg-error/20 border-error/20;
+            @apply from-error/10 to-error/20 bg-gradient-to-b border-error/20;
 
             .callout-fold {
                 @apply text-error-400;
@@ -310,7 +310,7 @@
         &[data-callout='highlight'],
         &[data-callout='example'],
         &[data-callout='tip'] {
-            @apply bg-secondary/20 border-secondary/20;
+            @apply from-secondary/10 to-secondary/20 bg-gradient-to-b border-secondary/20;
 
             .callout-fold {
                 @apply text-secondary;
@@ -326,7 +326,7 @@
 
         &[data-callout='quote'],
         &[data-callout='neutral'] {
-            @apply bg-accented/30 border-accented/30;
+            @apply from-accented/20 to-accented/30 bg-gradient-to-b border-accented/30;
 
             .callout-fold {
                 @apply text-highlighted;

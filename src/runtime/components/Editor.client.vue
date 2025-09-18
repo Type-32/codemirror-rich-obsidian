@@ -223,11 +223,16 @@ defineExpose({
 @reference "../assets/css/editor.css";
 
 .cm-cursor {
-    @apply border-l-primary! border-l-[1.6px]!;
+    @apply border-l-primary! border-l-[1.8px]! rounded-lg!;
 }
 
 .cm-selectionBackground {
-    @apply bg-primary/50! z-120!;
+    @apply bg-primary/30! z-[150];
+}
+
+.cm-selectionLayer {
+	@apply z-[150]!;
+	pointer-events: none;
 }
 
 div[contenteditable='true']:focus {
