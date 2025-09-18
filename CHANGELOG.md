@@ -1,6 +1,18 @@
 # Changelog
 
 
+## v0.0.16
+
+[compare changes](https://github.com/Type-32/codemirror-rich-obsidian/compare/v0.0.15...v0.0.16)
+
+### 🩹 Fixes
+
+- **alfaaz:** Fixing alfaaz not being included as a dependency ([6a0d1c9](https://github.com/Type-32/codemirror-rich-obsidian/commit/6a0d1c9))
+
+### ❤️ Contributors
+
+- Type-32 ([@Type-32](https://github.com/Type-32))
+
 ## v0.0.15
 
 [compare changes](https://github.com/Type-32/codemirror-rich-obsidian/compare/v0.0.14...v0.0.15)
