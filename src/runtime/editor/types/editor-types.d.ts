@@ -50,3 +50,5 @@ export type Frontmatter<T extends object = {}> = {
     slug?: string;
     [key: string]: any;
 } & T
+
+export type UnicodeRange = number[][]

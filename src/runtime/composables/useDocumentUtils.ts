@@ -1,6 +1,8 @@
-import * as alfaaz from "alfaaz";
+import { useAlfaaz } from './useAlfaaz'
 
 export function useDocumentUtils() {
+	const alfaaz = useAlfaaz()
+
 	function getWordCount(text: string) {
 		return alfaaz.countWords(text)
 	}
