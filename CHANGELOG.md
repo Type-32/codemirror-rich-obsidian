@@ -1,6 +1,22 @@
 # Changelog
 
 
+## v0.0.12
+
+[compare changes](https://github.com/Type-32/codemirror-rich-obsidian/compare/v0.0.11...v0.0.12)
+
+### 🚀 Enhancements
+
+- **editor & utils:** Added new utility function to parse internal links from markdown text and also added captions for image embeds; changed frontmatter parsing and added strong type result ([0ca1f74](https://github.com/Type-32/codemirror-rich-obsidian/commit/0ca1f74))
+
+### 🏡 Chore
+
+- **styles:** Updated editor quoteblock, callout escape-key, and selection styles ([451a005](https://github.com/Type-32/codemirror-rich-obsidian/commit/451a005))
+
+### ❤️ Contributors
+
+- Type-32 ([@Type-32](https://github.com/Type-32))
+
 ## v0.0.11
 
 [compare changes](https://github.com/Type-32/codemirror-rich-obsidian/compare/v0.0.10...v0.0.11)
