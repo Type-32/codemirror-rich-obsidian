@@ -17,9 +17,12 @@ function buildLinkDecorations(state: EditorState): EditorRange<Decoration>[] {
                 const isActive = isNodeRangeActive(state, node.from, node.to) || cursorSelectionCoveredNode(poses.cursorFrom, poses.cursorTo, poses.nodeFrom, poses.nodeTo);
                 if (!isActive) {
                     const urlNode = node.getChild('URL');
+                    const firstMark = node.getChildren('LinkMark')[0];
                     if (urlNode) {
                         const url = state.doc.sliceString(urlNode.from, urlNode.to);
-						const displayString = state.doc.sliceString(2, urlNode.from - 2)
+                        let displayString = undefined;
+                        if (firstMark?.to)
+                            displayString = state.doc.sliceString(firstMark?.to, urlNode.from - 2)
                         decorations.push(Decoration.replace({
                             widget: new ProseVueComponentEmbedWidget(ImageEmbedComponent, { filePath: url, display: displayString }, node.from),
                             block: true,
