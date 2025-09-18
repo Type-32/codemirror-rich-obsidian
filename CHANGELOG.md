@@ -1,6 +1,18 @@
 # Changelog
 
 
+## v0.0.14
+
+[compare changes](https://github.com/Type-32/codemirror-rich-obsidian/compare/v0.0.13...v0.0.14)
+
+### 🚀 Enhancements
+
+- **editor utils:** Added new composable `useEditorFrontmatter` for frontmatter manipulation utilities ([f107290](https://github.com/Type-32/codemirror-rich-obsidian/commit/f107290))
+
+### ❤️ Contributors
+
+- Type-32 ([@Type-32](https://github.com/Type-32))
+
 ## v0.0.13
 
 [compare changes](https://github.com/Type-32/codemirror-rich-obsidian/compare/v0.0.12...v0.0.13)
