@@ -1,6 +1,18 @@
 # Changelog
 
 
+## v0.0.15
+
+[compare changes](https://github.com/Type-32/codemirror-rich-obsidian/compare/v0.0.14...v0.0.15)
+
+### 🩹 Fixes
+
+- **image caption:** Fixed image caption not getting the correct caption text ([9b17030](https://github.com/Type-32/codemirror-rich-obsidian/commit/9b17030))
+
+### ❤️ Contributors
+
+- Type-32 ([@Type-32](https://github.com/Type-32))
+
 ## v0.0.14
 
 [compare changes](https://github.com/Type-32/codemirror-rich-obsidian/compare/v0.0.13...v0.0.14)
