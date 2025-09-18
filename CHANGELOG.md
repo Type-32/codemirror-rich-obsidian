@@ -1,6 +1,18 @@
 # Changelog
 
 
+## v0.0.19
+
+[compare changes](https://github.com/Type-32/codemirror-rich-obsidian/compare/v0.0.18...v0.0.19)
+
+### 🩹 Fixes
+
+- **alfaaz:** Just moved source code of alfaaz to this repo and credited the author everywhere ([18d3257](https://github.com/Type-32/codemirror-rich-obsidian/commit/18d3257))
+
+### ❤️ Contributors
+
+- Type-32 ([@Type-32](https://github.com/Type-32))
+
 ## v0.0.18
 
 [compare changes](https://github.com/Type-32/codemirror-rich-obsidian/compare/v0.0.17...v0.0.18)
