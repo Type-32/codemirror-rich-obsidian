@@ -1,6 +1,18 @@
 # Changelog
 
 
+## v0.0.21
+
+[compare changes](https://github.com/Type-32/codemirror-rich-obsidian/compare/v0.0.20...v0.0.21)
+
+### 🚀 Enhancements
+
+- **document:** Added function that parses markdown into table of content levels ([0cb67d3](https://github.com/Type-32/codemirror-rich-obsidian/commit/0cb67d3))
+
+### ❤️ Contributors
+
+- Type-32 ([@Type-32](https://github.com/Type-32))
+
 ## v0.0.20
 
 [compare changes](https://github.com/Type-32/codemirror-rich-obsidian/compare/v0.0.19...v0.0.20)
