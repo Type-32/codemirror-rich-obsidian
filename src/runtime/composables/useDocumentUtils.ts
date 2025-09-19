@@ -1,4 +1,8 @@
 import { useAlfaaz } from './useAlfaaz'
+import { markdown } from '@codemirror/lang-markdown'
+import { GFM, type MarkdownExtension } from '@lezer/markdown'
+import { CustomOFM } from '../editor/lezer-parsers/customOFMParsers'
+import { type TocEntry } from '../editor/types/editor-types'
 
 export function useDocumentUtils() {
 	const alfaaz = useAlfaaz()
@@ -35,6 +39,39 @@ export function useDocumentUtils() {
 		return text.trim().length === 0;
 	}
 
+	function getTableOfContents(text: string): TocEntry[] {
+		const toc: TocEntry[] = [];
+		if (!text) return toc;
+
+		const tree = markdown({
+			extensions: [GFM, CustomOFM as MarkdownExtension[], { remove: ['SetextHeading'] }],
+		}).language.parser.parse(text);
+
+		tree.iterate({
+			enter: (node) => {
+				if (node.name.startsWith('ATXHeading')) {
+					const levelMatch = node.name.match(/ATXHeading(\d)/);
+					if (levelMatch && levelMatch[1]) {
+						const level = parseInt(levelMatch[1], 10);
+						const headerMark = node.node.getChild('HeaderMark');
+						if (headerMark) {
+							const from = headerMark.to + 1;
+							const to = node.to;
+							const textContent = text.slice(from, to).trim();
+
+							toc.push({
+								level,
+								text: textContent,
+							});
+						}
+					}
+				}
+			},
+		});
+
+		return toc;
+	}
+
 	return {
 		getWordCount,
 		getLineCount,
@@ -42,6 +79,7 @@ export function useDocumentUtils() {
 		getReadingTime,
 		getParagraphs,
 		getAvgWordLength,
-		isEmpty
+		isEmpty,
+		getTableOfContents,
 	}
 }

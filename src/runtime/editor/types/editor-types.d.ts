@@ -52,3 +52,8 @@ export type Frontmatter<T extends object = {}> = {
 } & T
 
 export type UnicodeRange = number[][]
+
+export interface TocEntry {
+	level: number
+	text: string
+}
