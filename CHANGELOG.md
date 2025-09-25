@@ -1,6 +1,18 @@
 # Changelog
 
 
+## v0.0.25
+
+[compare changes](https://github.com/Type-32/codemirror-rich-obsidian/compare/v0.0.24...v0.0.25)
+
+### 💅 Refactors
+
+- **internal link mapping:** Refactored attribute names and added docs for internal link mapping types to prevent confusion ([adcda0d](https://github.com/Type-32/codemirror-rich-obsidian/commit/adcda0d))
+
+### ❤️ Contributors
+
+- Type-32 ([@Type-32](https://github.com/Type-32))
+
 ## v0.0.24
 
 [compare changes](https://github.com/Type-32/codemirror-rich-obsidian/compare/v0.0.23...v0.0.24)
