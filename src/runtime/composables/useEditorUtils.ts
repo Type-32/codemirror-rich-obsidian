@@ -6,6 +6,7 @@ import type { Ref } from 'vue'
 import type { TransactionSpec } from '@codemirror/state'
 import { CustomOFM } from '../../runtime/editor/lezer-parsers/customOFMParsers'
 import { GFM, type MarkdownExtension } from '@lezer/markdown'
+import type { SearchMatch } from '../editor/types/editor-types';
 
 export function useEditorUtils(editor: Ref<any>) {
 	const view = computed(() => {
@@ -72,6 +73,36 @@ export function useEditorUtils(editor: Ref<any>) {
         return ast.topNode.firstChild?.name === 'YAMLFrontMatter'
     }
 
+    function search(query: string, options: { caseSensitive?: boolean } = {}): SearchMatch[] {
+        const doc = getDoc();
+        if (!doc || !query) return [];
+
+        const matches: SearchMatch[] = [];
+        const regex = new RegExp(query, options.caseSensitive ? 'g' : 'gi');
+
+        let match;
+        while ((match = regex.exec(doc)) !== null) {
+            matches.push({
+                from: match.index,
+                to: match.index + match[0].length,
+            });
+        }
+        return matches;
+    }
+
+    function replaceAll(query: string, replacement: string, options: { caseSensitive?: boolean } = {}) {
+        const matches = search(query, options);
+        if (matches.length === 0) return;
+
+        const changes = matches.map(match => ({
+            from: match.from,
+            to: match.to,
+            insert: replacement,
+        }));
+
+        dispatch({ changes });
+    }
+
 	return {
 		getDoc,
 		setDoc,
@@ -83,5 +114,7 @@ export function useEditorUtils(editor: Ref<any>) {
 		findNodesByType,
 		getDocNodesByType,
 		hasFrontmatter,
+        search,
+        replaceAll,
 	}
 }

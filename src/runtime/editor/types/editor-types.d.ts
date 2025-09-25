@@ -57,3 +57,13 @@ export interface TocEntry {
 	level: number
 	text: string
 }
+
+export interface SearchMatch {
+	from: number;
+	to: number;
+}
+
+export interface SearchOptions {
+	query: string;
+	caseSensitive?: boolean;
+}
