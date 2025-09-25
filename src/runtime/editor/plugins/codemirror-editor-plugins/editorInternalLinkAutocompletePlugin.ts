@@ -1,4 +1,4 @@
-import {autocompletion, type CompletionContext, type CompletionResult} from "@codemirror/autocomplete";
+import {autocompletion, type Completion, type CompletionContext, type CompletionResult} from "@codemirror/autocomplete";
 import {syntaxTree} from "@codemirror/language";
 import {internalLinkMapFacet} from "../linkMappingConfig";
 
@@ -31,36 +31,37 @@ function internalLinkSource(context: CompletionContext): CompletionResult | null
     const linkMap = context.state.facet(internalLinkMapFacet);
     const nameCounts = new Map<string, number>();
     linkMap.forEach(link => {
-        nameCounts.set(link.internalLinkName, (nameCounts.get(link.internalLinkName) || 0) + 1);
+        nameCounts.set(link.name, (nameCounts.get(link.name) || 0) + 1);
     });
 
     const searchString = textBefore.toLowerCase();
     const options = linkMap
         .filter(link =>
-            link.internalLinkName.toLowerCase().includes(searchString) ||
+            (link.name && link.name.toLowerCase().includes(searchString)) ||
             (link.filePath && link.filePath.toLowerCase().includes(searchString))
         )
         .map(link => {
-            const isDuplicate = (nameCounts.get(link.internalLinkName) || 0) > 1;
+            if (!link.name) return null;
+            const isDuplicate = (nameCounts.get(link.name) || 0) > 1;
             if (isDuplicate) {
                 return {
-                    label: link.filePath || link.internalLinkName,
-                    detail: link.internalLinkName,
-                    apply: link.filePath || link.internalLinkName,
-                };
+					label: link.name,
+					detail: link.filePath,
+					apply: link.filePath || link.name,
+				}
             }
             return {
-                label: link.internalLinkName,
+                label: link.name,
                 detail: link.filePath,
-                apply: `${link.internalLinkName}`
+                apply: `${link.name}`
             };
-        });
+        }).filter(Boolean);
 
     if (options.length === 0) return null;
 
     return {
         from: from,
-        options,
+        options: options as Completion[] || [],
         validFor: /^[^\]|]*/,
     };
 }

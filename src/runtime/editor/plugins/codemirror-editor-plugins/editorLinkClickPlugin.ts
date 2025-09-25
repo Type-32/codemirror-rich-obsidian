@@ -34,15 +34,15 @@ export const editorLinkClickPlugin = EditorView.domEventHandlers({
             if (!path) return true;
 
             const linkMap = view.state.facet(internalLinkMapFacet);
-            const linkInfo = linkMap.find(l => l.internalLinkName === path);
+            const linkInfo = linkMap.find(l => l.name === path || l.filePath === path);
             const type = anchor.dataset.type as 'embed' | 'internal-link' | undefined;
 
             const detail: InternalLinkClickDetail = {
-                path: path,
+                target: path,
                 subpath: anchor.dataset.subpath,
                 display: anchor.dataset.display,
                 type: type || 'internal-link',
-                redirectToPath: linkInfo?.redirectToPath,
+                referenceId: anchor.dataset.referenceId || linkInfo?.referenceId,
             }
 
             view.dom.dispatchEvent(new CustomEvent('internal-link-click', {

@@ -26,7 +26,7 @@ function buildInternalLinkDecorations(state: EditorState): EditorRange<Decoratio
                 const pathNode = node.node.getChild('InternalLink')?.getChild('InternalPath');
                 if (pathNode) {
                     const path = state.doc.sliceString(pathNode.from, pathNode.to);
-                    const linkInfo = linkMap.find(l => l.internalLinkName === path || l.filePath === path);
+                    const linkInfo = linkMap.find(l => l.name === path || l.filePath === path);
 
                     if (linkInfo?.embedComponent) {
                         const line = state.doc.lineAt(node.from);
@@ -70,7 +70,7 @@ function buildInternalLinkDecorations(state: EditorState): EditorRange<Decoratio
                 const subpath = subpathNode ? state.doc.sliceString(subpathNode.from, subpathNode.to) : undefined;
                 const alias = aliasNode ? state.doc.sliceString(aliasNode.from, aliasNode.to) : undefined;
 
-                const linkInfo = linkMap.find(l => l.internalLinkName === path || l.filePath === path);
+                const linkInfo = linkMap.find(l => l.name === path || l.filePath === path);
 
                 // Skip decoration if it's an embed that should be a widget
                 if (node.name === 'Embed' && linkInfo?.embedComponent) {
@@ -87,6 +87,8 @@ function buildInternalLinkDecorations(state: EditorState): EditorRange<Decoratio
 
                 if (!linkInfo) {
                     linkAttributes['class'] += ' cm-unresolved-link';
+                } else {
+                    linkAttributes['data-reference-id'] = linkInfo.referenceId;
                 }
 
                 if (subpath) linkAttributes['data-subpath'] = subpath;

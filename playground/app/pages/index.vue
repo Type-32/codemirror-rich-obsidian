@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { InternalLink, SpecialCodeBlockMapping } from '#codemirror-rich-obsidian-editor/editor-types'
+import type { ExternalLinkClickDetail, InternalLink, InternalLinkClickDetail, SpecialCodeBlockMapping } from '#codemirror-rich-obsidian-editor/editor-types'
 import { EditorImageEmbedComponent, EditorTestCustomCodeBlock } from '#components'
 
 const router = useRouter()
@@ -9,17 +9,27 @@ const $eutils = useEditorUtils(editor)
 
 const internalLinkMap = ref<InternalLink[]>([
     {
-        internalLinkName: "My Note",
-        redirectToPath: "/notes/my-note",
+        name: "My Note",
+        referenceId: "/notes/my-note",
     },
     {
-        internalLinkName: "Another Note",
-        redirectToPath: "/notes/another-note",
+        name: "Another Note",
+        referenceId: "/notes/another-note",
     },
     {
-        internalLinkName: "Kthalatir.png",
+        name: "Test1",
+        filePath: "/notes/test1",
+        referenceId: "/notes/test1",
+    },
+    {
+        name: "Test1",
+        filePath: "/notes/other/test1",
+        referenceId: "/notes/other/test1",
+    },
+    {
+        name: "Kthalatir.png",
         filePath: "/Kthalatir.png",
-        redirectToPath: "/images/kthalatir",
+        referenceId: "/images/kthalatir",
         embedComponent: EditorImageEmbedComponent,
     }
 ]);
@@ -32,15 +42,15 @@ const specialCodeBlockMap = ref<SpecialCodeBlockMapping[]>([
 ])
 
 
-const handleInternalLinkClick = (detail: { path: string, subpath?: string, display?: string, type: 'internal-link' | 'embed' }) => {
-    // console.log("Internal link clicked:", detail);
-    const link = internalLinkMap.value.find(l => l.internalLinkName === detail.path);
-    if (link) {
-        router.push(link.redirectToPath);
-    }
+const handleInternalLinkClick = (detail: InternalLinkClickDetail) => {
+    console.log("Internal link clicked:", detail);
+    // const link = internalLinkMap.value.find(l => l.name === detail.path);
+    // if (link) {
+    //     router.push(link.redirectToPath);
+    // }
 };
 
-const handleExternalLinkClick = (detail: { url: string, text?: string }) => {
+const handleExternalLinkClick = (detail: ExternalLinkClickDetail) => {
     if (detail.url) {
         window.open(detail.url, '_blank');
     }
