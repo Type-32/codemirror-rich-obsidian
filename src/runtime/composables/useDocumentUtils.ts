@@ -72,6 +72,35 @@ export function useDocumentUtils() {
 		return toc;
 	}
 
+	function getAllTags(text: string): string[] {
+		const tags: string[] = [];
+		if (!text) return tags;
+
+		const tree = markdown({
+			extensions: [GFM, CustomOFM as MarkdownExtension[], { remove: ['SetextHeading'] }],
+		}).language.parser.parse(text);
+
+		let frontmatterEnd = 0;
+		const frontmatterNode = tree.topNode.firstChild;
+		if (frontmatterNode && frontmatterNode.name === 'Frontmatter') {
+			frontmatterEnd = frontmatterNode.to;
+		}
+
+		tree.iterate({
+			from: frontmatterEnd,
+			enter: (node) => {
+				if (node.name === 'Hashtag') {
+					const tagText = text.slice(node.from + 1, node.to);
+					if (tagText) {
+						tags.push(tagText);
+					}
+				}
+			},
+		});
+
+		return [...new Set(tags)];
+	}
+
 	return {
 		getWordCount,
 		getLineCount,
@@ -81,5 +110,6 @@ export function useDocumentUtils() {
 		getAvgWordLength,
 		isEmpty,
 		getTableOfContents,
+		getAllTags,
 	}
 }
