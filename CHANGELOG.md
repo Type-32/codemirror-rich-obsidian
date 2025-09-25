@@ -1,6 +1,18 @@
 # Changelog
 
 
+## v0.0.22
+
+[compare changes](https://github.com/Type-32/codemirror-rich-obsidian/compare/v0.0.21...v0.0.22)
+
+### 🏡 Chore
+
+- **dependencies:** Update deps ([7e05ee9](https://github.com/Type-32/codemirror-rich-obsidian/commit/7e05ee9))
+
+### ❤️ Contributors
+
+- Type-32 ([@Type-32](https://github.com/Type-32))
+
 ## v0.0.21
 
 [compare changes](https://github.com/Type-32/codemirror-rich-obsidian/compare/v0.0.20...v0.0.21)
