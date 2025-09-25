@@ -29,20 +29,39 @@ function internalLinkSource(context: CompletionContext): CompletionResult | null
     }
 
     const linkMap = context.state.facet(internalLinkMapFacet);
+    const nameCounts = new Map<string, number>();
+    linkMap.forEach(link => {
+        nameCounts.set(link.internalLinkName, (nameCounts.get(link.internalLinkName) || 0) + 1);
+    });
+
+    const searchString = textBefore.toLowerCase();
     const options = linkMap
-        .filter(link => link.internalLinkName.toLowerCase().includes(textBefore.toLowerCase()))
-        .map(link => ({
-            label: link.internalLinkName,
-            detail: link.filePath,
-            apply: `${link.internalLinkName}`
-        }));
+        .filter(link =>
+            link.internalLinkName.toLowerCase().includes(searchString) ||
+            (link.filePath && link.filePath.toLowerCase().includes(searchString))
+        )
+        .map(link => {
+            const isDuplicate = (nameCounts.get(link.internalLinkName) || 0) > 1;
+            if (isDuplicate) {
+                return {
+                    label: link.filePath || link.internalLinkName,
+                    detail: link.internalLinkName,
+                    apply: link.filePath || link.internalLinkName,
+                };
+            }
+            return {
+                label: link.internalLinkName,
+                detail: link.filePath,
+                apply: `${link.internalLinkName}`
+            };
+        });
 
     if (options.length === 0) return null;
 
     return {
         from: from,
         options,
-        validFor: /^[\w\s]*$/,
+        validFor: /^[^\]|]*/,
     };
 }
 
