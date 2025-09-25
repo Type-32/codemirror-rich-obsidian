@@ -1,5 +1,6 @@
 import type { Component } from 'vue'
 import type { LanguageSupport } from '@codemirror/language'
+import type { SyntaxNode } from '@lezer/common'
 
 export interface InternalLink {
     internalLinkName: string;
@@ -55,7 +56,8 @@ export type UnicodeRange = number[][]
 
 export interface TocEntry {
 	level: number
-	text: string
+	text: string,
+    node: SyntaxNode
 }
 
 export interface SearchMatch {

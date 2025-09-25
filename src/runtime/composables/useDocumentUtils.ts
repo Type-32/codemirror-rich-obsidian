@@ -62,6 +62,7 @@ export function useDocumentUtils() {
 							toc.push({
 								level,
 								text: textContent,
+								node: headerMark,
 							});
 						}
 					}

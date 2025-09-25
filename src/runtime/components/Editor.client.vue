@@ -21,11 +21,13 @@ import wysiwyg from '../editor/wysiwyg'
 import { internalLinkMapFacet } from '../editor/plugins/linkMappingConfig'
 import { specialCodeBlockMapFacet } from '../editor/plugins/specialCodeBlockMappingConfig'
 import { customBracketClosingConfig } from '../editor/plugins/customBracketClosingConfig'
+import { editorKeywordSearchPlugin, searchOptionsFacet } from '../editor/plugins/codemirror-editor-plugins/editorKeywordSearchPlugin'
 import type {
     InternalLink,
     SpecialCodeBlockMapping,
     InternalLinkClickDetail,
-    ExternalLinkClickDetail
+    ExternalLinkClickDetail,
+    SearchOptions
 } from '#codemirror-rich-obsidian-editor/editor-types'
 import {ref, shallowRef, computed, onMounted, onBeforeUnmount, unref, watch} from 'vue';
 
@@ -38,6 +40,7 @@ const props = defineProps<{
     foldGutter?: boolean
     disabled?: boolean
     debug?: boolean
+    searchOptions?: SearchOptions
 }>()
 const emit = defineEmits<{
     'internal-link-click': [detail: InternalLinkClickDetail]
@@ -51,6 +54,7 @@ const specialCodeBlockCompartment = new Compartment()
 const bracketClosingCompartment = new Compartment()
 const foldGutterCompartment = new Compartment()
 const showFrontmatterCompartment = new Compartment()
+const searchCompartment = new Compartment()
 const editorElement = ref<HTMLElement>()
 const keymaps = computed(() => {
     return props.disabled ? keymap.of([]) : keymap.of([...standardKeymap, ...historyKeymap, indentWithTab])
@@ -84,6 +88,8 @@ onMounted(() => {
         specialCodeBlockCompartment.of(specialCodeBlockMapFacet.of(props.specialCodeBlockMap || [])),
         bracketClosingCompartment.of(customBracketClosingConfig.of(props.bracketClosing ?? true)),
         foldGutterCompartment.of(props.foldGutter ?? true ? foldGutter() : []),
+        searchCompartment.of(editorKeywordSearchPlugin),
+        searchCompartment.of(searchOptionsFacet.of(props.searchOptions || { query: '' })),
         wysiwygPlugin,
         EditorView.editable.of(unref(!props.disabled)),
     ]
@@ -152,6 +158,18 @@ watch(
             })
         }
     },
+)
+
+watch(
+    () => props.searchOptions,
+    (newOptions) => {
+        if (view.value) {
+            view.value.dispatch({
+                effects: searchCompartment.reconfigure(searchOptionsFacet.of(newOptions || { query: '' }))
+            })
+        }
+    },
+    { deep: true }
 )
 
 function handleReady(payload: any) {
