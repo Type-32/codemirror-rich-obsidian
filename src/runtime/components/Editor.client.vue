@@ -88,7 +88,7 @@ onMounted(() => {
         specialCodeBlockCompartment.of(specialCodeBlockMapFacet.of(props.specialCodeBlockMap || [])),
         bracketClosingCompartment.of(customBracketClosingConfig.of(props.bracketClosing ?? true)),
         foldGutterCompartment.of(props.foldGutter ?? true ? foldGutter() : []),
-        searchCompartment.of(editorKeywordSearchPlugin),
+        editorKeywordSearchPlugin,
         searchCompartment.of(searchOptionsFacet.of(props.searchOptions || { query: '' })),
         wysiwygPlugin,
         EditorView.editable.of(unref(!props.disabled)),
