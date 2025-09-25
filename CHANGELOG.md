@@ -1,6 +1,18 @@
 # Changelog
 
 
+## v0.0.24
+
+[compare changes](https://github.com/Type-32/codemirror-rich-obsidian/compare/v0.0.23...v0.0.24)
+
+### 🩹 Fixes
+
+- **search:** Fixed editor search codemirror plugin compartment unable to initialize ([26511ee](https://github.com/Type-32/codemirror-rich-obsidian/commit/26511ee))
+
+### ❤️ Contributors
+
+- Type-32 ([@Type-32](https://github.com/Type-32))
+
 ## v0.0.23
 
 [compare changes](https://github.com/Type-32/codemirror-rich-obsidian/compare/v0.0.22...v0.0.23)
