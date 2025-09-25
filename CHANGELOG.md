@@ -1,6 +1,24 @@
 # Changelog
 
 
+## v0.0.23
+
+[compare changes](https://github.com/Type-32/codemirror-rich-obsidian/compare/v0.0.22...v0.0.23)
+
+### 🚀 Enhancements
+
+- **internal links:** Added relative path internal link resolution ([06cbba5](https://github.com/Type-32/codemirror-rich-obsidian/commit/06cbba5))
+- **document utils:** Added new function that finds all referenced tags in the given string ([55e0c68](https://github.com/Type-32/codemirror-rich-obsidian/commit/55e0c68))
+- **search & replace:** Added basic search & replace function for editor ([358ccce](https://github.com/Type-32/codemirror-rich-obsidian/commit/358ccce))
+
+### 🏡 Chore
+
+- **editor:** Added function that allows you to scroll the view to a given node ([3c2af5b](https://github.com/Type-32/codemirror-rich-obsidian/commit/3c2af5b))
+
+### ❤️ Contributors
+
+- Type-32 ([@Type-32](https://github.com/Type-32))
+
 ## v0.0.22
 
 [compare changes](https://github.com/Type-32/codemirror-rich-obsidian/compare/v0.0.21...v0.0.22)
