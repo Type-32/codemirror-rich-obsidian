@@ -10,10 +10,12 @@ const $eutils = useEditorUtils(editor)
 const internalLinkMap = ref<InternalLink[]>([
     {
         name: "My Note",
+        filePath: "/notes/my-note",
         referenceId: "/notes/my-note",
     },
     {
         name: "Another Note",
+        filePath: "/notes/another-note",
         referenceId: "/notes/another-note",
     },
     {

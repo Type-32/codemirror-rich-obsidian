@@ -1,11 +1,9 @@
 import { computed, ref, unref, watch } from 'vue'
 import { EditorView } from '@codemirror/view'
-import { markdown } from '@codemirror/lang-markdown'
 import type { SyntaxNode, Tree } from '@lezer/common'
 import type { Ref } from 'vue'
 import type { TransactionSpec } from '@codemirror/state'
-import { CustomOFM } from '../../runtime/editor/lezer-parsers/customOFMParsers'
-import { GFM, type MarkdownExtension } from '@lezer/markdown'
+import { parseMarkdownToAST } from '../utils/markdownParser'
 import type { SearchMatch, SearchOptions } from '../editor/types/editor-types'
 
 export function useEditorUtils(editor: Ref<any>) {
@@ -18,6 +16,26 @@ export function useEditorUtils(editor: Ref<any>) {
 	const searchResults = ref<SearchMatch[]>([])
 	const currentMatchIndex = ref(-1)
 	const searchQuery = ref<SearchOptions | null>(null)
+
+	/**
+	 * Helper: Creates a regex from search options
+	 */
+	function createSearchRegex(options: SearchOptions): RegExp {
+		return new RegExp(options.query, options.caseSensitive ? 'g' : 'gi')
+	}
+
+	/**
+	 * Helper: Finds all matches in the document for the given search options
+	 */
+	function findAllMatches(doc: string, options: SearchOptions): SearchMatch[] {
+		const matches: SearchMatch[] = []
+		const regex = createSearchRegex(options)
+		let match
+		while ((match = regex.exec(doc)) !== null) {
+			matches.push({ from: match.index, to: match.index + match[0].length })
+		}
+		return matches
+	}
 
 	function getDoc(): string | undefined {
 		return unref(view)?.state.doc.toString()
@@ -39,16 +57,6 @@ export function useEditorUtils(editor: Ref<any>) {
 
 	function dispatch(...specs: TransactionSpec[]) {
 		unref(view)?.dispatch(...specs)
-	}
-
-	function parseMarkdownToAST(markdownText: string): Tree {
-		return markdown({
-			extensions: [
-				GFM,
-				CustomOFM as MarkdownExtension[],
-				{ remove: ['SetextHeading'] }
-			]
-		}).language.parser.parse(markdownText)
 	}
 
     function getDocAst(): Tree {
@@ -87,14 +95,7 @@ export function useEditorUtils(editor: Ref<any>) {
 			return
 		}
 
-		const matches: SearchMatch[] = []
-		const regex = new RegExp(options.query, options.caseSensitive ? 'g' : 'gi')
-
-		let match
-		while ((match = regex.exec(doc)) !== null) {
-			matches.push({ from: match.index, to: match.index + match[0].length })
-		}
-		searchResults.value = matches
+		searchResults.value = findAllMatches(doc, options)
 		currentMatchIndex.value = -1 // No selection initially
 	}
 
@@ -146,30 +147,25 @@ export function useEditorUtils(editor: Ref<any>) {
 		}
 	}
 
-    function replaceAll(replacement: string) {
-        if (!searchQuery.value || !searchQuery.value.query) return
-        const doc = getDoc()
-        if (!doc) return
+	function replaceAll(replacement: string) {
+		if (!searchQuery.value || !searchQuery.value.query) return
+		const doc = getDoc()
+		if (!doc) return
 
-        const matches: SearchMatch[] = []
-        const regex = new RegExp(searchQuery.value.query, searchQuery.value.caseSensitive ? 'g' : 'gi')
-        let match
-        while ((match = regex.exec(doc)) !== null) {
-            matches.push({ from: match.index, to: match.index + match[0].length })
-        }
+		const matches = findAllMatches(doc, searchQuery.value)
 
-        if (matches.length === 0) return
+		if (matches.length === 0) return
 
-        const changes = matches.map(m => ({
-            from: m.from,
-            to: m.to,
-            insert: replacement,
-        }));
+		const changes = matches.map(m => ({
+			from: m.from,
+			to: m.to,
+			insert: replacement,
+		}))
 
-        dispatch({ changes });
-        searchResults.value = []
-        currentMatchIndex.value = -1
-    }
+		dispatch({ changes })
+		searchResults.value = []
+		currentMatchIndex.value = -1
+	}
 
 	function scrollToNode(node: SyntaxNode) {
 		const editorView = unref(view)
@@ -185,7 +181,7 @@ export function useEditorUtils(editor: Ref<any>) {
 		getSelection,
 		replaceSelection,
 		dispatch,
-		parseMarkdownToAST,
+		parseMarkdownToAST, // Re-exported from utils for convenience
 		getDocAst,
 		findNodesByType,
 		getDocNodesByType,

@@ -1,7 +1,5 @@
 import { load } from 'js-yaml'
-import { markdown } from '@codemirror/lang-markdown'
-import { GFM, type MarkdownExtension } from '@lezer/markdown'
-import { CustomOFM } from '../editor/lezer-parsers/customOFMParsers'
+import { parseMarkdownToAST } from './markdownParser'
 import type { Frontmatter } from '../editor/types/editor-types';
 
 export function parseFrontmatter(markdownText: string): { data?: Frontmatter; error?: Error } {
@@ -9,9 +7,7 @@ export function parseFrontmatter(markdownText: string): { data?: Frontmatter; er
         return {}
     }
 
-    const tree = markdown({
-        extensions: [GFM, CustomOFM as MarkdownExtension[], { remove: ['SetextHeading'] }],
-    }).language.parser.parse(markdownText)
+    const tree = parseMarkdownToAST(markdownText)
 
     const firstNode = tree.topNode.firstChild
     if (!firstNode || firstNode.name !== 'YAMLFrontMatter') {

@@ -4,16 +4,7 @@ import { syntaxTree } from '@codemirror/language';
 import type { EditorState, Range as EditorRange } from '@codemirror/state';
 import {internalLinkMapFacet} from "../linkMappingConfig";
 import {ProseVueComponentEmbedWidget} from "../codemirror-widgets/proseVueComponentEmbedWidget";
-import { cursorSelectionCoveredNode, toCursorNodePositions } from '../../utility/tools'
-
-function isNodeRangeActive(state: EditorState, nodeFrom: number, nodeTo: number): boolean {
-    const cursor = state.selection.main;
-    if (cursor.empty) {
-        return cursor.from >= nodeFrom && cursor.from <= nodeTo;
-    } else {
-        return Math.max(nodeFrom, cursor.from) < Math.min(nodeTo, cursor.to);
-    }
-}
+import { cursorSelectionCoveredNode, toCursorNodePositions, isNodeRangeActive } from '../../utility/tools'
 
 function buildInternalLinkDecorations(state: EditorState): EditorRange<Decoration>[] {
     const decorations: EditorRange<Decoration>[] = [];
@@ -124,8 +115,6 @@ function buildInternalLinkDecorations(state: EditorState): EditorRange<Decoratio
 
     return [...decorations, ...widgets];
 }
-
-export { isNodeRangeActive };
 
 export const proseInternalLinkCodemirrorViewPlugin = StateField.define<DecorationSet>({
     create(state) {

@@ -94,16 +94,23 @@ export default class RichEditPlugin implements PluginValue {
 
     update(update: ViewUpdate): void {
         if (update.docChanged) {
-            let decorations = this.decorations.map(update.changes)
-            update.changes.iterChangedRanges((fromA, toA, fromB, toB) => {
-                const newWidgets = this.processRange(update.view, fromB, toB)
-                decorations = decorations.update({
-                    filter: (f, t) => f < fromB || t > toB,
-                    add: newWidgets,
-                    sort: true,
+            // If selection also changed, we need to reprocess everything because
+            // mark visibility depends on cursor position (e.g., heading marks, emphasis marks)
+            if (update.selectionSet) {
+                this.decorations = this.process(update.view)
+            } else {
+                // Only doc changed, no selection change - optimize by processing changed ranges only
+                let decorations = this.decorations.map(update.changes)
+                update.changes.iterChangedRanges((fromA, toA, fromB, toB) => {
+                    const newWidgets = this.processRange(update.view, fromB, toB)
+                    decorations = decorations.update({
+                        filter: (f, t) => f < fromB || t > toB,
+                        add: newWidgets,
+                        sort: true,
+                    })
                 })
-            })
-            this.decorations = decorations
+                this.decorations = decorations
+            }
         } else if (update.viewportChanged || update.selectionSet) {
             this.decorations = this.process(update.view)
         }
@@ -121,50 +128,50 @@ export default class RichEditPlugin implements PluginValue {
         const widgets: Range<Decoration>[] = []
         const [cursor] = view.state.selection.ranges
 
-        for (let {from, to} of view.visibleRanges) {
-            syntaxTree(view.state).iterate({
-                from, to,
-                enter(node) {
-                    const nodeName = node.name;
-                    const nodeFrom = node.from;
-                    const nodeTo = node.to;
+        // Process only the specified range, not all visible ranges
+        // This allows for optimized partial updates when only a portion of the document changes
+        syntaxTree(view.state).iterate({
+            from, to,
+            enter(node) {
+                const nodeName = node.name;
+                const nodeFrom = node.from;
+                const nodeTo = node.to;
 
-                    if (nodeName === 'HorizontalRule') {
-                        // When cursor is on the rule, reveal the text for editing.
-                        if (cursorInNode(cursor?.from, cursor?.to, nodeFrom, nodeTo)) {
-                            return;
-                        }
-                        const line = view.state.doc.lineAt(nodeFrom);
-                        // Hide the '---' text
-                        widgets.push(decorationHidden.range(nodeFrom, nodeTo));
-                        // Add a class to the line to style it as an <hr>
-                        widgets.push(Decoration.line({ attributes: { class: 'hr' } }).range(line.from));
+                if (nodeName === 'HorizontalRule') {
+                    // When cursor is on the rule, reveal the text for editing.
+                    if (cursorInNode(cursor?.from, cursor?.to, nodeFrom, nodeTo)) {
                         return;
                     }
-
-                    // Handled by the Code Block Codemirror View Plugin
-                    // if (nodeName === 'FencedCode')
-                    //     widgets.push(decorationCode.range(nodeFrom, nodeTo));
-
-                    // [^1]: the part to determine whether the current iterated node should be added a decoration.
-                    if ((nodeName.startsWith('ATXHeading') || revealComponentMarkTokensOnCursor.includes(nodeName)) && cursorInNode(cursor?.from, cursor?.to, nodeFrom, nodeTo)) {
-                        // widgets.push(Decoration.replace({}).range(nodeFrom, nodeTo));
-                        return false; // Returning false reveals the marks in the current line.
-                    }
-
-                    if (nodeName === 'ListMark' && node.matchContext(['BulletList', 'ListItem']) && cursor?.from != nodeFrom && cursor?.from != nodeFrom + 1)
-                        widgets.push(decorationBullet.range(nodeFrom, nodeTo));
-
-                    // [^2] determines whether the currently iterated node should be added a decoration that hides the current node.
-                    if (hideComponentMarkTokens.includes(node.name))
-                        widgets.push(decorationHidden.range(nodeFrom, nodeTo));
-
-                    // [^3] Basically the same as below, but processed individually because it hides the header separately.
-                    if (nodeName === 'HeaderMark')
-                        widgets.push(decorationHidden.range(nodeFrom, nodeTo + 1));
+                    const line = view.state.doc.lineAt(nodeFrom);
+                    // Hide the '---' text
+                    widgets.push(decorationHidden.range(nodeFrom, nodeTo));
+                    // Add a class to the line to style it as an <hr>
+                    widgets.push(Decoration.line({ attributes: { class: 'hr' } }).range(line.from));
+                    return;
                 }
-            });
-        }
+
+                // Handled by the Code Block Codemirror View Plugin
+                // if (nodeName === 'FencedCode')
+                //     widgets.push(decorationCode.range(nodeFrom, nodeTo));
+
+                // [^1]: the part to determine whether the current iterated node should be added a decoration.
+                if ((nodeName.startsWith('ATXHeading') || revealComponentMarkTokensOnCursor.includes(nodeName)) && cursorInNode(cursor?.from, cursor?.to, nodeFrom, nodeTo)) {
+                    // widgets.push(Decoration.replace({}).range(nodeFrom, nodeTo));
+                    return false; // Returning false reveals the marks in the current line.
+                }
+
+                if (nodeName === 'ListMark' && node.matchContext(['BulletList', 'ListItem']) && cursor?.from != nodeFrom && cursor?.from != nodeFrom + 1)
+                    widgets.push(decorationBullet.range(nodeFrom, nodeTo));
+
+                // [^2] determines whether the currently iterated node should be added a decoration that hides the current node.
+                if (hideComponentMarkTokens.includes(node.name))
+                    widgets.push(decorationHidden.range(nodeFrom, nodeTo));
+
+                // [^3] Basically the same as below, but processed individually because it hides the header separately.
+                if (nodeName === 'HeaderMark')
+                    widgets.push(decorationHidden.range(nodeFrom, nodeTo + 1));
+            }
+        });
 
         return widgets;
     }

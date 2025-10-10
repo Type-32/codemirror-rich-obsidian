@@ -1,6 +1,7 @@
 import { type Ref } from 'vue'
-import { load, dump } from 'js-yaml'
+import { dump } from 'js-yaml'
 import { useEditorUtils } from './useEditorUtils'
+import { parseFrontmatter } from '../utils/frontmatter'
 import type { Frontmatter } from '../editor/types/editor-types'
 
 export function useEditorFrontmatter<T extends object = {}>(editor: Ref<any>) {
@@ -12,27 +13,8 @@ export function useEditorFrontmatter<T extends object = {}>(editor: Ref<any>) {
             return {}
         }
 
-        const ast = editorUtils.parseMarkdownToAST(doc)
-        const firstNode = ast.topNode.firstChild
-        if (!firstNode || firstNode.name !== 'YAMLFrontMatter') {
-            return {}
-        }
-
-        const contentNode = firstNode.getChild('YAMLContent')
-        const yamlContent = contentNode ? doc.slice(contentNode.from, contentNode.to) : ''
-
-        try {
-            const data = load(yamlContent)
-            if (data === null || data === undefined) {
-                return { data: {} as Frontmatter<T> }
-            }
-            if (typeof data === 'object') {
-                return { data: data as Frontmatter<T> }
-            }
-            return { error: new Error('Frontmatter is not a valid object.') }
-        } catch (e: any) {
-            return { error: e }
-        }
+        // Reuse the shared parseFrontmatter utility
+        return parseFrontmatter(doc) as { data?: Frontmatter<T>; error?: Error }
     }
 
     function setFrontmatterProperties(properties: Partial<Frontmatter<T>>) {

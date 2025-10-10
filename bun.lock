@@ -36,7 +36,6 @@
         "@nuxt/test-utils": "^3.19.2",
         "@types/js-yaml": "^4.0.9",
         "@types/node": "latest",
-        "alfaaz": "^1.1.0",
         "changelogen": "^0.6.2",
         "eslint": "^9.37.0",
         "nuxt": "^4.1.3",

@@ -1,15 +1,10 @@
-import { markdown } from '@codemirror/lang-markdown'
 import type { SyntaxNode } from '@lezer/common'
-import wysiwyg from '../editor/wysiwyg'
-import { GFM, type MarkdownExtension } from '@lezer/markdown'
-import { CustomOFM } from '../editor/lezer-parsers/customOFMParsers'
+import { parseMarkdownToAST } from './markdownParser'
 import type { InternalLinkNode } from '../editor/types/editor-types'
 
 export function getInternalLinks(markdownText: string): InternalLinkNode[] {
     const links: InternalLinkNode[] = []
-    const tree = markdown({
-		extensions: [GFM, CustomOFM as MarkdownExtension[], { remove: ['SetextHeading'] }],
-	}).language.parser.parse(markdownText)
+    const tree = parseMarkdownToAST(markdownText)
 
     tree.iterate({
         enter: (node) => {

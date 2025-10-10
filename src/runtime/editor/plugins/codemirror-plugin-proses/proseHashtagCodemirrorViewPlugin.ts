@@ -1,8 +1,8 @@
-import {Decoration, type DecorationSet, EditorView} from '@codemirror/view';
-import { StateField, RangeSet } from '@codemirror/state';
-import { syntaxTree } from '@codemirror/language';
-import type { EditorState, Range as EditorRange } from '@codemirror/state';
-import {decorationProseHashtag} from "../../utility/decorations";
+import { Decoration } from '@codemirror/view'
+import { syntaxTree } from '@codemirror/language'
+import type { EditorState, Range as EditorRange } from '@codemirror/state'
+import { decorationProseHashtag } from '../../utility/decorations'
+import { createProsePlugin } from './createProsePlugin'
 
 /* DOCUMENTATION TO SELF:
 * Hello there. You're wondering: "What the fuck is this plugin? Why are plugins everyfuckingwhere?"
@@ -17,26 +17,19 @@ import {decorationProseHashtag} from "../../utility/decorations";
 * */
 
 function buildHashtagWrappers(state: EditorState): EditorRange<Decoration>[] {
-    const decorations: EditorRange<Decoration>[] = [];
-    syntaxTree(state).iterate({
-        enter(node) {
-            if (node.name === 'HashtagTag') {
-                decorations.push(decorationProseHashtag.range(node.from, node.to));
-            }
-        }
-    });
-    return decorations;
+	const decorations: EditorRange<Decoration>[] = []
+	syntaxTree(state).iterate({
+		enter(node) {
+			if (node.name === 'HashtagTag') {
+				decorations.push(decorationProseHashtag.range(node.from, node.to))
+			}
+		},
+	})
+	return decorations
 }
 
-export const proseHashtagCodemirrorViewPlugin = StateField.define<DecorationSet>({
-    create(state) {
-        return RangeSet.of(buildHashtagWrappers(state));
-    },
-    update(value, tr) {
-        if (tr.docChanged) { // Or also on selection if visibility changes
-            return RangeSet.of(buildHashtagWrappers(tr.state));
-        }
-        return value.map(tr.changes);
-    },
-    provide: f => EditorView.decorations.from(f)
-});
+export const proseHashtagCodemirrorViewPlugin = createProsePlugin({
+	buildDecorations: buildHashtagWrappers,
+	rebuildOnDocChange: true,
+	rebuildOnSelection: false,
+})

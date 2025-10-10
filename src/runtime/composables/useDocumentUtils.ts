@@ -1,7 +1,5 @@
 import { useAlfaaz } from './useAlfaaz'
-import { markdown } from '@codemirror/lang-markdown'
-import { GFM, type MarkdownExtension } from '@lezer/markdown'
-import { CustomOFM } from '../editor/lezer-parsers/customOFMParsers'
+import { parseMarkdownToAST } from '../utils/markdownParser'
 import { type TocEntry } from '../editor/types/editor-types'
 
 export function useDocumentUtils() {
@@ -43,9 +41,7 @@ export function useDocumentUtils() {
 		const toc: TocEntry[] = [];
 		if (!text) return toc;
 
-		const tree = markdown({
-			extensions: [GFM, CustomOFM as MarkdownExtension[], { remove: ['SetextHeading'] }],
-		}).language.parser.parse(text);
+		const tree = parseMarkdownToAST(text);
 
 		tree.iterate({
 			enter: (node) => {
@@ -77,9 +73,7 @@ export function useDocumentUtils() {
 		const tags: string[] = [];
 		if (!text) return tags;
 
-		const tree = markdown({
-			extensions: [GFM, CustomOFM as MarkdownExtension[], { remove: ['SetextHeading'] }],
-		}).language.parser.parse(text);
+		const tree = parseMarkdownToAST(text);
 
 		let frontmatterEnd = 0;
 		const frontmatterNode = tree.topNode.firstChild;
