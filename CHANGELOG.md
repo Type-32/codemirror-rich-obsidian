@@ -1,6 +1,18 @@
 # Changelog
 
 
+## v0.0.26
+
+[compare changes](https://github.com/Type-32/codemirror-rich-obsidian/compare/v0.0.25...v0.0.26)
+
+### 🏡 Chore
+
+- **cleanup & opt:** Some code cleanup and rich text plugin optimizations ([d009ec7](https://github.com/Type-32/codemirror-rich-obsidian/commit/d009ec7))
+
+### ❤️ Contributors
+
+- Type-32 ([@Type-32](https://github.com/Type-32))
+
 ## v0.0.25
 
 [compare changes](https://github.com/Type-32/codemirror-rich-obsidian/compare/v0.0.24...v0.0.25)
