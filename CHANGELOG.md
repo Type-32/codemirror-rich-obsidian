@@ -1,6 +1,18 @@
 # Changelog
 
 
+## v0.1.1
+
+[compare changes](https://github.com/Type-32/codemirror-rich-obsidian/compare/v0.0.29...v0.1.1)
+
+### 🏡 Chore
+
+- **deps & css:** Updated dependencies and Nuxt UI CSS ([13b755e](https://github.com/Type-32/codemirror-rich-obsidian/commit/13b755e))
+
+### ❤️ Contributors
+
+- Type-32 ([@Type-32](https://github.com/Type-32))
+
 ## v0.0.29
 
 [compare changes](https://github.com/Type-32/codemirror-rich-obsidian/compare/v0.0.28...v0.0.29)
