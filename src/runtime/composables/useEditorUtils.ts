@@ -99,12 +99,12 @@ export function useEditorUtils(editor: Ref<any>) {
 		currentMatchIndex.value = -1 // No selection initially
 	}
 
-	function selectAndScrollToMatch(match: SearchMatch) {
+	function selectAndScrollToMatch(match: SearchMatch, verticalMargin?: number) {
 		const editorView = unref(view)
 		if (!editorView || !match) return
 		editorView.dispatch({
 			selection: { anchor: match.from, head: match.to },
-			effects: EditorView.scrollIntoView(match.from, { y: 'center' }),
+			effects: EditorView.scrollIntoView(match.from, { y: 'start', yMargin: verticalMargin }),
 		})
 	}
 
@@ -167,11 +167,11 @@ export function useEditorUtils(editor: Ref<any>) {
 		currentMatchIndex.value = -1
 	}
 
-	function scrollToNode(node: SyntaxNode) {
+	function scrollToNode(node: SyntaxNode, verticalMargin?: number) {
 		const editorView = unref(view)
 		if (!editorView || !node) return
 		editorView.dispatch({
-			effects: EditorView.scrollIntoView(node.from, { y: 'center' }),
+			effects: EditorView.scrollIntoView(node.from, { y: 'start', yMargin: verticalMargin }),
 		})
 	}
 
