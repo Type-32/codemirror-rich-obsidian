@@ -1,6 +1,18 @@
 # Changelog
 
 
+## v0.1.2
+
+[compare changes](https://github.com/Type-32/codemirror-rich-obsidian/compare/v0.1.1...v0.1.2)
+
+### 🏡 Chore
+
+- **scroll margin:** Added y-node-scroll margin ([47e0d86](https://github.com/Type-32/codemirror-rich-obsidian/commit/47e0d86))
+
+### ❤️ Contributors
+
+- Type-32 ([@Type-32](https://github.com/Type-32))
+
 ## v0.1.1
 
 [compare changes](https://github.com/Type-32/codemirror-rich-obsidian/compare/v0.0.29...v0.1.1)
