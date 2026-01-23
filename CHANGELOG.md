@@ -1,6 +1,18 @@
 # Changelog
 
 
+## v0.1.3
+
+[compare changes](https://github.com/Type-32/codemirror-rich-obsidian/compare/v0.1.2...v0.1.3)
+
+### 🏡 Chore
+
+- **scroll margin:** Added vertical view scrolling strategy for scroll functions ([572d008](https://github.com/Type-32/codemirror-rich-obsidian/commit/572d008))
+
+### ❤️ Contributors
+
+- Type-32 ([@Type-32](https://github.com/Type-32))
+
 ## v0.1.2
 
 [compare changes](https://github.com/Type-32/codemirror-rich-obsidian/compare/v0.1.1...v0.1.2)
