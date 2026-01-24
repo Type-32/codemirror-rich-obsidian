@@ -21,6 +21,13 @@
 .cm-content {
     @apply font-editor;
 
+	.katex-display {
+		@apply m-0 pointer-events-none;
+		.katex, .katex-html {
+			@apply pointer-events-none;
+		}
+	}
+
     .cm-meta, .cm-escape {
         @apply text-dimmed! no-underline!;
     }
