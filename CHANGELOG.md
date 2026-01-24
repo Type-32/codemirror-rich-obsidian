@@ -1,6 +1,18 @@
 # Changelog
 
 
+## v0.1.5
+
+[compare changes](https://github.com/Type-32/codemirror-rich-obsidian/compare/v0.1.4...v0.1.5)
+
+### 🏡 Chore
+
+- **embed component props:** Added so that embed component props and the embed link data is passed into props as well ([4de1930](https://github.com/Type-32/codemirror-rich-obsidian/commit/4de1930))
+
+### ❤️ Contributors
+
+- Type-32 ([@Type-32](https://github.com/Type-32))
+
 ## v0.1.4
 
 [compare changes](https://github.com/Type-32/codemirror-rich-obsidian/compare/v0.1.3...v0.1.4)
