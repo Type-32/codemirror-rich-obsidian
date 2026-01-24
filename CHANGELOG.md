@@ -1,6 +1,18 @@
 # Changelog
 
 
+## v0.1.4
+
+[compare changes](https://github.com/Type-32/codemirror-rich-obsidian/compare/v0.1.3...v0.1.4)
+
+### 🏡 Chore
+
+- **embed component props:** Added props field to allow devs to pass in props to their embedded components ([7ec767d](https://github.com/Type-32/codemirror-rich-obsidian/commit/7ec767d))
+
+### ❤️ Contributors
+
+- Type-32 ([@Type-32](https://github.com/Type-32))
+
 ## v0.1.3
 
 [compare changes](https://github.com/Type-32/codemirror-rich-obsidian/compare/v0.1.2...v0.1.3)
