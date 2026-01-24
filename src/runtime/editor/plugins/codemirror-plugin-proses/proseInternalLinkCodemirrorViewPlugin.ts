@@ -30,7 +30,7 @@ function buildInternalLinkDecorations(state: EditorState): EditorRange<Decoratio
                         }
 
                         widgets.push(Decoration.widget({
-                            widget: new ProseVueComponentEmbedWidget(linkInfo.embedComponent, linkInfo?.componentProps || props, node.from),
+                            widget: new ProseVueComponentEmbedWidget(linkInfo.embedComponent, linkInfo?.componentProps ? { ...linkInfo?.componentProps, ...props } : props, node.from),
                             block: true,
                             side: 1
                         }).range(line.to));
