@@ -1,10 +1,37 @@
 import {Decoration, type DecorationSet, EditorView} from '@codemirror/view';
 import { StateField, RangeSet } from '@codemirror/state';
 import { syntaxTree } from '@codemirror/language';
-import type { EditorState, Range as EditorRange } from '@codemirror/state';
+import type { EditorState, Range as EditorRange, SelectionRange } from '@codemirror/state';
 import {internalLinkMapFacet} from "../linkMappingConfig";
 import {ProseVueComponentEmbedWidget} from "../codemirror-widgets/proseVueComponentEmbedWidget";
 import { cursorSelectionCoveredNode, toCursorNodePositions, isNodeRangeActive } from '../../utility/tools'
+
+/**
+ * Finds all Embed node ranges in the syntax tree
+ */
+function getEmbedAndInternalLinkRanges(state: EditorState): Array<{ from: number, to: number }> {
+    const ranges: Array<{ from: number, to: number }> = []
+    syntaxTree(state).iterate({
+        enter(node) {
+            if (node.name === 'Embed' || node.name === 'InternalLink') {
+                ranges.push({ from: node.from, to: node.to })
+                return false // Don't descend into children
+            }
+        }
+    })
+    return ranges
+}
+
+/**
+ * Checks if cursor is inside any of the given ranges
+ */
+function isCursorInAnyRange(cursor: SelectionRange, ranges: Array<{ from: number, to: number }>): boolean {
+    return ranges.some(range => 
+        (cursor.from >= range.from && cursor.from <= range.to) ||
+        (cursor.to >= range.from && cursor.to <= range.to) ||
+        (cursor.from <= range.from && cursor.to >= range.to)
+    )
+}
 
 function buildInternalLinkDecorations(state: EditorState): EditorRange<Decoration>[] {
     const decorations: EditorRange<Decoration>[] = [];
@@ -30,7 +57,13 @@ function buildInternalLinkDecorations(state: EditorState): EditorRange<Decoratio
                         }
 
                         widgets.push(Decoration.widget({
-                            widget: new ProseVueComponentEmbedWidget(linkInfo.embedComponent, linkInfo?.componentProps ? { ...linkInfo?.componentProps, ...props } : props, node.from),
+                            widget: new ProseVueComponentEmbedWidget(
+                                linkInfo.embedComponent, 
+                                linkInfo?.componentProps ? { ...linkInfo?.componentProps, ...props } : props, 
+                                node.from,
+                                node.from,
+                                node.to
+                            ),
                             block: true,
                             side: 1
                         }).range(line.to));
@@ -120,11 +153,38 @@ export const proseInternalLinkCodemirrorViewPlugin = StateField.define<Decoratio
     create(state) {
         return RangeSet.of(buildInternalLinkDecorations(state), true);
     },
-    update(value, tr) {
-        if (tr.docChanged || tr.selection) {
+    update(oldDecorations, tr) {
+        // If document changed, we must rebuild affected ranges
+        if (tr.docChanged) {
+            // For doc changes, rebuild everything for now
+            // Could be optimized further to only rebuild changed ranges
             return RangeSet.of(buildInternalLinkDecorations(tr.state), true);
         }
-        return value.map(tr.changes);
+        
+        // If only selection changed, check if cursor entered/left any embeds/links
+        if (tr.selection) {
+            const oldCursor = tr.startState.selection.main
+            const newCursor = tr.state.selection.main
+            
+            // Get all Embed and InternalLink ranges from syntax tree
+            const linkRanges = getEmbedAndInternalLinkRanges(tr.state)
+            
+            // Check if cursor state changed (entered or left a link/embed)
+            const wasInLink = isCursorInAnyRange(oldCursor, linkRanges)
+            const isInLink = isCursorInAnyRange(newCursor, linkRanges)
+            
+            // Rebuild if cursor entered or left any link/embed
+            // Widgets with eq() returning true won't remount
+            if (wasInLink !== isInLink) {
+                return RangeSet.of(buildInternalLinkDecorations(tr.state), true);
+            }
+            
+            // Cursor moved but didn't cross link/embed boundaries
+            return oldDecorations;
+        }
+        
+        // No changes that affect decorations
+        return oldDecorations.map(tr.changes);
     },
     provide: f => EditorView.decorations.from(f)
 });

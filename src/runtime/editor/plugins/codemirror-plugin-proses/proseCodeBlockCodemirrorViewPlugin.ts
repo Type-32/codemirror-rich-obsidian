@@ -1,13 +1,40 @@
 import { Decoration, EditorView } from '@codemirror/view'
 import { StateField, RangeSet, type Transaction } from '@codemirror/state'
 import { syntaxTree } from '@codemirror/language'
-import type { EditorState, Range as EditorRange } from '@codemirror/state'
+import type { EditorState, Range as EditorRange, SelectionRange } from '@codemirror/state'
 import type { DecorationSet } from '@codemirror/view'
 import { EndFenceWidget, LanguageFlairWidget } from '../codemirror-widgets/proseCodeBlockWidgets'
 import { specialCodeBlockMapFacet } from '../specialCodeBlockMappingConfig'
 import { ProseVueComponentEmbedWidget } from '../codemirror-widgets/proseVueComponentEmbedWidget'
 import { cursorSelectionCoveredNode, isNodeRangeActive, toCursorNodePositions } from '../../utility/tools'
 import type { SpecialCodeBlockMapping } from '#codemirror-rich-obsidian-editor/editor-types'
+
+/**
+ * Finds all FencedCode node ranges in the syntax tree
+ */
+function getFencedCodeRanges(state: EditorState): Array<{ from: number, to: number }> {
+    const ranges: Array<{ from: number, to: number }> = []
+    syntaxTree(state).iterate({
+        enter(node) {
+            if (node.name === 'FencedCode') {
+                ranges.push({ from: node.from, to: node.to })
+                return false // Don't descend into children
+            }
+        }
+    })
+    return ranges
+}
+
+/**
+ * Checks if cursor is inside any of the given ranges
+ */
+function isCursorInAnyRange(cursor: SelectionRange, ranges: Array<{ from: number, to: number }>): boolean {
+    return ranges.some(range => 
+        (cursor.from >= range.from && cursor.from <= range.to) ||
+        (cursor.to >= range.from && cursor.to <= range.to) ||
+        (cursor.from <= range.from && cursor.to >= range.to)
+    )
+}
 
 function buildCodeBlockDecorations(state: EditorState): EditorRange<Decoration>[] {
     const decorations: EditorRange<Decoration>[] = []
@@ -50,7 +77,9 @@ function buildCodeBlockDecorations(state: EditorState): EditorRange<Decoration>[
                                 widget: new ProseVueComponentEmbedWidget(
                                     specialMapping.component,
                                     { codeContent: codeText },
-                                    node.from
+                                    node.from,
+                                    node.from,
+                                    node.to
                                 ),
                                 block: true,
                             }).range(node.from, node.to)
@@ -108,11 +137,34 @@ export const proseCodeBlockCodemirrorViewPlugin = StateField.define<DecorationSe
     create(state: EditorState) {
         return RangeSet.of(buildCodeBlockDecorations(state), true)
     },
-    update(value: DecorationSet, tr: Transaction) {
-        if (tr.docChanged || tr.selection) {
+    update(oldDecorations: DecorationSet, tr: Transaction) {
+        // If document changed, rebuild everything
+        if (tr.docChanged) {
             return RangeSet.of(buildCodeBlockDecorations(tr.state), true)
         }
-        return value.map(tr.changes)
+        
+        // If only selection changed, check if cursor entered/left any code blocks
+        if (tr.selection) {
+            const oldCursor = tr.startState.selection.main
+            const newCursor = tr.state.selection.main
+            
+            // Get all FencedCode ranges from syntax tree
+            const codeBlockRanges = getFencedCodeRanges(tr.state)
+            
+            // Check if cursor state changed (entered or left a code block)
+            const wasInCodeBlock = isCursorInAnyRange(oldCursor, codeBlockRanges)
+            const isInCodeBlock = isCursorInAnyRange(newCursor, codeBlockRanges)
+            
+            // Rebuild if cursor entered or left any code block
+            if (wasInCodeBlock !== isInCodeBlock) {
+                return RangeSet.of(buildCodeBlockDecorations(tr.state), true)
+            }
+            
+            // Cursor moved but didn't cross code block boundaries
+            return oldDecorations
+        }
+        
+        return oldDecorations.map(tr.changes)
     },
     provide: (f: StateField<DecorationSet>) => EditorView.decorations.from(f),
 })

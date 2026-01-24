@@ -1,6 +1,7 @@
 <script setup lang="ts">
 const props = defineProps<{codeContent?: string}>()
 const clicks = useState(() => 0)
+console.log('update')
 </script>
 
 <template>

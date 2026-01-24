@@ -70,7 +70,7 @@ function test() {
 			ref="editor"
             class="h-full w-2xl"
             :internal-link-map
-            :special-code-block-map
+            :special-code-block-map="specialCodeBlockMap"
             @internal-link-click="handleInternalLinkClick"
             @external-link-click="handleExternalLinkClick"
             :disabled="editorDisabled"

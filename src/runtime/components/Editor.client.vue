@@ -65,7 +65,7 @@ async function loadLanguage(info: string): Promise<LanguageSupport> {
     if (lang) {
         return await lang.load()
     }
-    throw new Error(`Language ${info} not found`);
+    // throw new Error(`Language ${info} not found`);
 }
 
 onMounted(() => {

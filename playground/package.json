@@ -12,17 +12,17 @@
     "lint:fix": "eslint --fix ."
   },
   "dependencies": {
-    "@iconify-json/lucide": "^1.2.66",
-    "@iconify-json/simple-icons": "^1.2.50",
-    "@nuxt/fonts": "0.11.4",
-    "@nuxt/icon": "1.15.0",
-    "@nuxt/image": "1.10.0",
-    "@nuxt/ui": "^4.0.0-alpha.1",
-    "nuxt": "^4.1.1"
+    "@iconify-json/lucide": "^1.2.86",
+    "@iconify-json/simple-icons": "^1.2.67",
+    "@nuxt/fonts": "0.13.0",
+    "@nuxt/icon": "2.2.1",
+    "@nuxt/image": "2.0.0",
+    "@nuxt/ui": "^4.4.0",
+    "nuxt": "^4.3.0"
   },
   "devDependencies": {
-    "@tailwindcss/language-server": "^0.14.26",
-    "typescript": "^5.9.2"
+    "@tailwindcss/language-server": "^0.14.29",
+    "typescript": "^5.9.3"
   },
   "trustedDependencies": [
     "@parcel/watcher",
