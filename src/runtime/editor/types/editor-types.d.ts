@@ -30,6 +30,10 @@ export interface InternalLink {
 	 * If not provided, embeds of this link will be rendered as standard links.
 	 */
 	embedComponent?: Component;
+	/**
+	 * An optional parameter to pass alongside into the component as the prop.
+	 */
+	componentProps?: Record<string, any>
 }
 
 export interface InternalLinkNode {
