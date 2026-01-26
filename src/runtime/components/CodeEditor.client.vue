@@ -52,7 +52,7 @@ const props = withDefaults(defineProps<{
 	 * Pass a CodeMirror Extension (e.g., from @codemirror/theme-one-dark)
 	 */
 	darkTheme?: Extension,
-	colorMode?: 'dark' | 'light'
+	colorMode?: string
 }>(), {
 	colorMode: 'dark'
 })
