@@ -208,7 +208,7 @@ defineExpose({
 <template>
     <div :class="props.class ? props.class : 'w-full h-full overflow-visible'" ref="editorElement">
         <ClientOnly class="overflow-visible">
-            <div class="w-full cm-content overflow-visible">
+            <div class="w-full cm-rich-editor overflow-visible">
                 <CodeMirror
                     v-model="doc"
                     placeholder="Start typing your markdown content here..."
@@ -222,7 +222,7 @@ defineExpose({
                     @change="log('change', $event)"
                     @focus="log('focus', $event)"
                     @blur="log('blur', $event)"
-                    class="w-full h-full cm-content overflow-visible"
+                    class="w-full h-full cm-rich-editor overflow-visible"
                     :disabled="props.disabled"
                     :readonly="props.disabled"
                 />

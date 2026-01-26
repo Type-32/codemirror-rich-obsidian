@@ -1,11 +1,13 @@
 <script setup lang="ts">
 import type { ExternalLinkClickDetail, InternalLink, InternalLinkClickDetail, SpecialCodeBlockMapping } from '#codemirror-rich-obsidian-editor/editor-types'
 import { EditorImageEmbedComponent, EditorTestCustomCodeBlock } from '#components'
+import type { TabsItem } from '@nuxt/ui'
 
 const router = useRouter()
 const editorDisabled = ref(false), showFrontmatter = ref(false)
 const editor = ref()
 const $eutils = useEditorUtils(editor)
+const content = ref('')
 
 const internalLinkMap = ref<InternalLink[]>([
     {
@@ -62,23 +64,47 @@ function test() {
 	console.log($eutils.getDocAst())
 }
 
+const tabs = ref<TabsItem[]>([
+	{
+		label: 'Rich Text Editor',
+		slot: 'rich' as const
+	},
+	{
+		label: 'Code Editor',
+		slot: 'code' as const
+	}
+])
+
 </script>
 
 <template>
-    <div class="w-full overflow-visible flex flex-col justify-start items-center my-10">
-        <Editor
-			ref="editor"
-            class="h-full w-2xl"
-            :internal-link-map
-            :special-code-block-map="specialCodeBlockMap"
-            @internal-link-click="handleInternalLinkClick"
-            @external-link-click="handleExternalLinkClick"
-            :disabled="editorDisabled"
-            :fold-gutter="false"
-			:show-frontmatter
-            debug
-        />
-        <USwitch v-model="editorDisabled" label="Disabled"/>
-		<UButton @click="test" label="Test"/>
-    </div>
+	<UTabs :items="tabs" class="w-full" variant="link" :ui="{ trigger: 'grow' }">
+		<template #rich>
+			<div class="w-full overflow-visible flex flex-col justify-start items-center my-10">
+				<Editor
+					v-model="content"
+					ref="editor"
+					class="h-full w-2xl"
+					:internal-link-map
+					:special-code-block-map="specialCodeBlockMap"
+					@internal-link-click="handleInternalLinkClick"
+					@external-link-click="handleExternalLinkClick"
+					:disabled="editorDisabled"
+					:fold-gutter="false"
+					debug
+				/>
+			</div>
+		</template>
+		<template #code>
+			<div class="w-full overflow-visible flex flex-col justify-start items-center my-10">
+				<CodeEditor
+					v-model="content"
+					class="h-full w-2xl"
+					:disabled="editorDisabled"
+				/>
+			</div>
+		</template>
+	</UTabs>
+	<USwitch v-model="editorDisabled" label="Disabled"/>
+	<UButton @click="test" label="Test"/>
 </template>

@@ -18,8 +18,35 @@
     --indent-level: 0;
 }
 
-.cm-content {
-    @apply font-editor;
+.cm-code-editor {
+	@apply font-editor-code;
+	.cm-content, .cm-placeholder {
+		@apply font-editor-code text-sm;
+	}
+
+	.cm-gutters, .cm-gutters-before {
+		@apply bg-default text-muted text-sm border-r border-r-accented font-editor-code;
+	}
+
+	.cm-activeLineGutter {
+		@apply bg-elevated;
+	}
+
+	.cm-activeLine {
+		@apply bg-muted;
+	}
+}
+
+.cm-rich-editor {
+	@apply font-editor;
+
+	.cm-activeLine {
+		@apply after:absolute after:left-0 after:border-primary after:border after:rounded-lg after:h-full after:top-0 -z-10 bg-inherit;
+	}
+
+    .cm-content {
+		@apply font-editor;
+	}
 
 	.katex-display {
 		@apply m-0 pointer-events-none;
@@ -222,7 +249,7 @@
 
     .cm-callout-widget,
     .callout {
-        @apply p-3 relative flex flex-col h-fit mx-2 my-2 rounded-xl border border-primary/20 from-primary/10 to-primary/20 bg-gradient-to-b; /* Removed transition-all from parent to be more specific */
+        @apply p-3 relative flex flex-col h-fit rounded-xl border border-primary/20 from-primary/10 to-primary/20 bg-gradient-to-b; /* Removed transition-all from parent to be more specific */
 
         summary {
             @apply inline-flex;
