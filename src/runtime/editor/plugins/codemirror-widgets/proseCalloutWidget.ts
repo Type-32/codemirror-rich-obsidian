@@ -10,8 +10,6 @@ import markdownItObsidianCallouts from 'markdown-it-obsidian-callouts';
 const md = new MarkdownIt({ html: true }).use(markdownItObsidianCallouts);
 
 export class CalloutWidget extends WidgetType {
-    private rawContent: string = '';
-
     constructor(private sourceNodeFrom: number, private sourceNodeTo: number) {
         super();
     }
@@ -27,19 +25,17 @@ export class CalloutWidget extends WidgetType {
         return null;
     }
 
-    private extractDetails(view: EditorView): void {
+    toDOM(view: EditorView): HTMLElement {
         const state = view.state;
         const calloutNode = syntaxTree(state).resolve(this.sourceNodeFrom, 1);
         const parentBlockquote = this.findParentBlockquote(calloutNode);
+        
+        let rawContent = '';
         if (parentBlockquote) {
-            this.rawContent = view.state.doc.sliceString(parentBlockquote.from, parentBlockquote.to);
+            rawContent = view.state.doc.sliceString(parentBlockquote.from, parentBlockquote.to);
         }
-    }
 
-    toDOM(view: EditorView): HTMLElement {
-        this.extractDetails(view);
-
-        const renderedHtml = md.render(this.rawContent);
+        const renderedHtml = md.render(rawContent);
         const tempDiv = document.createElement('div');
         tempDiv.innerHTML = renderedHtml;
         
@@ -99,9 +95,10 @@ export class CalloutWidget extends WidgetType {
     }
 
     override eq(other: CalloutWidget): boolean {
+        // Widgets are equal if they reference the same position range
+        // This prevents unnecessary re-rendering of markdown-it when the callout hasn't moved
         return other.sourceNodeFrom === this.sourceNodeFrom &&
-            other.sourceNodeTo === this.sourceNodeTo &&
-            other.rawContent === this.rawContent;
+            other.sourceNodeTo === this.sourceNodeTo;
     }
 
     override ignoreEvent(event: Event): boolean {

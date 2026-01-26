@@ -9,6 +9,7 @@
 - https://github.com/mgmeyers/obsidian-indentation-guides, for indentation guides
 - Markdown-It
 - https://github.com/thecodrr/alfaaz, for insanely fast word/line-counting functions
+- https://github.com/yuri2peter/codemirror-ai-enhancer, for providing the simple AI completion editing experience
 
 ### Related References & Resources
 - https://github.com/heavycircle/remark-obsidian, for mostly wiki link alias & highlights & callouts parsing
@@ -18,7 +19,7 @@
 - https://github.com/nothingislost/obsidian-cm6-attributes
 
 ## Disclaimer
-I have used Gemini 2.5 Pro in the process of developing this editor numerous times, so do expect errors or inconsistencies in some parts of the code.
+I have used Gemini 2.5 Pro + Gemini 3 Pro Preview + Claude Sonnet 4.5 in the process of developing this editor numerous times, so do expect errors or inconsistencies in some parts of the code.
 
 ## Introduction
 Do I even need an intro?
