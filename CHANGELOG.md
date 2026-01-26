@@ -1,6 +1,18 @@
 # Changelog
 
 
+## v0.1.8
+
+[compare changes](https://github.com/Type-32/codemirror-rich-obsidian/compare/v0.1.7...v0.1.8)
+
+### 🩹 Fixes
+
+- **color mode:** Fixed colormode bad prop type ([4588438](https://github.com/Type-32/codemirror-rich-obsidian/commit/4588438))
+
+### ❤️ Contributors
+
+- Type-32 ([@Type-32](https://github.com/Type-32))
+
 ## v0.1.7
 
 [compare changes](https://github.com/Type-32/codemirror-rich-obsidian/compare/v0.1.6...v0.1.7)
