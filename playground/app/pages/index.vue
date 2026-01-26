@@ -8,6 +8,7 @@ const editorDisabled = ref(false), showFrontmatter = ref(false)
 const editor = ref()
 const $eutils = useEditorUtils(editor)
 const content = ref('')
+const codeLanguage = ref('js')
 
 const internalLinkMap = ref<InternalLink[]>([
     {
@@ -97,10 +98,12 @@ const tabs = ref<TabsItem[]>([
 		</template>
 		<template #code>
 			<div class="w-full overflow-visible flex flex-col justify-start items-center my-10">
+				<UInput v-model="codeLanguage"/>
 				<CodeEditor
 					v-model="content"
 					class="h-full w-2xl"
 					:disabled="editorDisabled"
+					:language="codeLanguage"
 				/>
 			</div>
 		</template>

@@ -24,6 +24,10 @@
 		@apply font-editor-code text-sm;
 	}
 
+	.cm-placeholder {
+		@apply text-dimmed;
+	}
+
 	.cm-gutters, .cm-gutters-before {
 		@apply bg-default text-muted text-sm border-r border-r-accented font-editor-code;
 	}
@@ -34,6 +38,10 @@
 
 	.cm-activeLine {
 		@apply bg-muted;
+	}
+
+	.cm-foldPlaceholder {
+		@apply bg-elevated border border-default font-editor-code text-muted;
 	}
 }
 

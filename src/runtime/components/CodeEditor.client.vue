@@ -1,89 +1,80 @@
 <script setup lang="ts">
 import CodeMirror from 'vue-codemirror6'
 import {
-	keymap,
 	EditorView,
 	drawSelection,
 	rectangularSelection,
 	highlightActiveLine,
 	highlightActiveLineGutter,
-	ViewPlugin,
-	Decoration,
-	ViewUpdate, lineNumbers, highlightSpecialChars, dropCursor, crosshairCursor,
+	lineNumbers,
+	highlightSpecialChars,
+	dropCursor,
+	crosshairCursor,
+	keymap,
 } from '@codemirror/view'
-import type { DecorationSet } from '@codemirror/view'
-import { standardKeymap, history, historyKeymap, indentWithTab, defaultKeymap } from '@codemirror/commands'
+import { history, historyKeymap, defaultKeymap } from '@codemirror/commands'
 import {
 	defaultHighlightStyle,
 	syntaxHighlighting,
 	indentOnInput,
 	foldGutter,
 	syntaxTree,
-	bracketMatching, foldKeymap,
+	bracketMatching,
+	foldKeymap,
 } from '@codemirror/language'
-import { Compartment, EditorState, RangeSetBuilder } from '@codemirror/state'
-import { LanguageSupport, LRLanguage } from '@codemirror/language'
+import { Compartment, EditorState } from '@codemirror/state'
+import { type LanguageSupport } from '@codemirror/language'
 import { languages } from '@codemirror/language-data'
-import wysiwyg from '../editor/wysiwyg'
-import { internalLinkMapFacet } from '../editor/plugins/linkMappingConfig'
-import { specialCodeBlockMapFacet } from '../editor/plugins/specialCodeBlockMappingConfig'
-import { customBracketClosingConfig } from '../editor/plugins/customBracketClosingConfig'
-import { editorKeywordSearchPlugin, searchOptionsFacet } from '../editor/plugins/codemirror-editor-plugins/editorKeywordSearchPlugin'
-import type {
-	InternalLink,
-	SpecialCodeBlockMapping,
-	InternalLinkClickDetail,
-	ExternalLinkClickDetail,
-	SearchOptions
-} from '#codemirror-rich-obsidian-editor/editor-types'
-import {ref, shallowRef, computed, onMounted, onBeforeUnmount, unref, watch} from 'vue';
+import { ref, shallowRef, onMounted, watch } from 'vue'
 import { autocompletion, closeBrackets, closeBracketsKeymap, completionKeymap } from '@codemirror/autocomplete'
 import { highlightSelectionMatches, searchKeymap } from '@codemirror/search'
 import { lintKeymap } from '@codemirror/lint'
+import type { SearchOptions } from '#codemirror-rich-obsidian-editor/editor-types'
 
 const doc = defineModel<string>()
 const props = defineProps<{
 	class?: string
-	internalLinkMap?: InternalLink[]
-	specialCodeBlockMap?: SpecialCodeBlockMapping[]
+	language?: string // e.g., 'javascript', 'typescript', 'json', 'yaml', 'html', etc.
 	bracketClosing?: boolean
 	foldGutter?: boolean
 	disabled?: boolean
 	debug?: boolean
 	searchOptions?: SearchOptions
 }>()
-const emit = defineEmits<{
-	'internal-link-click': [detail: InternalLinkClickDetail]
-	'external-link-click': [detail: ExternalLinkClickDetail]
-}>()
+const emit = defineEmits<{}>()
 const extensions = shallowRef<any[]>([])
 const view = shallowRef<EditorView>()
 const ast = ref([])
-const internalLinkCompartment = new Compartment()
-const specialCodeBlockCompartment = new Compartment()
-const bracketClosingCompartment = new Compartment()
-const foldGutterCompartment = new Compartment()
-const showFrontmatterCompartment = new Compartment()
-const searchCompartment = new Compartment()
-const editorElement = ref<HTMLElement>()
-const keymaps = computed(() => {
-	return props.disabled ? keymap.of([]) : keymap.of([...standardKeymap, ...historyKeymap, indentWithTab])
-})
+const languageCompartment = new Compartment()
 
-async function loadLanguage(info: string): Promise<LanguageSupport> {
-	const lang = languages.find(l => l.name.toLowerCase() === info.toLowerCase() || l.alias.map(a => a.toLowerCase()).includes(info.toLowerCase()))
+/**
+ * Loads a language support extension based on the language name
+ */
+async function loadLanguage(languageName?: string): Promise<LanguageSupport | null> {
+	if (!languageName) return null
+
+	const lang = languages.find(l =>
+		l.name.toLowerCase() === languageName.toLowerCase() ||
+		l.alias.map(a => a.toLowerCase()).includes(languageName.toLowerCase())
+	)
+
 	if (lang) {
-		return await lang.load()
+		try {
+			return await lang.load()
+		} catch (e) {
+			console.warn(`Failed to load language: ${languageName}`, e)
+			return null
+		}
 	}
-	// throw new Error(`Language ${info} not found`);
+
+	console.warn(`Language not found: ${languageName}`)
+	return null
 }
 
-onMounted(() => {
-	// const wysiwygPlugin = wysiwyg({
-	// 	lezer: {
-	// 		codeLanguages: loadLanguage,
-	// 	},
-	// })
+onMounted(async () => {
+	// Load initial language support
+	const initialLanguage = await loadLanguage(props.language)
+
 	extensions.value = [
 		lineNumbers(),
 		// A gutter with code folding markers
@@ -118,6 +109,8 @@ onMounted(() => {
 		highlightActiveLineGutter(),
 		// Highlight text that matches the selected text
 		highlightSelectionMatches(),
+		// Language support compartment (can be reconfigured)
+		languageCompartment.of(initialLanguage || []),
 		keymap.of([
 			// Closed-brackets aware backspace
 			...closeBracketsKeymap,
@@ -136,91 +129,23 @@ onMounted(() => {
 		]),
 		EditorView.editable.of(unref(!props.disabled)),
 	]
-	if (editorElement.value) {
-		editorElement.value.addEventListener('internal-link-click', handleInternalLinkClick as EventListener)
-		editorElement.value.addEventListener('external-link-click', handleExternalLinkClick as EventListener)
-	}
 })
 
-onBeforeUnmount(() => {
-	if (editorElement.value) {
-		editorElement.value.removeEventListener('internal-link-click', handleInternalLinkClick as EventListener)
-		editorElement.value.removeEventListener('external-link-click', handleExternalLinkClick as EventListener)
+// Watch for language prop changes and dynamically reload language support
+watch(
+	() => props.language,
+	async (newLanguage) => {
+		if (view.value) {
+			const languageSupport = await loadLanguage(newLanguage)
+			view.value.dispatch({
+				effects: languageCompartment.reconfigure(languageSupport || []),
+			})
+		}
 	}
-})
-
-function handleInternalLinkClick(event: CustomEvent<InternalLinkClickDetail>) {
-	emit('internal-link-click', event.detail)
-}
-
-function handleExternalLinkClick(event: CustomEvent<ExternalLinkClickDetail>) {
-	emit('external-link-click', event.detail)
-}
-
-watch(
-	() => props.internalLinkMap,
-	(newMap) => {
-		if (view.value) {
-			view.value.dispatch({
-				effects: internalLinkCompartment.reconfigure(internalLinkMapFacet.of(newMap || [])),
-			})
-		}
-	},
-	{ deep: true }
-)
-
-watch(
-	() => props.specialCodeBlockMap,
-	(newMap) => {
-		if (view.value) {
-			view.value.dispatch({
-				effects: specialCodeBlockCompartment.reconfigure(specialCodeBlockMapFacet.of(newMap || [])),
-			})
-		}
-	},
-	{ deep: true }
-)
-
-watch(
-	() => props.bracketClosing,
-	(newValue) => {
-		if (view.value) {
-			view.value.dispatch({
-				effects: bracketClosingCompartment.reconfigure(customBracketClosingConfig.of(newValue ?? true)),
-			})
-		}
-	},
-)
-
-watch(
-	() => props.foldGutter,
-	(newValue) => {
-		if (view.value) {
-			view.value.dispatch({
-				effects: foldGutterCompartment.reconfigure(newValue ?? true ? foldGutter() : []),
-			})
-		}
-	},
-)
-
-watch(
-	() => props.searchOptions,
-	(newOptions) => {
-		if (view.value) {
-			view.value.dispatch({
-				effects: searchCompartment.reconfigure(searchOptionsFacet.of(newOptions || { query: '' }))
-			})
-		}
-	},
-	{ deep: true }
 )
 
 function handleReady(payload: any) {
 	view.value = payload.view
-}
-
-function log(...args: any[]) {
-	// console.log(...args)
 }
 
 function iterate() {
@@ -249,7 +174,7 @@ defineExpose({
 </script>
 
 <template>
-	<div :class="props.class ? props.class : 'w-full h-full overflow-visible'" ref="editorElement">
+	<div :class="props.class ? props.class : 'w-full h-full overflow-visible'">
 		<ClientOnly class="overflow-visible">
 			<div class="w-full cm-code-editor overflow-visible">
 				<CodeMirror
@@ -262,9 +187,6 @@ defineExpose({
 					:indent-unit="'\t'"
 					:extensions="extensions"
 					@ready="handleReady"
-					@change="log('change', $event)"
-					@focus="log('focus', $event)"
-					@blur="log('blur', $event)"
 					class="w-full h-full cm-code-editor overflow-visible"
 					:disabled="props.disabled"
 					:readonly="props.disabled"
