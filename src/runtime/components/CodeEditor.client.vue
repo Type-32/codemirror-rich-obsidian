@@ -34,7 +34,7 @@ import { catppuccinLatte, catppuccinMocha } from '@catppuccin/codemirror'
 import type { SearchOptions } from '#codemirror-rich-obsidian-editor/editor-types'
 
 const doc = defineModel<string>()
-const props = defineProps<{
+const props = withDefaults(defineProps<{
 	class?: string
 	language?: string // e.g., 'javascript', 'typescript', 'json', 'yaml', 'html', etc.
 	bracketClosing?: boolean
@@ -51,8 +51,11 @@ const props = defineProps<{
 	 * Custom theme for dark mode. Defaults to Catppuccin Mocha.
 	 * Pass a CodeMirror Extension (e.g., from @codemirror/theme-one-dark)
 	 */
-	darkTheme?: Extension
-}>()
+	darkTheme?: Extension,
+	colorMode?: 'dark' | 'light'
+}>(), {
+	colorMode: 'dark'
+})
 const emit = defineEmits<{}>()
 const extensions = shallowRef<any[]>([])
 const view = shallowRef<EditorView>()
@@ -61,8 +64,7 @@ const languageCompartment = new Compartment()
 const themeCompartment = new Compartment()
 
 // Get Nuxt's color mode
-const colorMode = useColorMode()
-const isDark = computed(() => colorMode.value === 'dark')
+const isDark = computed(() => props.colorMode === 'dark')
 
 // Get theme based on color mode and props
 const currentTheme = computed(() => {
