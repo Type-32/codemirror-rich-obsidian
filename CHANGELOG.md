@@ -1,6 +1,18 @@
 # Changelog
 
 
+## v0.1.7
+
+[compare changes](https://github.com/Type-32/codemirror-rich-obsidian/compare/v0.1.6...v0.1.7)
+
+### 🩹 Fixes
+
+- **color mode:** Fixed bad color mode import ([7bc133b](https://github.com/Type-32/codemirror-rich-obsidian/commit/7bc133b))
+
+### ❤️ Contributors
+
+- Type-32 ([@Type-32](https://github.com/Type-32))
+
 ## v0.1.6
 
 [compare changes](https://github.com/Type-32/codemirror-rich-obsidian/compare/v0.1.5...v0.1.6)
