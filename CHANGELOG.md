@@ -1,6 +1,23 @@
 # Changelog
 
 
+## v0.1.6
+
+[compare changes](https://github.com/Type-32/codemirror-rich-obsidian/compare/v0.1.5...v0.1.6)
+
+### 🏡 Chore
+
+- **embeds & codeblock components:** Added basic node-update optimization to prevent components from being updated per cursor change ([76a94b1](https://github.com/Type-32/codemirror-rich-obsidian/commit/76a94b1))
+- **katex:** Updated block katex display css to remove cursor-offsetting margins ([1bba94a](https://github.com/Type-32/codemirror-rich-obsidian/commit/1bba94a))
+- **readme & callouts:** Added optimization for callouts and added models in readme ([cff27ad](https://github.com/Type-32/codemirror-rich-obsidian/commit/cff27ad))
+- **code editor & stylesheets:** Updated the css stylesheets and also the example, and added a Code Editor ([1cbb031](https://github.com/Type-32/codemirror-rich-obsidian/commit/1cbb031))
+- **code editor:** Added support for certain languages ([77ad517](https://github.com/Type-32/codemirror-rich-obsidian/commit/77ad517))
+- **code editor:** Added catppuccin as default syntax highlighting theme, and added prop slots to allow theme customization for code editor ([c786769](https://github.com/Type-32/codemirror-rich-obsidian/commit/c786769))
+
+### ❤️ Contributors
+
+- Type-32 ([@Type-32](https://github.com/Type-32))
+
 ## v0.1.5
 
 [compare changes](https://github.com/Type-32/codemirror-rich-obsidian/compare/v0.1.4...v0.1.5)
