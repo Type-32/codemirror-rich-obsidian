@@ -7,7 +7,7 @@ const router = useRouter()
 const editorDisabled = ref(false), showFrontmatter = ref(false)
 const editor = ref()
 const $eutils = useEditorUtils(editor)
-const content = ref('')
+const content = useState<string>('content', () => '')
 const codeLanguage = ref('js')
 
 const internalLinkMap = ref<InternalLink[]>([
@@ -109,5 +109,6 @@ const tabs = ref<TabsItem[]>([
 		</template>
 	</UTabs>
 	<USwitch v-model="editorDisabled" label="Disabled"/>
+	<UColorModeButton/>
 	<UButton @click="test" label="Test"/>
 </template>

@@ -24,6 +24,10 @@
 		@apply font-editor-code text-sm;
 	}
 
+	.cm-editor {
+		@apply bg-default;
+	}
+
 	.cm-placeholder {
 		@apply text-dimmed;
 	}

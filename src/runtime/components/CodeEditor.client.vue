@@ -25,10 +25,12 @@ import {
 import { Compartment, EditorState } from '@codemirror/state'
 import { type LanguageSupport } from '@codemirror/language'
 import { languages } from '@codemirror/language-data'
-import { ref, shallowRef, onMounted, watch } from 'vue'
+import { ref, shallowRef, onMounted, watch, computed } from 'vue'
 import { autocompletion, closeBrackets, closeBracketsKeymap, completionKeymap } from '@codemirror/autocomplete'
 import { highlightSelectionMatches, searchKeymap } from '@codemirror/search'
 import { lintKeymap } from '@codemirror/lint'
+import type { Extension } from '@codemirror/state'
+import { catppuccinLatte, catppuccinMocha } from '@catppuccin/codemirror'
 import type { SearchOptions } from '#codemirror-rich-obsidian-editor/editor-types'
 
 const doc = defineModel<string>()
@@ -40,12 +42,35 @@ const props = defineProps<{
 	disabled?: boolean
 	debug?: boolean
 	searchOptions?: SearchOptions
+	/**
+	 * Custom theme for light mode. Defaults to Catppuccin Latte.
+	 * Pass a CodeMirror Extension (e.g., from @codemirror/theme-one-dark)
+	 */
+	lightTheme?: Extension
+	/**
+	 * Custom theme for dark mode. Defaults to Catppuccin Mocha.
+	 * Pass a CodeMirror Extension (e.g., from @codemirror/theme-one-dark)
+	 */
+	darkTheme?: Extension
 }>()
 const emit = defineEmits<{}>()
 const extensions = shallowRef<any[]>([])
 const view = shallowRef<EditorView>()
 const ast = ref([])
 const languageCompartment = new Compartment()
+const themeCompartment = new Compartment()
+
+// Get Nuxt's color mode
+const colorMode = useColorMode()
+const isDark = computed(() => colorMode.value === 'dark')
+
+// Get theme based on color mode and props
+const currentTheme = computed(() => {
+	if (isDark.value) {
+		return props.darkTheme || catppuccinMocha
+	}
+	return props.lightTheme || catppuccinLatte
+})
 
 /**
  * Loads a language support extension based on the language name
@@ -91,8 +116,8 @@ onMounted(async () => {
 		EditorState.allowMultipleSelections.of(true),
 		// Re-indent lines when typing specific input
 		indentOnInput(),
-		// Highlight syntax with a default style
-		syntaxHighlighting(defaultHighlightStyle),
+		// Theme compartment - switches between light and dark
+		themeCompartment.of(currentTheme.value),
 		// Highlight matching brackets near cursor
 		bracketMatching(),
 		// Automatically close brackets
@@ -127,7 +152,7 @@ onMounted(async () => {
 			// Keys related to the linter system
 			...lintKeymap
 		]),
-		EditorView.editable.of(unref(!props.disabled)),
+		EditorView.editable.of(!props.disabled),
 	]
 })
 
@@ -139,6 +164,18 @@ watch(
 			const languageSupport = await loadLanguage(newLanguage)
 			view.value.dispatch({
 				effects: languageCompartment.reconfigure(languageSupport || []),
+			})
+		}
+	}
+)
+
+// Watch for color mode changes and switch theme
+watch(
+	currentTheme,
+	(newTheme) => {
+		if (view.value) {
+			view.value.dispatch({
+				effects: themeCompartment.reconfigure(newTheme),
 			})
 		}
 	}
