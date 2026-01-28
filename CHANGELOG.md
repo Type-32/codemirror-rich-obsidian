@@ -1,6 +1,10 @@
 # Changelog
 
 
+## v0.1.14
+
+[compare changes](https://github.com/Type-32/codemirror-rich-obsidian/compare/v0.1.8...v0.1.14)
+
 ## v0.1.8
 
 [compare changes](https://github.com/Type-32/codemirror-rich-obsidian/compare/v0.1.7...v0.1.8)
