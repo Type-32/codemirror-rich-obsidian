@@ -1,6 +1,18 @@
 # Changelog
 
 
+## v0.1.18
+
+[compare changes](https://github.com/Type-32/codemirror-rich-obsidian/compare/v0.1.17...v0.1.18)
+
+### 🏡 Chore
+
+- Added error catching in editor frontmatter and utils composable ([d533eec](https://github.com/Type-32/codemirror-rich-obsidian/commit/d533eec))
+
+### ❤️ Contributors
+
+- Type-32 ([@Type-32](https://github.com/Type-32))
+
 ## v0.1.17
 
 [compare changes](https://github.com/Type-32/codemirror-rich-obsidian/compare/v0.1.16...v0.1.17)
