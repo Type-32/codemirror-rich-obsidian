@@ -38,7 +38,11 @@ export function useEditorUtils(editor: Ref<any>) {
 	}
 
 	function getDoc(): string | undefined {
-		return unref(view)?.state.doc.toString()
+		try {
+			return unref(view)?.state.doc.toString()
+		} catch (e) {
+			console.error(e)
+		}
 	}
 
 	function setDoc(content: string) {
