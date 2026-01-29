@@ -10,7 +10,7 @@ export function useEditorFrontmatter<T extends object = {}>(editor: Ref<any>) {
     function getFrontmatter(): { data?: T; error?: Error } {
         const doc = editorUtils.getDoc()
         if (!doc) {
-            return {}
+            return { error: new Error('No document object found') }
         }
 
         // Reuse the shared parseFrontmatter utility

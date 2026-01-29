@@ -4,14 +4,14 @@ import type { Frontmatter } from '../editor/types/editor-types';
 
 export function parseFrontmatter(markdownText: string): { data?: Frontmatter; error?: Error } {
     if (!markdownText) {
-        return {}
+        return { error: new Error('No markdown text provided') }
     }
 
     const tree = parseMarkdownToAST(markdownText)
 
     const firstNode = tree.topNode.firstChild
     if (!firstNode || firstNode.name !== 'YAMLFrontMatter') {
-        return {}
+        return { data: {} }
     }
 
     const contentNode = firstNode.getChild('YAMLContent')
