@@ -17,59 +17,135 @@ export function useEditorFrontmatter<T extends object = {}>(editor: Ref<any>) {
         return parseFrontmatter(doc) as { data?: T; error?: Error }
     }
 
-    function setFrontmatterProperties(properties: Partial<T>) {
+    /**
+     * Updates existing frontmatter properties by merging with new values.
+     * Preserves existing properties and adds/updates specified ones.
+     */
+    function updateFrontmatterProperties(properties: Partial<T>) {
         const doc = editorUtils.getDoc() || ''
         const ast = editorUtils.parseMarkdownToAST(doc)
         const firstNode = ast.topNode.firstChild
 
         let existingData: Record<string, any> = {}
-        let frontmatterNodeRange = { from: -1, to: -1 }
 
-        if (firstNode && firstNode.name === 'YAMLFrontMatter') {
-            frontmatterNodeRange = { from: firstNode.from, to: firstNode.to }
+        // Check for both possible frontmatter node names
+        if (firstNode && (firstNode.name === 'Frontmatter' || firstNode.name === 'YAMLFrontMatter')) {
             const { data, error } = getFrontmatter()
             if (data && !error) {
                 existingData = data
             }
         }
-        
+
+        // Merge existing data with new properties
         const newData = { ...existingData, ...properties }
-        
-        Object.keys(newData).forEach(key => {
-            if (newData[key] === undefined) {
-                delete newData[key]
-            }
-        })
 
-        const newYamlContent = Object.keys(newData).length > 0 
-            ? dump(newData, { skipInvalid: true }).trim() 
-            : ''
-            
-        const newFrontmatterBlock = `---\n${newYamlContent}\n---`
-
-        if (frontmatterNodeRange.from !== -1) {
-            editorUtils.dispatch({
-                changes: { from: frontmatterNodeRange.from, to: frontmatterNodeRange.to, insert: newFrontmatterBlock }
-            })
-        } else {
-            const insertText = doc.trim().length > 0 ? `${newFrontmatterBlock}\n\n` : newFrontmatterBlock
-            editorUtils.dispatch({
-                changes: { from: 0, to: 0, insert: insertText }
-            })
-        }
+        setFrontmatterProperties(newData)
     }
 
+	/**
+	 * Sets frontmatter properties, replacing all existing frontmatter.
+	 * If properties object is empty or all values are undefined, removes frontmatter entirely.
+	 */
+	function setFrontmatterProperties(properties: Partial<T>) {
+		const doc = editorUtils.getDoc() || ''
+		const ast = editorUtils.parseMarkdownToAST(doc)
+		const firstNode = ast.topNode.firstChild
+
+		let frontmatterNodeRange = { from: -1, to: -1 }
+
+		// Check for both possible frontmatter node names
+		if (firstNode && (firstNode.name === 'Frontmatter' || firstNode.name === 'YAMLFrontMatter')) {
+			frontmatterNodeRange = { from: firstNode.from, to: firstNode.to }
+			const { error } = getFrontmatter()
+			if (error) return;
+		}
+
+		// Clean up undefined values
+		const newData: Partial<T> & Record<string, any> = { ...properties }
+		Object.keys(newData).forEach(key => {
+			if (newData[key] === undefined) {
+				delete newData[key]
+			}
+		})
+
+		// Check if there's any content to write
+		const hasContent = Object.keys(newData).length > 0
+
+		if (!hasContent) {
+			// Remove frontmatter entirely if no properties
+			if (frontmatterNodeRange.from !== -1) {
+				// Remove existing frontmatter block and any trailing newlines
+				const endPos = frontmatterNodeRange.to
+				let removeEnd = endPos
+				
+				// Skip up to 2 newlines after the frontmatter
+				if (doc[endPos] === '\n') removeEnd++
+				if (doc[endPos + 1] === '\n') removeEnd++
+				
+				editorUtils.dispatch({
+					changes: { from: frontmatterNodeRange.from, to: removeEnd, insert: '' }
+				})
+			}
+			// If no frontmatter exists and no content, do nothing
+			return
+		}
+
+		// Generate YAML content
+		const newYamlContent = dump(newData, { skipInvalid: true }).trim()
+		const newFrontmatterBlock = `---\n${newYamlContent}\n---`
+
+		if (frontmatterNodeRange.from !== -1) {
+			// Replace existing frontmatter
+			editorUtils.dispatch({
+				changes: { from: frontmatterNodeRange.from, to: frontmatterNodeRange.to, insert: newFrontmatterBlock }
+			})
+		} else {
+			// Insert new frontmatter at the beginning
+			const insertText = doc.trim().length > 0 ? `${newFrontmatterBlock}\n\n` : `${newFrontmatterBlock}\n`
+			editorUtils.dispatch({
+				changes: { from: 0, to: 0, insert: insertText }
+			})
+		}
+	}
+
+	/**
+	 * Completely removes the frontmatter from the document if it exists.
+	 * Includes the YAML delimiters and any trailing newlines.
+	 */
+	function clearFrontmatter() {
+		const doc = editorUtils.getDoc() || ''
+		const ast = editorUtils.parseMarkdownToAST(doc)
+		const firstNode = ast.topNode.firstChild
+
+		// Check if frontmatter exists
+		if (firstNode && (firstNode.name === 'Frontmatter' || firstNode.name === 'YAMLFrontMatter')) {
+			const endPos = firstNode.to
+			let removeEnd = endPos
+			
+			// Skip up to 2 newlines after the frontmatter
+			if (doc[endPos] === '\n') removeEnd++
+			if (doc[endPos + 1] === '\n') removeEnd++
+			
+			editorUtils.dispatch({
+				changes: { from: firstNode.from, to: removeEnd, insert: '' }
+			})
+		}
+		// If no frontmatter exists, do nothing
+	}
+
     function addFrontmatterProperty(key: string, value: any) {
-        setFrontmatterProperties({ [key]: value } as Partial<T>)
+        updateFrontmatterProperties({ [key]: value } as Partial<T>)
     }
 
     function removeFrontmatterProperty(key: string) {
-        setFrontmatterProperties({ [key]: undefined } as Partial<T>)
+        updateFrontmatterProperties({ [key]: undefined } as Partial<T>)
     }
 
     return {
         getFrontmatter,
-        setFrontmatterProperties,
+        updateFrontmatterProperties,
+		setFrontmatterProperties,
+		clearFrontmatter,
         addFrontmatterProperty,
         removeFrontmatterProperty,
     }
