@@ -1,6 +1,6 @@
 {
 	"name": "@type32/codemirror-rich-obsidian-editor",
-	"version": "0.1.18",
+	"version": "0.1.20",
 	"description": "OFM Editor Component for Nuxt.",
 	"repository": "https://github.com/Type-32/codemirror-rich-obsidian",
 	"license": "MIT",
