@@ -1,6 +1,25 @@
 # Changelog
 
 
+## v0.1.21
+
+[compare changes](https://github.com/Type-32/codemirror-rich-obsidian/compare/v0.1.20...v0.1.21)
+
+### 🩹 Fixes
+
+- **frontmatter:** Fixing extra fence added whenever frontmatter set issue" ([d1d2347](https://github.com/Type-32/codemirror-rich-obsidian/commit/d1d2347))
+
+### 🏡 Chore
+
+- **release:** V0.1.20" ([dc63989](https://github.com/Type-32/codemirror-rich-obsidian/commit/dc63989))
+- **release:** V0.1.19" ([730e5b7](https://github.com/Type-32/codemirror-rich-obsidian/commit/730e5b7))
+- **editor utilities:** Added reactivity handling and better error handling to editor composables and the editor instance" ([e468367](https://github.com/Type-32/codemirror-rich-obsidian/commit/e468367))
+- Reverting frontmatter reactivity due to performance issues ([0ae2740](https://github.com/Type-32/codemirror-rich-obsidian/commit/0ae2740))
+
+### ❤️ Contributors
+
+- Type-32 ([@Type-32](https://github.com/Type-32))
+
 ## v0.1.18
 
 [compare changes](https://github.com/Type-32/codemirror-rich-obsidian/compare/v0.1.17...v0.1.18)
