@@ -22,7 +22,6 @@ import { internalLinkMapFacet } from '../editor/plugins/linkMappingConfig'
 import { specialCodeBlockMapFacet } from '../editor/plugins/specialCodeBlockMappingConfig'
 import { customBracketClosingConfig } from '../editor/plugins/customBracketClosingConfig'
 import { editorKeywordSearchPlugin, searchOptionsFacet } from '../editor/plugins/codemirror-editor-plugins/editorKeywordSearchPlugin'
-import { createEditorReactivityExtension } from '../composables/useEditorUtils'
 import type {
     InternalLink,
     SpecialCodeBlockMapping,
@@ -49,7 +48,6 @@ const emit = defineEmits<{
 }>()
 const extensions = shallowRef<any[]>([])
 const view = shallowRef<EditorView>()
-const editorInstance = shallowRef<any>()
 const ast = ref([])
 const internalLinkCompartment = new Compartment()
 const specialCodeBlockCompartment = new Compartment()
@@ -62,26 +60,18 @@ const keymaps = computed(() => {
     return props.disabled ? keymap.of([]) : keymap.of([...standardKeymap, ...historyKeymap, indentWithTab])
 })
 
-async function loadLanguage(info: string): Promise<LanguageSupport | null> {
+async function loadLanguage(info: string): Promise<LanguageSupport> {
     const lang = languages.find(l => l.name.toLowerCase() === info.toLowerCase() || l.alias.map(a => a.toLowerCase()).includes(info.toLowerCase()))
     if (lang) {
         return await lang.load()
     }
-    // Return null for unsupported languages
-    return null
+    // throw new Error(`Language ${info} not found`);
 }
 
 onMounted(() => {
     const wysiwygPlugin = wysiwyg({
         lezer: {
-            codeLanguages: async (info: string) => {
-                const result = await loadLanguage(info)
-                if (result === null) {
-                    // Return a minimal LanguageSupport for unsupported languages
-                    return null as any
-                }
-                return result
-            },
+            codeLanguages: loadLanguage,
         },
     })
     extensions.value = [
@@ -102,7 +92,6 @@ onMounted(() => {
         searchCompartment.of(searchOptionsFacet.of(props.searchOptions || { query: '' })),
         wysiwygPlugin,
         EditorView.editable.of(unref(!props.disabled)),
-        createEditorReactivityExtension(editorInstance),
     ]
     if (editorElement.value) {
         editorElement.value.addEventListener('internal-link-click', handleInternalLinkClick as EventListener)
@@ -185,7 +174,6 @@ watch(
 
 function handleReady(payload: any) {
     view.value = payload.view
-    editorInstance.value = payload
 }
 
 function log(...args: any[]) {

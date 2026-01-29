@@ -31,7 +31,6 @@ import { highlightSelectionMatches, searchKeymap } from '@codemirror/search'
 import { lintKeymap } from '@codemirror/lint'
 import type { Extension } from '@codemirror/state'
 import { catppuccinLatte, catppuccinMocha } from '@catppuccin/codemirror'
-import { createEditorReactivityExtension } from '../composables/useEditorUtils'
 import type { SearchOptions } from '#codemirror-rich-obsidian-editor/editor-types'
 
 const doc = defineModel<string>()
@@ -60,7 +59,6 @@ const props = withDefaults(defineProps<{
 const emit = defineEmits<{}>()
 const extensions = shallowRef<any[]>([])
 const view = shallowRef<EditorView>()
-const editorInstance = shallowRef<any>()
 const ast = ref([])
 const languageCompartment = new Compartment()
 const themeCompartment = new Compartment()
@@ -157,8 +155,6 @@ onMounted(async () => {
 			...lintKeymap
 		]),
 		EditorView.editable.of(!props.disabled),
-		// Reactivity extension for composables
-		createEditorReactivityExtension(editorInstance),
 	]
 })
 
@@ -189,7 +185,6 @@ watch(
 
 function handleReady(payload: any) {
 	view.value = payload.view
-	editorInstance.value = payload
 }
 
 function iterate() {

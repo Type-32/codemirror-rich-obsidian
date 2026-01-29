@@ -1,60 +1,16 @@
-import { computed, ref, unref, watch, triggerRef, type ShallowRef } from 'vue'
-import { EditorView, ViewUpdate } from '@codemirror/view'
+import { computed, ref, unref, watch } from 'vue'
+import { EditorView } from '@codemirror/view'
 import type { SyntaxNode, Tree } from '@lezer/common'
 import type { Ref } from 'vue'
-import type { TransactionSpec, Extension } from '@codemirror/state'
+import type { TransactionSpec } from '@codemirror/state'
 import { parseMarkdownToAST } from '../utils/markdownParser'
 import type { SearchMatch, SearchOptions } from '../editor/types/editor-types'
-
-// Global reactivity manager for editor updates
-const reactivityCallbacks = new WeakMap<any, Set<() => void>>()
-
-/**
- * Creates a CodeMirror extension that enables reactive composables.
- * This should be added to the editor's extensions array.
- */
-export function createEditorReactivityExtension(editorRef: Ref<any>): Extension {
-	return EditorView.updateListener.of((update: ViewUpdate) => {
-		if (update.docChanged) {
-			const callbacks = reactivityCallbacks.get(editorRef)
-			if (callbacks) {
-				callbacks.forEach(cb => cb())
-			}
-		}
-	})
-}
 
 export function useEditorUtils(editor: Ref<any>) {
 	const view = computed(() => {
 		const instance = unref(editor)
 		if (!instance) return
 		return instance.view ?? instance
-	})
-
-	// Reactive document content that updates on editor changes
-	const docVersion = ref(0)
-	
-	// Register this composable's reactivity callback
-	if (!reactivityCallbacks.has(editor)) {
-		reactivityCallbacks.set(editor, new Set())
-	}
-	const callbacks = reactivityCallbacks.get(editor)!
-	const triggerReactivity = () => {
-		docVersion.value++
-	}
-	callbacks.add(triggerReactivity)
-
-	const doc = computed(() => {
-		// Access docVersion to trigger reactivity
-		docVersion.value
-		try {
-			const editorView = unref(view)
-			if (!editorView) return undefined
-			return editorView.state.doc.toString()
-		} catch (e) {
-			console.error('Error getting document:', e)
-			return undefined
-		}
 	})
 
 	const searchResults = ref<SearchMatch[]>([])
@@ -81,22 +37,17 @@ export function useEditorUtils(editor: Ref<any>) {
 		return matches
 	}
 
-	/**
-	 * Returns the current document content as a string.
-	 * For reactive access, use the `doc` computed property instead.
-	 */
 	function getDoc(): string | undefined {
-		return doc.value
+		try {
+			return unref(view)?.state.doc.toString()
+		} catch (e) {
+			console.error(e)
+		}
 	}
 
 	function setDoc(content: string) {
-		const editorView = unref(view)
-		if (!editorView) {
-			console.warn('Editor not initialized')
-			return
-		}
-		editorView.dispatch({
-			changes: { from: 0, to: editorView.state.doc.length, insert: content },
+		unref(view)?.dispatch({
+			changes: { from: 0, to: unref(view)!.state.doc.length, insert: content },
 		})
 	}
 
@@ -105,27 +56,15 @@ export function useEditorUtils(editor: Ref<any>) {
 	}
 
 	function replaceSelection(text: string) {
-		const editorView = unref(view)
-		if (!editorView) {
-			console.warn('Editor not initialized')
-			return
-		}
-		editorView.dispatch(editorView.state.replaceSelection(text))
+		unref(view)?.dispatch(unref(view)!.state.replaceSelection(text))
 	}
 
 	function dispatch(...specs: TransactionSpec[]) {
-		const editorView = unref(view)
-		if (!editorView) {
-			console.warn('Editor not initialized')
-			return
-		}
-		editorView.dispatch(...specs)
+		unref(view)?.dispatch(...specs)
 	}
 
-    function getDocAst(): Tree | undefined {
-		const docContent = getDoc()
-		if (!docContent) return undefined
-        return parseMarkdownToAST(docContent) as Tree
+    function getDocAst(): Tree {
+        return parseMarkdownToAST(getDoc() || '') as Tree
     }
 
 	function findNodesByType(tree: Tree, nodeTypeName: string): SyntaxNode[] {
@@ -141,9 +80,7 @@ export function useEditorUtils(editor: Ref<any>) {
 	}
 
     function getDocNodesByType(nodeTypeName: string): SyntaxNode[] {
-		const ast = getDocAst()
-		if (!ast) return []
-        return findNodesByType(ast, nodeTypeName)
+        return findNodesByType(getDocAst(), nodeTypeName)
     }
 
     function hasFrontmatter(): boolean {
@@ -243,37 +180,23 @@ export function useEditorUtils(editor: Ref<any>) {
 	}
 
 	return {
-		// Reactive properties
-		doc, // Reactive computed document content
-		view, // Reactive computed editor view
-		searchResults,
-		currentMatchIndex,
-
-		// Reactivity helpers
-		triggerReactivity, // Manual trigger for reactivity
-
-		// Document operations
 		getDoc,
 		setDoc,
 		getSelection,
 		replaceSelection,
 		dispatch,
-
-		// AST operations
 		parseMarkdownToAST, // Re-exported from utils for convenience
 		getDocAst,
 		findNodesByType,
 		getDocNodesByType,
 		hasFrontmatter,
-
-		// Search operations
 		search,
 		replaceAll,
+		searchResults,
+		currentMatchIndex,
 		findNext,
 		findPrevious,
 		replaceCurrent,
-
-		// Scroll operations
 		scrollToNode,
 	}
 }
