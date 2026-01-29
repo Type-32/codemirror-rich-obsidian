@@ -1,18 +1,6 @@
 # Changelog
 
 
-## v0.1.19
-
-[compare changes](https://github.com/Type-32/codemirror-rich-obsidian/compare/v0.1.18...v0.1.19)
-
-### 🏡 Chore
-
-- **editor utilities:** Added reactivity handling and better error handling to editor composables and the editor instance ([41154bb](https://github.com/Type-32/codemirror-rich-obsidian/commit/41154bb))
-
-### ❤️ Contributors
-
-- Type-32 ([@Type-32](https://github.com/Type-32))
-
 ## v0.1.18
 
 [compare changes](https://github.com/Type-32/codemirror-rich-obsidian/compare/v0.1.17...v0.1.18)
