@@ -76,12 +76,22 @@ const tabs = ref<TabsItem[]>([
 	}
 ])
 
+const $eu = useEditorUtils(editor)
+const $ef = useEditorFrontmatter(editor)
+
+function test2() {
+	console.log($eu.getDocAst())
+	console.log($eu.getDoc())
+	console.log($ef.getFrontmatter())
+}
+
 </script>
 
 <template>
 	<UTabs :items="tabs" class="w-full" variant="link" :ui="{ trigger: 'grow' }">
 		<template #rich>
 			<div class="w-full overflow-visible flex flex-col justify-start items-center my-10">
+				<UButton @click="test2" label="Test 2"/>
 				<Editor
 					v-model="content"
 					ref="editor"

@@ -7,17 +7,17 @@ import type { Frontmatter } from '../editor/types/editor-types'
 export function useEditorFrontmatter<T extends object = {}>(editor: Ref<any>) {
     const editorUtils = useEditorUtils(editor)
 
-    function getFrontmatter(): { data?: Frontmatter<T>; error?: Error } {
+    function getFrontmatter(): { data?: T; error?: Error } {
         const doc = editorUtils.getDoc()
         if (!doc) {
             return {}
         }
 
         // Reuse the shared parseFrontmatter utility
-        return parseFrontmatter(doc) as { data?: Frontmatter<T>; error?: Error }
+        return parseFrontmatter(doc) as { data?: T; error?: Error }
     }
 
-    function setFrontmatterProperties(properties: Partial<Frontmatter<T>>) {
+    function setFrontmatterProperties(properties: Partial<T>) {
         const doc = editorUtils.getDoc() || ''
         const ast = editorUtils.parseMarkdownToAST(doc)
         const firstNode = ast.topNode.firstChild
@@ -60,11 +60,11 @@ export function useEditorFrontmatter<T extends object = {}>(editor: Ref<any>) {
     }
 
     function addFrontmatterProperty(key: string, value: any) {
-        setFrontmatterProperties({ [key]: value } as Partial<Frontmatter<T>>)
+        setFrontmatterProperties({ [key]: value } as Partial<T>)
     }
 
     function removeFrontmatterProperty(key: string) {
-        setFrontmatterProperties({ [key]: undefined } as Partial<Frontmatter<T>>)
+        setFrontmatterProperties({ [key]: undefined } as Partial<T>)
     }
 
     return {
