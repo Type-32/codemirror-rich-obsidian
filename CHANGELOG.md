@@ -1,6 +1,18 @@
 # Changelog
 
 
+## v0.1.22
+
+[compare changes](https://github.com/Type-32/codemirror-rich-obsidian/compare/v0.1.21...v0.1.22)
+
+### 🩹 Fixes
+
+- **frontmatter:** Try fixing frontmatter parsing performance issues ([2834e5e](https://github.com/Type-32/codemirror-rich-obsidian/commit/2834e5e))
+
+### ❤️ Contributors
+
+- Type-32 ([@Type-32](https://github.com/Type-32))
+
 ## v0.1.21
 
 [compare changes](https://github.com/Type-32/codemirror-rich-obsidian/compare/v0.1.20...v0.1.21)
