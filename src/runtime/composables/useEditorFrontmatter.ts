@@ -84,24 +84,7 @@ export function useEditorFrontmatter<T extends object = {}>(editor: Ref<any>) {
 				return false
 			}
 
-			const ast = editorUtils.getDocAst()
-			if (!ast) {
-				console.warn('Failed to parse document AST')
-				return false
-			}
-
-			const firstNode = ast.topNode.firstChild
-
-			let frontmatterNodeRange = { from: -1, to: -1 }
-
-			// Check for both possible frontmatter node names
-			if (firstNode && (firstNode.name === 'Frontmatter' || firstNode.name === 'YAMLFrontMatter')) {
-				frontmatterNodeRange = { from: firstNode.from, to: firstNode.to }
-				const { error } = getFrontmatter()
-				if (error) return false
-			}
-
-			// Clean up undefined values
+			// Clean up undefined values first
 			const newData: Partial<T> & Record<string, any> = { ...properties }
 			Object.keys(newData).forEach(key => {
 				if (newData[key] === undefined) {
@@ -112,35 +95,57 @@ export function useEditorFrontmatter<T extends object = {}>(editor: Ref<any>) {
 			// Check if there's any content to write
 			const hasContent = Object.keys(newData).length > 0
 
+			// Manually find frontmatter boundaries in the document
+			let frontmatterStart = -1
+			let frontmatterEnd = -1
+
+			// Check if document starts with frontmatter fence
+			if (doc.startsWith('---\n') || doc.startsWith('---\r\n')) {
+				frontmatterStart = 0
+				// Find the closing fence
+				const searchStart = doc.indexOf('\n', 3) + 1 // Start after the opening fence
+				const closingFenceIndex = doc.indexOf('\n---', searchStart)
+				
+				if (closingFenceIndex !== -1) {
+					// Found closing fence, include it in the range
+					frontmatterEnd = closingFenceIndex + 4 // Position after "---"
+					
+					// Check if there's a newline after the closing fence
+					if (doc[frontmatterEnd] === '\n' || doc[frontmatterEnd] === '\r') {
+						// Don't include it in the frontmatter range - we'll handle it separately
+					}
+				}
+			}
+
+			const hasFrontmatter = frontmatterStart !== -1 && frontmatterEnd !== -1
+
 			if (!hasContent) {
 				// Remove frontmatter entirely if no properties
-				if (frontmatterNodeRange.from !== -1) {
-					// Remove existing frontmatter block and any trailing newlines
-					const endPos = frontmatterNodeRange.to
-					let removeEnd = endPos
-
+				if (hasFrontmatter) {
+					let removeEnd = frontmatterEnd
 					// Skip up to 2 newlines after the frontmatter
-					if (doc[endPos] === '\n') removeEnd++
-					if (doc[endPos + 1] === '\n') removeEnd++
+					if (doc[removeEnd] === '\n' || doc[removeEnd] === '\r') removeEnd++
+					if (doc[removeEnd] === '\n' || doc[removeEnd] === '\r') removeEnd++
 
 					editorUtils.dispatch({
-						changes: { from: frontmatterNodeRange.from, to: removeEnd, insert: '' },
+						changes: { from: frontmatterStart, to: removeEnd, insert: '' },
 					})
+					return true
 				}
-				// If no frontmatter exists and no content, do nothing
-				return false;
+				// If no frontmatter exists and no content, return false
+				return false
 			}
 
 			// Generate YAML content
 			const newYamlContent = dump(newData, { skipInvalid: true }).trim()
 			const newFrontmatterBlock = `---\n${newYamlContent}\n---`
 
-			if (frontmatterNodeRange.from !== -1) {
-				// Replace existing frontmatter
+			if (hasFrontmatter) {
+				// Replace existing frontmatter (excluding trailing newlines)
 				editorUtils.dispatch({
 					changes: {
-						from: frontmatterNodeRange.from,
-						to: frontmatterNodeRange.to,
+						from: frontmatterStart,
+						to: frontmatterEnd,
 						insert: newFrontmatterBlock,
 					},
 				})
@@ -171,25 +176,31 @@ export function useEditorFrontmatter<T extends object = {}>(editor: Ref<any>) {
 				return false
 			}
 
-			const ast = editorUtils.getDocAst()
-			if (!ast) {
-				console.warn('Failed to parse document AST')
-				return false
+			// Manually find frontmatter boundaries
+			let frontmatterStart = -1
+			let frontmatterEnd = -1
+
+			// Check if document starts with frontmatter fence
+			if (doc.startsWith('---\n') || doc.startsWith('---\r\n')) {
+				frontmatterStart = 0
+				// Find the closing fence
+				const searchStart = doc.indexOf('\n', 3) + 1
+				const closingFenceIndex = doc.indexOf('\n---', searchStart)
+				
+				if (closingFenceIndex !== -1) {
+					frontmatterEnd = closingFenceIndex + 4 // Position after "---"
+				}
 			}
 
-			const firstNode = ast.topNode.firstChild
-
-			// Check if frontmatter exists
-			if (firstNode && (firstNode.name === 'Frontmatter' || firstNode.name === 'YAMLFrontMatter')) {
-				const endPos = firstNode.to
-				let removeEnd = endPos
+			if (frontmatterStart !== -1 && frontmatterEnd !== -1) {
+				let removeEnd = frontmatterEnd
 
 				// Skip up to 2 newlines after the frontmatter
-				if (doc[endPos] === '\n') removeEnd++
-				if (doc[endPos + 1] === '\n') removeEnd++
+				if (doc[removeEnd] === '\n' || doc[removeEnd] === '\r') removeEnd++
+				if (doc[removeEnd] === '\n' || doc[removeEnd] === '\r') removeEnd++
 
 				editorUtils.dispatch({
-					changes: { from: firstNode.from, to: removeEnd, insert: '' },
+					changes: { from: frontmatterStart, to: removeEnd, insert: '' },
 				})
 				return true
 			}
