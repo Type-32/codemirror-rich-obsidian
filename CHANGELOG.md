@@ -1,6 +1,18 @@
 # Changelog
 
 
+## v0.1.20
+
+[compare changes](https://github.com/Type-32/codemirror-rich-obsidian/compare/v0.1.19...v0.1.20)
+
+### 🩹 Fixes
+
+- **frontmatter:** Fixing extra fence added whenever frontmatter set issue ([d1d2440](https://github.com/Type-32/codemirror-rich-obsidian/commit/d1d2440))
+
+### ❤️ Contributors
+
+- Type-32 ([@Type-32](https://github.com/Type-32))
+
 ## v0.1.19
 
 [compare changes](https://github.com/Type-32/codemirror-rich-obsidian/compare/v0.1.18...v0.1.19)
