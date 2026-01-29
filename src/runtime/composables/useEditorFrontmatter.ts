@@ -26,16 +26,15 @@ export function useEditorFrontmatter<T extends object = {}>(editor: Ref<any>) {
      * Updates existing frontmatter properties by merging with new values.
      * Preserves existing properties and adds/updates specified ones.
      */
-    function updateFrontmatterProperties(properties: Partial<T>) {
+    function updateFrontmatterProperties(properties: Partial<T>): boolean {
 		try {
-			const doc = editorUtils.getDoc() || ''
-			const ast = editorUtils.parseMarkdownToAST(doc)
-			const firstNode = ast.topNode.firstChild
+			const doc = editorUtils.getDoc()
+			if (!doc) return false
 
 			let existingData: Record<string, any> = {}
 
-			// Check for both possible frontmatter node names
-			if (firstNode && (firstNode.name === 'Frontmatter' || firstNode.name === 'YAMLFrontMatter')) {
+			// Fast check: Does frontmatter exist?
+			if (doc.startsWith('---\n') || doc.startsWith('---\r\n')) {
 				const { data, error } = getFrontmatter()
 				if (data && !error) {
 					existingData = data
@@ -47,8 +46,8 @@ export function useEditorFrontmatter<T extends object = {}>(editor: Ref<any>) {
 
 			return setFrontmatterProperties(newData)
 		} catch (e) {
-			console.log(e)
-			return false;
+			console.error('Error updating frontmatter:', e)
+			return false
 		}
     }
 
@@ -56,20 +55,10 @@ export function useEditorFrontmatter<T extends object = {}>(editor: Ref<any>) {
 	 * Sets frontmatter properties, replacing all existing frontmatter.
 	 * If properties object is empty or all values are undefined, removes frontmatter entirely.
 	 */
-	function setFrontmatterProperties(properties: Partial<T>) {
+	function setFrontmatterProperties(properties: Partial<T>): boolean {
 		try {
-			const doc = editorUtils.getDoc() || ''
-			const ast = editorUtils.parseMarkdownToAST(doc)
-			const firstNode = ast.topNode.firstChild
-
-			let frontmatterNodeRange = { from: -1, to: -1 }
-
-			// Check for both possible frontmatter node names
-			if (firstNode && (firstNode.name === 'Frontmatter' || firstNode.name === 'YAMLFrontMatter')) {
-				frontmatterNodeRange = { from: firstNode.from, to: firstNode.to }
-				const { error } = getFrontmatter()
-				if (error) return false;
-			}
+			const doc = editorUtils.getDoc()
+			if (doc === undefined) return false
 
 			// Clean up undefined values
 			const newData: Partial<T> & Record<string, any> = { ...properties }
@@ -82,35 +71,52 @@ export function useEditorFrontmatter<T extends object = {}>(editor: Ref<any>) {
 			// Check if there's any content to write
 			const hasContent = Object.keys(newData).length > 0
 
+			// Fast frontmatter detection using string operations
+			let frontmatterStart = -1
+			let frontmatterEnd = -1
+
+			if (doc.startsWith('---\n') || doc.startsWith('---\r\n')) {
+				frontmatterStart = 0
+				const yamlStart = doc.indexOf('\n', 3) + 1
+				const closingFenceIndex = doc.indexOf('\n---', yamlStart)
+				
+				if (closingFenceIndex !== -1) {
+					const afterFence = closingFenceIndex + 4
+					const nextChar = doc[afterFence]
+					if (nextChar === undefined || nextChar === '\n' || nextChar === '\r') {
+						frontmatterEnd = afterFence
+					}
+				}
+			}
+
+			const hasFrontmatter = frontmatterStart !== -1 && frontmatterEnd !== -1
+
 			if (!hasContent) {
 				// Remove frontmatter entirely if no properties
-				if (frontmatterNodeRange.from !== -1) {
-					// Remove existing frontmatter block and any trailing newlines
-					const endPos = frontmatterNodeRange.to
-					let removeEnd = endPos
-
+				if (hasFrontmatter) {
+					let removeEnd = frontmatterEnd
 					// Skip up to 2 newlines after the frontmatter
-					if (doc[endPos] === '\n') removeEnd++
-					if (doc[endPos + 1] === '\n') removeEnd++
+					if (doc[removeEnd] === '\n' || doc[removeEnd] === '\r') removeEnd++
+					if (doc[removeEnd] === '\n' || doc[removeEnd] === '\r') removeEnd++
 
 					editorUtils.dispatch({
-						changes: { from: frontmatterNodeRange.from, to: removeEnd, insert: '' },
+						changes: { from: frontmatterStart, to: removeEnd, insert: '' },
 					})
+					return true
 				}
-				// If no frontmatter exists and no content, do nothing
-				return false;
+				return false
 			}
 
 			// Generate YAML content
 			const newYamlContent = dump(newData, { skipInvalid: true }).trim()
 			const newFrontmatterBlock = `---\n${newYamlContent}\n---`
 
-			if (frontmatterNodeRange.from !== -1) {
+			if (hasFrontmatter) {
 				// Replace existing frontmatter
 				editorUtils.dispatch({
 					changes: {
-						from: frontmatterNodeRange.from,
-						to: frontmatterNodeRange.to,
+						from: frontmatterStart,
+						to: frontmatterEnd,
 						insert: newFrontmatterBlock,
 					},
 				})
@@ -122,10 +128,10 @@ export function useEditorFrontmatter<T extends object = {}>(editor: Ref<any>) {
 				})
 			}
 
-			return true;
+			return true
 		} catch (e) {
-			console.log(e)
-			return false;
+			console.error('Error setting frontmatter:', e)
+			return false
 		}
 	}
 
@@ -133,40 +139,50 @@ export function useEditorFrontmatter<T extends object = {}>(editor: Ref<any>) {
 	 * Completely removes the frontmatter from the document if it exists.
 	 * Includes the YAML delimiters and any trailing newlines.
 	 */
-	function clearFrontmatter() {
+	function clearFrontmatter(): boolean {
 		try {
-			const doc = editorUtils.getDoc() || ''
-			const ast = editorUtils.parseMarkdownToAST(doc)
-			const firstNode = ast.topNode.firstChild
+			const doc = editorUtils.getDoc()
+			if (!doc) return false
 
-			// Check if frontmatter exists
-			if (firstNode && (firstNode.name === 'Frontmatter' || firstNode.name === 'YAMLFrontMatter')) {
-				const endPos = firstNode.to
-				let removeEnd = endPos
-
-				// Skip up to 2 newlines after the frontmatter
-				if (doc[endPos] === '\n') removeEnd++
-				if (doc[endPos + 1] === '\n') removeEnd++
-
-				editorUtils.dispatch({
-					changes: { from: firstNode.from, to: removeEnd, insert: '' },
-				})
+			// Fast frontmatter detection
+			if (!doc.startsWith('---\n') && !doc.startsWith('---\r\n')) {
+				return true // No frontmatter to remove
 			}
 
-			return true;
+			const yamlStart = doc.indexOf('\n', 3) + 1
+			if (yamlStart === 0) return true
+
+			const closingFenceIndex = doc.indexOf('\n---', yamlStart)
+			if (closingFenceIndex === -1) return true
+
+			const afterFence = closingFenceIndex + 4
+			const nextChar = doc[afterFence]
+			if (nextChar !== undefined && nextChar !== '\n' && nextChar !== '\r') {
+				return true // Not a valid closing fence
+			}
+
+			let removeEnd = afterFence
+			// Skip up to 2 newlines after the frontmatter
+			if (doc[removeEnd] === '\n' || doc[removeEnd] === '\r') removeEnd++
+			if (doc[removeEnd] === '\n' || doc[removeEnd] === '\r') removeEnd++
+
+			editorUtils.dispatch({
+				changes: { from: 0, to: removeEnd, insert: '' },
+			})
+
+			return true
 		} catch (e) {
-			console.log(e)
-			return false;
+			console.error('Error clearing frontmatter:', e)
+			return false
 		}
-		// If no frontmatter exists, do nothing
 	}
 
-    function addFrontmatterProperty(key: string, value: any) {
-        updateFrontmatterProperties({ [key]: value } as Partial<T>)
+    function addFrontmatterProperty(key: string, value: any): boolean {
+        return updateFrontmatterProperties({ [key]: value } as Partial<T>)
     }
 
-    function removeFrontmatterProperty(key: string) {
-        updateFrontmatterProperties({ [key]: undefined } as Partial<T>)
+    function removeFrontmatterProperty(key: string): boolean {
+        return updateFrontmatterProperties({ [key]: undefined } as Partial<T>)
     }
 
     return {
