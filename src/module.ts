@@ -9,8 +9,11 @@ export default defineNuxtModule<ModuleOptions>({
 		name: '@type32/codemirror-rich-obsidian-editor',
 		configKey: 'cmOfmEditor',
 	},
-	// Default configuration options of the Nuxt module
-	defaults: {},
+	moduleDependencies: {
+		'@nuxt/ui': {
+			version: '>=4.4.0'
+		}
+	},
 	setup(_options, _nuxt) {
 		const resolver = createResolver(import.meta.url)
 
