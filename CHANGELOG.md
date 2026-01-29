@@ -1,6 +1,18 @@
 # Changelog
 
 
+## v0.1.17
+
+[compare changes](https://github.com/Type-32/codemirror-rich-obsidian/compare/v0.1.16...v0.1.17)
+
+### 🩹 Fixes
+
+- **frontmatter:** Improved error handling with frontmatter ([b62a23a](https://github.com/Type-32/codemirror-rich-obsidian/commit/b62a23a))
+
+### ❤️ Contributors
+
+- Type-32 ([@Type-32](https://github.com/Type-32))
+
 ## v0.1.16
 
 [compare changes](https://github.com/Type-32/codemirror-rich-obsidian/compare/v0.1.15...v0.1.16)
