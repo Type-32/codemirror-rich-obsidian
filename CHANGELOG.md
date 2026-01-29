@@ -1,6 +1,18 @@
 # Changelog
 
 
+## v0.1.16
+
+[compare changes](https://github.com/Type-32/codemirror-rich-obsidian/compare/v0.1.15...v0.1.16)
+
+### 🏡 Chore
+
+- **frontmatter:** Added more functions to the editor frontmatter composable ([5459d76](https://github.com/Type-32/codemirror-rich-obsidian/commit/5459d76))
+
+### ❤️ Contributors
+
+- Type-32 ([@Type-32](https://github.com/Type-32))
+
 ## v0.1.15
 
 [compare changes](https://github.com/Type-32/codemirror-rich-obsidian/compare/v0.1.14...v0.1.15)
