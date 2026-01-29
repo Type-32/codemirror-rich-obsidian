@@ -1,4 +1,4 @@
-import { type Ref } from 'vue'
+import { type Ref, computed } from 'vue'
 import { dump } from 'js-yaml'
 import { useEditorUtils } from './useEditorUtils'
 import { parseFrontmatter } from '../utils/frontmatter'
@@ -7,29 +7,49 @@ import type { Frontmatter } from '../editor/types/editor-types'
 export function useEditorFrontmatter<T extends object = {}>(editor: Ref<any>) {
     const editorUtils = useEditorUtils(editor)
 
-    function getFrontmatter(): { data?: T; error?: Error } {
+	/**
+	 * Reactive computed property that automatically updates when the document changes.
+	 * Returns parsed frontmatter data and any parsing errors.
+	 */
+	const frontmatter = computed<{ data?: T; error?: Error }>(() => {
 		try {
-			const doc = editorUtils.getDoc()
+			const doc = editorUtils.doc.value
 			if (!doc) {
-				return { error: new Error('No document object found') }
+				return {}
 			}
-
-			// Reuse the shared parseFrontmatter utility
 			return parseFrontmatter(doc) as { data?: T; error?: Error }
 		} catch (e) {
-			console.log(e)
+			console.error('Error parsing frontmatter:', e)
 			return { error: e as Error }
 		}
+	})
+
+	/**
+	 * Returns the current frontmatter data.
+	 * For reactive access, use the `frontmatter` computed property instead.
+	 */
+    function getFrontmatter(): { data?: T; error?: Error } {
+		return frontmatter.value
     }
 
     /**
      * Updates existing frontmatter properties by merging with new values.
      * Preserves existing properties and adds/updates specified ones.
      */
-    function updateFrontmatterProperties(properties: Partial<T>) {
+    function updateFrontmatterProperties(properties: Partial<T>): boolean {
 		try {
-			const doc = editorUtils.getDoc() || ''
-			const ast = editorUtils.parseMarkdownToAST(doc)
+			const doc = editorUtils.getDoc()
+			if (!doc) {
+				console.warn('Editor not initialized or document is empty')
+				return false
+			}
+
+			const ast = editorUtils.getDocAst()
+			if (!ast) {
+				console.warn('Failed to parse document AST')
+				return false
+			}
+
 			const firstNode = ast.topNode.firstChild
 
 			let existingData: Record<string, any> = {}
@@ -47,8 +67,8 @@ export function useEditorFrontmatter<T extends object = {}>(editor: Ref<any>) {
 
 			return setFrontmatterProperties(newData)
 		} catch (e) {
-			console.log(e)
-			return false;
+			console.error('Error updating frontmatter properties:', e)
+			return false
 		}
     }
 
@@ -56,10 +76,20 @@ export function useEditorFrontmatter<T extends object = {}>(editor: Ref<any>) {
 	 * Sets frontmatter properties, replacing all existing frontmatter.
 	 * If properties object is empty or all values are undefined, removes frontmatter entirely.
 	 */
-	function setFrontmatterProperties(properties: Partial<T>) {
+	function setFrontmatterProperties(properties: Partial<T>): boolean {
 		try {
-			const doc = editorUtils.getDoc() || ''
-			const ast = editorUtils.parseMarkdownToAST(doc)
+			const doc = editorUtils.getDoc()
+			if (doc === undefined) {
+				console.warn('Editor not initialized or document is empty')
+				return false
+			}
+
+			const ast = editorUtils.getDocAst()
+			if (!ast) {
+				console.warn('Failed to parse document AST')
+				return false
+			}
+
 			const firstNode = ast.topNode.firstChild
 
 			let frontmatterNodeRange = { from: -1, to: -1 }
@@ -68,7 +98,7 @@ export function useEditorFrontmatter<T extends object = {}>(editor: Ref<any>) {
 			if (firstNode && (firstNode.name === 'Frontmatter' || firstNode.name === 'YAMLFrontMatter')) {
 				frontmatterNodeRange = { from: firstNode.from, to: firstNode.to }
 				const { error } = getFrontmatter()
-				if (error) return false;
+				if (error) return false
 			}
 
 			// Clean up undefined values
@@ -122,10 +152,10 @@ export function useEditorFrontmatter<T extends object = {}>(editor: Ref<any>) {
 				})
 			}
 
-			return true;
+			return true
 		} catch (e) {
-			console.log(e)
-			return false;
+			console.error('Error setting frontmatter properties:', e)
+			return false
 		}
 	}
 
@@ -133,10 +163,20 @@ export function useEditorFrontmatter<T extends object = {}>(editor: Ref<any>) {
 	 * Completely removes the frontmatter from the document if it exists.
 	 * Includes the YAML delimiters and any trailing newlines.
 	 */
-	function clearFrontmatter() {
+	function clearFrontmatter(): boolean {
 		try {
-			const doc = editorUtils.getDoc() || ''
-			const ast = editorUtils.parseMarkdownToAST(doc)
+			const doc = editorUtils.getDoc()
+			if (!doc) {
+				console.warn('Editor not initialized or document is empty')
+				return false
+			}
+
+			const ast = editorUtils.getDocAst()
+			if (!ast) {
+				console.warn('Failed to parse document AST')
+				return false
+			}
+
 			const firstNode = ast.topNode.firstChild
 
 			// Check if frontmatter exists
@@ -151,25 +191,30 @@ export function useEditorFrontmatter<T extends object = {}>(editor: Ref<any>) {
 				editorUtils.dispatch({
 					changes: { from: firstNode.from, to: removeEnd, insert: '' },
 				})
+				return true
 			}
 
-			return true;
+			// If no frontmatter exists, return true (nothing to remove)
+			return true
 		} catch (e) {
-			console.log(e)
-			return false;
+			console.error('Error clearing frontmatter:', e)
+			return false
 		}
-		// If no frontmatter exists, do nothing
 	}
 
-    function addFrontmatterProperty(key: string, value: any) {
-        updateFrontmatterProperties({ [key]: value } as Partial<T>)
+    function addFrontmatterProperty(key: string, value: any): boolean {
+        return updateFrontmatterProperties({ [key]: value } as Partial<T>)
     }
 
-    function removeFrontmatterProperty(key: string) {
-        updateFrontmatterProperties({ [key]: undefined } as Partial<T>)
+    function removeFrontmatterProperty(key: string): boolean {
+        return updateFrontmatterProperties({ [key]: undefined } as Partial<T>)
     }
 
     return {
+		// Reactive properties
+		frontmatter, // Reactive computed frontmatter data
+
+		// Methods
         getFrontmatter,
         updateFrontmatterProperties,
 		setFrontmatterProperties,

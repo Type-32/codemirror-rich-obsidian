@@ -73,6 +73,228 @@ Customize the editor fonts:
 }
 ```
 
+## Components
+
+### `Editor.client.vue`
+
+The main WYSIWYG Obsidian-Flavored Markdown editor component.
+
+**Props:**
+- `v-model`: Document content (string)
+- `internalLinkMap`: Array of internal link mappings for custom link rendering
+- `specialCodeBlockMap`: Array of custom code block component mappings
+- `bracketClosing`: Enable automatic bracket closing (default: true)
+- `foldGutter`: Enable code folding gutter (default: true)
+- `disabled`: Disable editing (default: false)
+- `searchOptions`: Search configuration object
+
+**Events:**
+- `@internal-link-click`: Emitted when an internal link is clicked
+- `@external-link-click`: Emitted when an external link is clicked
+
+### `CodeEditor.client.vue`
+
+A styled code-only editor with syntax highlighting for multiple languages.
+
+**Props:**
+- `v-model`: Code content (string)
+- `language`: Programming language for syntax highlighting (e.g., 'javascript', 'typescript', 'json', 'yaml')
+- `lightTheme`: Custom CodeMirror theme extension for light mode (default: Catppuccin Latte)
+- `darkTheme`: Custom CodeMirror theme extension for dark mode (default: Catppuccin Mocha)
+- `colorMode`: Color mode ('dark' or 'light', default: 'dark')
+- `bracketClosing`: Enable automatic bracket closing (default: true)
+- `foldGutter`: Enable code folding gutter (default: true)
+- `disabled`: Disable editing (default: false)
+
+**Example Usage:**
+
+```vue
+<template>
+  <CodeEditor 
+    v-model="code"
+    language="typescript"
+    :color-mode="colorMode"
+    :dark-theme="customDarkTheme"
+    :light-theme="customLightTheme"
+  />
+</template>
+
+<script setup lang="ts">
+import { ref } from 'vue'
+import { oneDark } from '@codemirror/theme-one-dark'
+
+const code = ref('console.log("Hello World")')
+const colorMode = ref('dark')
+
+// Optional: Use custom themes
+const customDarkTheme = oneDark
+const customLightTheme = undefined // Will use default Catppuccin Latte
+</script>
+```
+
+## Composables
+
+This module provides powerful composables for interacting with the editor programmatically. All composables are **reactive** and **null-safe** during initialization.
+
+### `useEditorUtils(editor: Ref)`
+
+Provides utilities for document manipulation, AST operations, and search functionality.
+
+#### Reactive Properties
+- **`doc`**: Computed property that automatically updates when the editor content changes
+- **`view`**: Computed property for the CodeMirror EditorView instance
+- **`searchResults`**: Ref containing current search matches
+- **`currentMatchIndex`**: Ref for the currently selected search match
+
+#### Document Operations
+- **`getDoc()`**: Get current document content (snapshot)
+- **`setDoc(content: string)`**: Replace entire document
+- **`getSelection()`**: Get current selection
+- **`replaceSelection(text: string)`**: Replace selected text
+- **`dispatch(...specs: TransactionSpec[])`**: Dispatch editor transactions
+
+#### AST Operations
+- **`getDocAst()`**: Get parsed markdown AST
+- **`findNodesByType(tree: Tree, nodeTypeName: string)`**: Find nodes by type
+- **`getDocNodesByType(nodeTypeName: string)`**: Find nodes in current document
+- **`hasFrontmatter()`**: Check if document has frontmatter
+
+#### Search Operations
+- **`search(options: SearchOptions)`**: Search in document
+- **`findNext()`**, **`findPrevious()`**: Navigate search results
+- **`replaceCurrent(replacement: string)`**: Replace current match
+- **`replaceAll(replacement: string)`**: Replace all matches
+
+#### Example Usage
+
+```vue
+<script setup lang="ts">
+import { ref, watch } from 'vue'
+
+const editor = ref()
+const { doc, frontmatter, getDoc, setDoc } = useEditorUtils(editor)
+
+// Reactive: automatically updates when editor content changes
+watch(doc, (newContent) => {
+  console.log('Document changed:', newContent)
+})
+
+// Non-reactive: get current snapshot
+function saveDocument() {
+  const content = getDoc()
+  // Save content...
+}
+</script>
+```
+
+### `useEditorFrontmatter<T>(editor: Ref)`
+
+Provides utilities for managing YAML frontmatter with full reactivity and type safety.
+
+#### Reactive Properties
+- **`frontmatter`**: Computed property that automatically parses and updates when frontmatter changes
+  - Returns `{ data?: T, error?: Error }`
+
+#### Methods
+- **`getFrontmatter()`**: Get current frontmatter (snapshot)
+- **`setFrontmatterProperties(properties: Partial<T>)`**: Replace all frontmatter
+  - Returns `boolean` indicating success
+  - Removes frontmatter entirely if properties is empty
+- **`updateFrontmatterProperties(properties: Partial<T>)`**: Merge with existing frontmatter
+  - Returns `boolean` indicating success
+  - Preserves existing properties
+- **`clearFrontmatter()`**: Completely remove frontmatter from document
+  - Returns `boolean` indicating success
+  - Removes YAML delimiters and trailing newlines
+- **`addFrontmatterProperty(key: string, value: any)`**: Add/update single property
+  - Returns `boolean` indicating success
+- **`removeFrontmatterProperty(key: string)`**: Remove single property
+  - Returns `boolean` indicating success
+
+#### Example Usage
+
+```vue
+<script setup lang="ts">
+import { ref, watch } from 'vue'
+
+interface MyFrontmatter {
+  title?: string
+  tags?: string[]
+  date?: string
+}
+
+const editor = ref()
+const { 
+  frontmatter, 
+  setFrontmatterProperties, 
+  updateFrontmatterProperties,
+  clearFrontmatter 
+} = useEditorFrontmatter<MyFrontmatter>(editor)
+
+// Reactive: automatically updates when frontmatter changes
+watch(frontmatter, (fm) => {
+  if (fm.data) {
+    console.log('Title:', fm.data.title)
+    console.log('Tags:', fm.data.tags)
+  }
+})
+
+// Replace all frontmatter
+function setMetadata() {
+  setFrontmatterProperties({
+    title: 'My Document',
+    tags: ['vue', 'nuxt'],
+    date: new Date().toISOString()
+  })
+}
+
+// Update specific properties (preserves other properties)
+function addTag(tag: string) {
+  const currentTags = frontmatter.value.data?.tags || []
+  updateFrontmatterProperties({
+    tags: [...currentTags, tag]
+  })
+}
+
+// Remove all frontmatter
+function removeFrontmatter() {
+  clearFrontmatter()
+}
+</script>
+```
+
+### Null Safety
+
+All composables are safe to use during Vue hydration when the editor ref may be `undefined` or `null`:
+
+```typescript
+// Safe to call even if editor isn't ready yet
+const { doc, frontmatter, setDoc } = useEditorUtils(editor)
+
+// Reactive properties will be undefined until editor is initialized
+console.log(doc.value) // undefined initially
+
+// Methods return false or empty values if editor isn't ready
+const success = setDoc('New content') // Returns undefined if not ready
+```
+
+### Enabling Reactivity
+
+The reactive features are **automatically enabled** in both `Editor.client.vue` and `CodeEditor.client.vue` components. No additional setup is required.
+
+If you're creating a custom editor setup, include the reactivity extension:
+
+```typescript
+import { createEditorReactivityExtension } from '@type32/codemirror-rich-obsidian-editor/composables/useEditorUtils'
+
+const editorInstance = shallowRef()
+
+const extensions = [
+  // ... your other extensions
+  createEditorReactivityExtension(editorInstance)
+]
+```
+
 ## Known Issues
 - Same as `segphault/codemirror-rich-markdoc`, the rendered block replacement code is not yet optimized, so it recomputes all of the replaced regions on every operation instead of only updating them as needed.
   - Progress is being made on this issue: we've optimized the Rich Text Plugin to update based on only the updated ranges instead of the entire document.
@@ -92,7 +314,8 @@ Customize the editor fonts:
   - We have a mapping prop that allows developers to add their own link-to-file implementations. (Specific to Vue/Nuxt)
 - ~~Support for code-block mermaid graph rendering & bases is lacking.~~
   - We have a mapping prop that allows developers to add their own custom codeblock widgets. (Specific to Vue/Nuxt)
-- Light/Dark themes are not yet supported in code-block syntax highlighting.
+- ~~Light/Dark themes are not yet supported in code-block syntax highlighting.~~
+  - The `CodeEditor.client.vue` component now supports customizable light/dark themes with Catppuccin as the default.
 
 ## Contributions
 - To anyone who wants to fork this, **make sure you preserve the original credits and references to the libraries that are used in this project. It means a lot to them and to us.**
