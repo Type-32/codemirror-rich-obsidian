@@ -1,6 +1,18 @@
 # Changelog
 
 
+## v0.1.23
+
+[compare changes](https://github.com/Type-32/codemirror-rich-obsidian/compare/v0.1.22...v0.1.23)
+
+### 🏡 Chore
+
+- **frontmatter:** Added utility function to parse yaml/yml content ([38c63ca](https://github.com/Type-32/codemirror-rich-obsidian/commit/38c63ca))
+
+### ❤️ Contributors
+
+- Type-32 ([@Type-32](https://github.com/Type-32))
+
 ## v0.1.22
 
 [compare changes](https://github.com/Type-32/codemirror-rich-obsidian/compare/v0.1.21...v0.1.22)
