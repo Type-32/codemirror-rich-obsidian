@@ -1,7 +1,6 @@
 import { type Ref } from 'vue'
-import { dump } from 'js-yaml'
 import { useEditorUtils } from './useEditorUtils'
-import { parseFrontmatter } from '../utils/frontmatter'
+import { parseFrontmatter, stringifyYaml } from '../utils/frontmatter'
 import type { Frontmatter } from '../editor/types/editor-types'
 
 export function useEditorFrontmatter<T extends object = {}>(editor: Ref<any>) {
@@ -108,8 +107,12 @@ export function useEditorFrontmatter<T extends object = {}>(editor: Ref<any>) {
 			}
 
 			// Generate YAML content
-			const newYamlContent = dump(newData, { skipInvalid: true }).trim()
-			const newFrontmatterBlock = `---\n${newYamlContent}\n---`
+			const yamlResult = stringifyYaml(newData)
+			if (yamlResult.error) {
+				console.error('Error converting data to YAML:', yamlResult.error)
+				return false
+			}
+			const newFrontmatterBlock = `---\n${yamlResult.yaml}\n---`
 
 			if (hasFrontmatter) {
 				// Replace existing frontmatter

@@ -1,5 +1,69 @@
-import { load } from 'js-yaml'
+import { load, dump } from 'js-yaml'
 import type { Frontmatter } from '../editor/types/editor-types';
+
+/**
+ * Converts a JavaScript object/data into a YAML string suitable for writing to files.
+ * 
+ * @param data - The data to convert to YAML
+ * @param options - Optional formatting options
+ * @returns YAML string or error object
+ * 
+ * @example
+ * ```typescript
+ * interface Config {
+ *   title: string
+ *   count: number
+ *   tags: string[]
+ * }
+ * 
+ * const data: Config = {
+ *   title: 'Hello',
+ *   count: 42,
+ *   tags: ['vue', 'nuxt']
+ * }
+ * 
+ * const result = stringifyYaml(data)
+ * if (result.yaml) {
+ *   console.log(result.yaml)
+ *   // Output:
+ *   // title: Hello
+ *   // count: 42
+ *   // tags:
+ *   //   - vue
+ *   //   - nuxt
+ * }
+ * ```
+ */
+export function stringifyYaml(
+    data: any,
+    options?: {
+        /** Number of spaces for indentation (default: 2) */
+        indent?: number
+        /** Skip invalid types instead of throwing (default: true) */
+        skipInvalid?: boolean
+        /** Maximum line width (default: 80) */
+        lineWidth?: number
+        /** Sort object keys (default: false) */
+        sortKeys?: boolean
+    }
+): { yaml?: string; error?: Error } {
+    if (data === null || data === undefined) {
+        return { yaml: '' }
+    }
+
+    try {
+        const yaml = dump(data, {
+            indent: options?.indent ?? 2,
+            skipInvalid: options?.skipInvalid ?? true,
+            lineWidth: options?.lineWidth ?? 80,
+            sortKeys: options?.sortKeys ?? false,
+        })
+
+        return { yaml: yaml.trim() }
+    } catch (e: any) {
+        return { error: e }
+    }
+}
 
 /**
  * Parses a YAML/YML string into the specified type.
