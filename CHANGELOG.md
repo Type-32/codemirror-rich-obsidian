@@ -1,6 +1,18 @@
 # Changelog
 
 
+## v0.1.26
+
+[compare changes](https://github.com/Type-32/codemirror-rich-obsidian/compare/v0.1.25...v0.1.26)
+
+### 🏡 Chore
+
+- **types:** Types annotation ([683dc22](https://github.com/Type-32/codemirror-rich-obsidian/commit/683dc22))
+
+### ❤️ Contributors
+
+- Type-32 ([@Type-32](https://github.com/Type-32))
+
 ## v0.1.25
 
 [compare changes](https://github.com/Type-32/codemirror-rich-obsidian/compare/v0.1.24...v0.1.25)
