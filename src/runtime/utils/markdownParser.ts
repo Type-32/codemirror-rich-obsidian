@@ -1,13 +1,14 @@
 import { markdown } from '@codemirror/lang-markdown'
 import { GFM, type MarkdownExtension } from '@lezer/markdown'
 import { CustomOFM } from '../editor/lezer-parsers/customOFMParsers'
+import type { LanguageSupport } from '@codemirror/language'
 import type { Tree } from '@lezer/common'
 
 /**
  * Creates a markdown parser with standard OFM extensions
  * This configuration is used consistently across the codebase
  */
-export function createMarkdownParser() {
+export function createMarkdownParser(): LanguageSupport {
 	return markdown({
 		extensions: [GFM, CustomOFM as MarkdownExtension[], { remove: ['SetextHeading'] }],
 	})

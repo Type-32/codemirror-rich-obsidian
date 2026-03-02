@@ -1,5 +1,6 @@
 import {autocompletion, type Completion, type CompletionContext, type CompletionResult} from "@codemirror/autocomplete";
 import {syntaxTree} from "@codemirror/language";
+import type { Extension } from "@codemirror/state";
 import {internalLinkMapFacet} from "../linkMappingConfig";
 
 function internalLinkSource(context: CompletionContext): CompletionResult | null {
@@ -66,7 +67,7 @@ function internalLinkSource(context: CompletionContext): CompletionResult | null
     };
 }
 
-export const editorInternalLinkAutocompletePlugin = autocompletion({
+export const editorInternalLinkAutocompletePlugin: Extension = autocompletion({
     override: [internalLinkSource],
     icons: false,
 });
