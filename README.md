@@ -19,7 +19,7 @@
 - https://github.com/nothingislost/obsidian-cm6-attributes
 
 ## Disclaimer
-I have used Gemini 2.5 Pro + Gemini 3 Pro Preview + Claude Sonnet 4.5 in the process of developing this editor numerous times, so do expect errors or inconsistencies in some parts of the code.
+I have used Gemini 2.5 Pro + Gemini 3 Pro Preview + Claude Sonnet 4.5 + Claude Sonnet 4.6 in the process of developing this editor numerous times, so do expect errors or inconsistencies in some parts of the code.
 
 ## Introduction
 Do I even need an intro?

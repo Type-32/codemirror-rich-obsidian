@@ -85,6 +85,10 @@ function test2() {
 	console.log($ef.getFrontmatter())
 }
 
+function test3() {
+	console.log(parseFrontmatter(content.value))
+}
+
 </script>
 
 <template>
@@ -92,6 +96,7 @@ function test2() {
 		<template #rich>
 			<div class="w-full overflow-visible flex flex-col justify-start items-center my-10">
 				<UButton @click="test2" label="Test 2"/>
+				<UButton @click="test3" label="Test 3"/>
 				<Editor
 					v-model="content"
 					ref="editor"
