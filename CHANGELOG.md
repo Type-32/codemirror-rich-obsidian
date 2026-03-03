@@ -1,6 +1,18 @@
 # Changelog
 
 
+## v0.1.27
+
+[compare changes](https://github.com/Type-32/codemirror-rich-obsidian/compare/v0.1.26...v0.1.27)
+
+### 🩹 Fixes
+
+- **codemirror:** Try fixing codemirror duplicate state issue ([c11c9b9](https://github.com/Type-32/codemirror-rich-obsidian/commit/c11c9b9))
+
+### ❤️ Contributors
+
+- Type-32 ([@Type-32](https://github.com/Type-32))
+
 ## v0.1.26
 
 [compare changes](https://github.com/Type-32/codemirror-rich-obsidian/compare/v0.1.25...v0.1.26)

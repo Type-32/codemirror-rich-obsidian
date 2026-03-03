@@ -1,6 +1,6 @@
 {
 	"name": "@type32/codemirror-rich-obsidian-editor",
-	"version": "0.1.26",
+	"version": "0.1.27",
 	"description": "OFM Editor Component for Nuxt.",
 	"repository": "https://github.com/Type-32/codemirror-rich-obsidian",
 	"license": "MIT",
@@ -67,14 +67,30 @@
 		"yjs": "^13.6.29"
 	},
 	"peerDependenciesMeta": {
-		"@catppuccin/codemirror": { "optional": true },
-		"@codemirror/theme-one-dark": { "optional": true },
-		"@hsorby/vue3-katex": { "optional": true },
-		"@tiptap/extension-collaboration": { "optional": true },
-		"@tiptap/extension-node-range": { "optional": true },
-		"@tiptap/y-tiptap": { "optional": true },
-		"katex": { "optional": true },
-		"yjs": { "optional": true }
+		"@catppuccin/codemirror": {
+			"optional": true
+		},
+		"@codemirror/theme-one-dark": {
+			"optional": true
+		},
+		"@hsorby/vue3-katex": {
+			"optional": true
+		},
+		"@tiptap/extension-collaboration": {
+			"optional": true
+		},
+		"@tiptap/extension-node-range": {
+			"optional": true
+		},
+		"@tiptap/y-tiptap": {
+			"optional": true
+		},
+		"katex": {
+			"optional": true
+		},
+		"yjs": {
+			"optional": true
+		}
 	},
 	"devDependencies": {
 		"@catppuccin/codemirror": "^1.0.3",
