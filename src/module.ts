@@ -24,7 +24,44 @@ export default defineNuxtModule<ModuleOptions>({
 		addImportsDir(resolver.resolve('runtime/composables'))
 		addImportsDir(resolver.resolve('runtime/utils'))
 
-		_nuxt.options.build.transpile.push('alfaaz', 'js-yaml')
+		_nuxt.options.build.transpile.push(
+			'alfaaz',
+			'js-yaml',
+			'lezer-markdown-obsidian',
+			'markdown-it-obsidian-callouts',
+		)
+
+		// Ensure there is only ever one instance of these singleton packages
+		// in the host project by forcing deduplication through Vite's resolve.dedupe.
+		const codemirrorPackages = [
+			'@codemirror/state',
+			'@codemirror/view',
+			'@codemirror/language',
+			'@codemirror/autocomplete',
+			'@codemirror/commands',
+			'@codemirror/lang-markdown',
+			'@codemirror/lang-json',
+			'@codemirror/lang-yaml',
+			'@codemirror/language-data',
+			'@codemirror/search',
+			'@codemirror/lint',
+			'@lezer/common',
+			'@lezer/highlight',
+			'@lezer/markdown',
+			'codemirror',
+			'vue-codemirror6',
+		]
+
+		_nuxt.hook('vite:extendConfig', (config) => {
+			config.resolve ??= {}
+			config.resolve.dedupe ??= []
+			config.resolve.dedupe.push(...codemirrorPackages)
+
+			config.optimizeDeps ??= {}
+			config.optimizeDeps.include ??= []
+			config.optimizeDeps.exclude ??= []
+			config.optimizeDeps.exclude.push(...codemirrorPackages)
+		})
 
 		_nuxt.options.alias['#codemirror-rich-obsidian-editor'] = resolver.resolve(
 			'./runtime/editor/types',
