@@ -1,6 +1,18 @@
 # Changelog
 
 
+## v0.1.28
+
+[compare changes](https://github.com/Type-32/codemirror-rich-obsidian/compare/v0.1.27...v0.1.28)
+
+### 🚀 Enhancements
+
+- **internalLinks:** Implement fast string-scanner for internal link parsing in markdown ([7485ead](https://github.com/Type-32/codemirror-rich-obsidian/commit/7485ead))
+
+### ❤️ Contributors
+
+- Type-32 ([@Type-32](https://github.com/Type-32))
+
 ## v0.1.27
 
 [compare changes](https://github.com/Type-32/codemirror-rich-obsidian/compare/v0.1.26...v0.1.27)
