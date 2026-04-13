@@ -1,6 +1,18 @@
 # Changelog
 
 
+## v0.1.29
+
+[compare changes](https://github.com/Type-32/codemirror-rich-obsidian/compare/v0.1.28...v0.1.29)
+
+### 🏡 Chore
+
+- Readme & update deps ([cd05126](https://github.com/Type-32/codemirror-rich-obsidian/commit/cd05126))
+
+### ❤️ Contributors
+
+- Type-32 ([@Type-32](https://github.com/Type-32))
+
 ## v0.1.28
 
 [compare changes](https://github.com/Type-32/codemirror-rich-obsidian/compare/v0.1.27...v0.1.28)
