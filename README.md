@@ -93,6 +93,7 @@ Customize the editor fonts:
 - ~~Support for code-block mermaid graph rendering & bases is lacking.~~
   - We have a mapping prop that allows developers to add their own custom codeblock widgets. (Specific to Vue/Nuxt)
 - Light/Dark themes are not yet supported in code-block syntax highlighting.
+- Tables doesn't render. It's intended that way **until I find or make a good enough table editor component.**
 
 ## Contributions
 - To anyone who wants to fork this, **make sure you preserve the original credits and references to the libraries that are used in this project. It means a lot to them and to us.**
