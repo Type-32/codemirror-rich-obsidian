@@ -15,7 +15,7 @@
 
     --list-indent: 1.5rem;
 
-    --list-bullet-width: 1.375rem;
+    --list-bullet-width: 0.5rem;
 
     --indent-level: 0;
 }
@@ -254,17 +254,25 @@
            raw `-` and the trailing space present in the DOM for CodeMirror's
            `posAtCoords` scanning (which crashes with "side is undefined" when
            it finds no text rects), while making them take zero visible width.
+
+           `line-height: 1rem` (absolute, independent of the span's own
+           `font-size: 0`) ensures the text nodes still produce rects with
+           valid non-zero HEIGHT so CM's coord-to-pos scan can locate them.
+           Without this, indented list lines see zero-height rects and
+           mis-map clicks to the line start.
+
            The visible bullet is drawn by the `::before` pseudo-element, which
            restores its own font-size and occupies a fixed-width slot that
            defines the hanging-indent geometry for `.cm-list-line`. */
         font-size: 0;
+        line-height: 1rem;
 
         &.cm-list-formatting-ul::before {
             content: '•';
             @apply text-dimmed inline-block text-start align-baseline;
             font-size: 1rem;
-            line-height: 1;
-            width: var(--list-bullet-width, 1.375rem);
+            line-height: inherit;
+            width: calc(var(--list-bullet-width, 1.375rem));
         }
     }
 
@@ -477,12 +485,20 @@
     }
 
     .cm-list-line {
-        /* Obsidian-style hanging indent:
-           - padding-inline-start pushes the whole block in by (nesting * list-indent) + bullet-width
-           - text-indent: -bullet-width pulls the FIRST line back so the bullet
-             sits in the "negative" slot. Wrapped lines align under the content. */
-        padding-inline-start: calc(var(--indent-level, 0) * var(--list-indent) + var(--list-bullet-width, 1.375rem));
-        text-indent: calc(-1 * var(--list-bullet-width, 1.375rem));
+        /* Obsidian-style hanging indent.
+           We allocate `2 * bullet-width` of left padding so that after the
+           `text-indent: -bullet-width` pull-back on the first line, the bullet
+           still sits INSIDE the editor's content frame (at x = bullet-width
+           from the line start). Without the extra bullet-width, the first
+           line's `::before` bullet would be pulled to x = 0 of the line-box
+           and clip against `.cm-content`'s left padding / editor border.
+
+           First-line bullet position: padding-inline-start + text-indent = (level * list-indent) + bullet-width
+           First-line content position: (level * list-indent) + 2 * bullet-width
+           Wrapped-line content position: (level * list-indent) + 2 * bullet-width (= padding-inline-start)
+           → first-line content and wrapped-line content align perfectly. */
+        padding-inline-start: calc(var(--indent-level, 0) * var(--list-indent) + 2 * var(--list-bullet-width, 1.375rem) + 0.3rem);
+        text-indent: calc(-1 * calc(var(--list-bullet-width, 1.375rem)));
     }
 
     .cm-obsidian-hidden {
