@@ -18,8 +18,9 @@
     --list-bullet-width: 0.5rem;
 
     /* Indent-guide styling for list lines. See `.cm-list-line` below. */
-    --list-guide-color: var(--ui-primary);
+    --list-guide-color: var(--ui-text-dimmed);
     --list-guide-width: 1px;
+    --list-guide-opacity: 0.3;
 
     --indent-level: 0;
 }
@@ -544,8 +545,13 @@
            ancestor's bullet column.
 
            Theming (tweakable in the @theme block at the top of this file):
-             --list-guide-color: stripe color (defaults to --ui-primary)
-             --list-guide-width: stripe thickness (defaults to 1px)
+             --list-guide-color:   stripe color (defaults to --ui-primary)
+             --list-guide-width:   stripe thickness (defaults to 1px)
+             --list-guide-opacity: stripe opacity 0-1 (defaults to 0.3)
+
+           The effective stripe color is produced via `color-mix` so opacity
+           works even when `--list-guide-color` is a `var(...)` reference to a
+           themed palette variable rather than a raw rgb/hex value.
 
            Level-0 lines get `background-size: 0 100%` (zero width) so no
            stripes are drawn — correct for top-level items.
@@ -555,8 +561,8 @@
            so guide columns stay anchored to ancestor bullet positions. */
         background-image: repeating-linear-gradient(
             to right,
-            var(--list-guide-color) 0,
-            var(--list-guide-color) var(--list-guide-width),
+            color-mix(in oklab, var(--list-guide-color) calc(var(--list-guide-opacity, 0.3) * 100%), transparent) 0,
+            color-mix(in oklab, var(--list-guide-color) calc(var(--list-guide-opacity, 0.3) * 100%), transparent) var(--list-guide-width),
             transparent var(--list-guide-width),
             transparent var(--list-indent, 1.5rem)
         );
