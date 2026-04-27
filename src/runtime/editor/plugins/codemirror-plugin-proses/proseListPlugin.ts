@@ -7,6 +7,7 @@ import {
 } from '@codemirror/view'
 import { RangeSetBuilder } from '@codemirror/state'
 import { syntaxTree } from '@codemirror/language'
+import { isCursorInRange } from '../../utility/tools'
 
 /**
  * Returns the nesting depth of a list line (0 for top-level).
@@ -48,6 +49,15 @@ function getListNestingLevel(lineText: string): number {
  *   - Wraps the line's content in `<span class="cm-list-content cm-list-content-N">`,
  *     providing a DOM hook for per-nesting-level styling, matching the
  *     structural convention Obsidian uses (`.cm-list-N`).
+ *
+ * IMPORTANT: The structural decorations (line + formatting span + content span)
+ * emitted by this plugin are SELECTION-INDEPENDENT. The formatting span is
+ * always applied. The reveal-the-raw-`-`-when-cursor-is-on-it behavior is
+ * provided by a sibling plugin `proseListEditMarkPlugin` (below) that toggles
+ * a line-level class on `selectionSet`. Keeping inline-mark geometry stable
+ * across selection changes is critical — otherwise DOM reflow between
+ * mousedown and cursor-placement causes CodeMirror's `posAtCoords` scan to
+ * mis-map the first click to the line start.
  *
  * This plugin REPLACES the deprecated `indentationListPlugin` and the
  * `ListMark -> decorationBullet` logic previously in `richTextPlugin.ts`.
@@ -95,17 +105,6 @@ function buildDecorations(view: EditorView): DecorationSet {
                 //    BULLET lists only. Skipped for:
                 //    - ordered lists (raw `1.`, `2.` render naturally)
                 //    - task items (checkbox widget from proseTaskListPlugin owns this range)
-                //
-                //    NOTE: We intentionally do NOT skip the decoration when the
-                //    cursor is inside the ListMark range. Skipping there causes
-                //    the span to toggle between "collapsed width" and "natural
-                //    width" on click/caret movement, which produces a layout
-                //    reflow that confuses CodeMirror's `posAtCoords` scan on the
-                //    next click (first click lands at line start, second click
-                //    lands correctly). The raw `-` text is still present in the
-                //    DOM under the decoration, so editing operations on the
-                //    ListMark continue to work normally — the bullet just stays
-                //    visually rendered even while the caret is on it.
                 if (listMark && !isOrdered && !task) {
                     const markFrom = Math.max(0, Math.min(listMark.from, docLength))
                     const markTo = Math.max(
@@ -178,6 +177,86 @@ export const proseListPlugin = ViewPlugin.fromClass(
             // reflows and can disturb `posAtCoords` scanning mid-click.
             if (update.docChanged || update.viewportChanged) {
                 this.decorations = buildDecorations(update.view)
+            }
+        }
+    },
+    {
+        decorations: (v) => v.decorations,
+    }
+)
+
+/**
+ * Companion plugin that toggles a LINE-LEVEL class on list lines whose
+ * ListMark currently contains the cursor. The CSS rule
+ * `.cm-list-line-editing-mark .cm-list-formatting` reveals the raw `-` text
+ * (undoes the `font-size: 0` collapse) so the user can edit the bullet
+ * character.
+ *
+ * Why a separate plugin (instead of conditionally skipping the formatting
+ * decoration in `proseListPlugin`)?
+ *
+ * A `Decoration.mark` that toggles based on selection would cause the
+ * wrapping `<span>` to appear/disappear on caret movement. That changes
+ * inline geometry and triggers a DOM reflow between mousedown and
+ * cursor-placement, which confuses CodeMirror's `posAtCoords` scan — the
+ * first click on any list line would mis-map to line-start.
+ *
+ * A line decoration, by contrast, only adds/removes a CLASS on the
+ * already-existing line `<div>`. Its geometry doesn't change; only the
+ * cascade of CSS rules. CM's rect measurements stay valid across clicks.
+ */
+function buildEditMarkDecorations(view: EditorView): DecorationSet {
+    const builder = new RangeSetBuilder<Decoration>()
+    const { state } = view
+    const seenLines = new Set<number>()
+
+    for (const { from, to } of view.visibleRanges) {
+        syntaxTree(state).iterate({
+            from,
+            to,
+            enter: (node) => {
+                if (node.name !== 'ListItem') return
+
+                const listMark = node.node.getChild('ListMark')
+                if (!listMark) return
+
+                // Reveal the raw `-` when the cursor is anywhere in
+                // [ListMark.from, ListMark.to + 1] — which is the range our
+                // formatting span covers. This lets the user click on the
+                // bullet to edit it.
+                const revealFrom = listMark.from
+                const revealTo = Math.min(listMark.to + 1, state.doc.length)
+                if (!isCursorInRange(state, [revealFrom, revealTo])) return
+
+                const line = state.doc.lineAt(node.from)
+                if (seenLines.has(line.from)) return
+                seenLines.add(line.from)
+
+                builder.add(
+                    line.from,
+                    line.from,
+                    Decoration.line({
+                        attributes: { class: 'cm-list-line-editing-mark' },
+                    })
+                )
+            },
+        })
+    }
+
+    return builder.finish()
+}
+
+export const proseListEditMarkPlugin = ViewPlugin.fromClass(
+    class {
+        decorations: DecorationSet
+
+        constructor(view: EditorView) {
+            this.decorations = buildEditMarkDecorations(view)
+        }
+
+        update(update: ViewUpdate) {
+            if (update.docChanged || update.viewportChanged || update.selectionSet) {
+                this.decorations = buildEditMarkDecorations(update.view)
             }
         }
     },

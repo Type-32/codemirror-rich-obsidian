@@ -287,6 +287,22 @@
         }
     }
 
+    /* When the cursor is on the ListMark (detected by
+       `proseListEditMarkPlugin`), reveal the raw `- ` text so the user can
+       edit the bullet character. We undo the width-collapse tricks: restore
+       natural font-size + text color, hide the `::before` bullet, and let the
+       span flow as regular inline text. */
+    .cm-list-line-editing-mark .cm-list-formatting {
+        display: inline;
+        width: auto;
+        font-size: inherit;
+        color: inherit;
+
+        &::before {
+            content: none;
+        }
+    }
+
     /* DOM hook for per-nesting-level content styling. Intentionally has no
        default visual effect; consumers can target
        `.cm-list-content-0`, `.cm-list-content-1`, etc. for custom themes. */
