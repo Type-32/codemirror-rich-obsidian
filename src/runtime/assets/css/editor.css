@@ -18,9 +18,15 @@
     --list-bullet-width: 0.5rem;
 
     /* Indent-guide styling for list lines. See `.cm-list-line` below. */
-    --list-guide-color: var(--ui-text-dimmed);
+    --list-guide-color: var(--ui-primary);
     --list-guide-width: 1px;
-    --list-guide-opacity: 0.3;
+    --list-guide-opacity: 0.05;
+
+    /* Active indent-guide styling — the guide stripe belonging to the
+       current cursor's ancestor group is highlighted on all sibling lines.
+       See `.cm-list-line-active-guide` below. */
+    --list-active-guide-color: var(--ui-primary);
+    --list-active-guide-opacity: 1;
 
     --indent-level: 0;
 }
@@ -570,6 +576,46 @@
         background-size: calc(calc(var(--indent-level, 0) * var(--list-indent, 1.5rem))) 100%;
         background-position-x: calc(var(--list-bullet-width, 1.375rem));
         background-origin: border-box;
+    }
+
+    /* Active indent guide: when the cursor is on a list line at level K,
+       `proseListActiveGuidePlugin` adds `cm-list-line-active-guide` (and
+       `--active-guide-index: K-1`) to all sibling list lines in the same
+       ancestor group (contiguous runs of lines with nesting level >= K).
+
+       We layer a SECOND `background-image` as the first background layer
+       (drawn on top), rendering exactly one stripe at the active guide's
+       x-coordinate in `--list-active-guide-color` at full opacity. This
+       overlays the corresponding dim stripe from the base `.cm-list-line`
+       rule, creating Obsidian's "connecting vertical highlight" across the
+       current nesting group.
+
+       Theming (in the @theme block at the top of this file):
+         --list-active-guide-color:   stripe color (defaults to --ui-primary)
+         --list-active-guide-opacity: stripe opacity 0-1 (defaults to 1) */
+    .cm-list-line-active-guide {
+        background-image:
+            linear-gradient(
+                to right,
+                color-mix(in oklab, var(--list-active-guide-color) calc(var(--list-active-guide-opacity, 1) * 100%), transparent) 0,
+                color-mix(in oklab, var(--list-active-guide-color) calc(var(--list-active-guide-opacity, 1) * 100%), transparent) var(--list-guide-width),
+                transparent var(--list-guide-width)
+            ),
+            repeating-linear-gradient(
+                to right,
+                color-mix(in oklab, var(--list-guide-color) calc(var(--list-guide-opacity, 0.3) * 100%), transparent) 0,
+                color-mix(in oklab, var(--list-guide-color) calc(var(--list-guide-opacity, 0.3) * 100%), transparent) var(--list-guide-width),
+                transparent var(--list-guide-width),
+                transparent var(--list-indent, 1.5rem)
+            );
+        background-repeat: no-repeat, no-repeat;
+        background-size:
+            var(--list-guide-width) 100%,
+            calc((var(--indent-level, 0)) * var(--list-indent, 1.5rem)) 100%;
+        background-position-x:
+            calc((var(--active-guide-index, 0) + 0) * var(--list-indent, 1.5rem) + var(--list-bullet-width, 1.375rem) + calc(var(--list-indent, 1px) * 0.0)),
+            var(--list-bullet-width, 1.375rem);
+        background-origin: border-box, border-box;
     }
 
     .cm-obsidian-hidden {

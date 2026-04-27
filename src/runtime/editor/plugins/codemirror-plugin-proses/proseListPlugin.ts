@@ -264,3 +264,153 @@ export const proseListEditMarkPlugin = ViewPlugin.fromClass(
         decorations: (v) => v.decorations,
     }
 )
+
+/**
+ * Companion plugin that highlights the "active" indent guide on list lines
+ * belonging to the nesting group containing the current cursor.
+ *
+ * When the cursor is on a list line at level K >= 1:
+ *   - The K-th indent guide (drawn at x = (K-1)*list-indent + bullet-width)
+ *     is the deepest ancestor's guide column.
+ *   - All contiguous list lines above and below the cursor whose nesting
+ *     level is >= K belong to the same ancestor group (they share the
+ *     cursor's level-(K-1) ancestor). These lines receive a class
+ *     `cm-list-line-active-guide` plus `cm-list-line-active-guide-N` where
+ *     N = K - 1 (the INDEX of the guide to highlight).
+ *
+ * CSS in editor.css layers a second `background-image` on these lines that
+ * draws ONLY the N-th stripe at full opacity in the primary guide color,
+ * overlaying the dim default stripe.
+ *
+ * Like `proseListEditMarkPlugin`, this plugin emits ONLY line-level classes
+ * (no inline marks), so it doesn't alter inline-rect geometry and can safely
+ * rebuild on `selectionSet` without affecting CodeMirror's `posAtCoords`.
+ */
+function buildActiveGuideDecorations(view: EditorView): DecorationSet {
+    const builder = new RangeSetBuilder<Decoration>()
+    const { state } = view
+    const { selection } = state
+
+    if (!selection?.main) return builder.finish()
+    const cursorPos = selection.main.from
+
+    // Find which list line (if any) the cursor is on, and its nesting level.
+    const cursorLine = state.doc.lineAt(cursorPos)
+    let cursorLevel = -1
+    {
+        // Walk the syntax tree at cursor to see if we're inside a ListItem
+        const cursorTree = syntaxTree(state)
+        let node = cursorTree.resolveInner(cursorPos, -1)
+        let insideListItem = false
+        for (let cur: typeof node | null = node; cur; cur = cur.parent) {
+            if (cur.name === 'ListItem') {
+                insideListItem = true
+                break
+            }
+        }
+        if (insideListItem) {
+            cursorLevel = getListNestingLevel(cursorLine.text)
+        }
+    }
+
+    // If cursor isn't on a list line (or is on a level-0 line), there's
+    // no active guide to highlight (level 0 has no ancestor guides).
+    if (cursorLevel < 1) return builder.finish()
+
+    // The guide index to highlight is cursorLevel - 1 (the DEEPEST ancestor
+    // column, which visually "connects" the current line to its siblings).
+    const activeGuideIndex = cursorLevel - 1
+
+    // Walk outward from the cursor line, collecting all contiguous list
+    // lines whose nesting level >= cursorLevel. Those lines share the same
+    // cursor-level-(K-1) ancestor.
+    //
+    // We iterate the doc line-by-line. A line is considered "in the group" if:
+    //   - it is a list line (has a ListItem starting on it or continuing
+    //     into it), AND
+    //   - its nesting level (leading tab/4-space count) >= cursorLevel.
+    //
+    // We determine "is a list line" by checking if the syntax tree at
+    // line.from has a ListItem ancestor. This is the same check used by
+    // `proseListPlugin` when emitting `.cm-list-line`.
+
+    const tree = syntaxTree(state)
+    const isListLine = (lineFrom: number): boolean => {
+        // Resolve at line start; if we're inside a ListItem, it's a list line.
+        let n = tree.resolveInner(lineFrom, 1)
+        for (let cur: typeof n | null = n; cur; cur = cur.parent) {
+            if (cur.name === 'ListItem') return true
+        }
+        return false
+    }
+
+    const groupLines: Array<{ from: number }> = [{ from: cursorLine.from }]
+
+    // Walk upward
+    {
+        let from = cursorLine.from
+        while (from > 0) {
+            const prev = state.doc.lineAt(from - 1)
+            const prevLevel = getListNestingLevel(prev.text)
+            if (prevLevel >= cursorLevel && isListLine(prev.from)) {
+                groupLines.push({ from: prev.from })
+                from = prev.from
+            } else {
+                break
+            }
+        }
+    }
+
+    // Walk downward
+    {
+        let to = cursorLine.to
+        while (to < state.doc.length) {
+            const next = state.doc.lineAt(to + 1)
+            const nextLevel = getListNestingLevel(next.text)
+            if (nextLevel >= cursorLevel && isListLine(next.from)) {
+                groupLines.push({ from: next.from })
+                to = next.to
+            } else {
+                break
+            }
+        }
+    }
+
+    // Add line decorations in ascending `from` order (required by RangeSetBuilder).
+    groupLines
+        .sort((a, b) => a.from - b.from)
+        .forEach(({ from }) => {
+            builder.add(
+                from,
+                from,
+                Decoration.line({
+                    attributes: {
+                        class: `cm-list-line-active-guide cm-list-line-active-guide-${activeGuideIndex}`,
+                        style: `--active-guide-index: ${activeGuideIndex}`,
+                    },
+                })
+            )
+        })
+
+    return builder.finish()
+}
+
+export const proseListActiveGuidePlugin = ViewPlugin.fromClass(
+    class {
+        decorations: DecorationSet
+
+        constructor(view: EditorView) {
+            this.decorations = buildActiveGuideDecorations(view)
+        }
+
+        update(update: ViewUpdate) {
+            if (update.docChanged || update.viewportChanged || update.selectionSet) {
+                this.decorations = buildActiveGuideDecorations(update.view)
+            }
+        }
+    },
+    {
+        decorations: (v) => v.decorations,
+    }
+)
+
