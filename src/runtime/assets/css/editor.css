@@ -17,6 +17,10 @@
 
     --list-bullet-width: 0.5rem;
 
+    /* Indent-guide styling for list lines. See `.cm-list-line` below. */
+    --list-guide-color: var(--ui-primary);
+    --list-guide-width: 1px;
+
     --indent-level: 0;
 }
 
@@ -508,7 +512,13 @@
     }
 
     .cm-list-line .cm-indent::before {
-        @apply top-0;
+        /* The `indentationGuidesPlugin` wraps leading tabs in `.cm-indent`
+           spans whose `::before` draws a vertical line. On list lines we
+           render guides via `background-image` on `.cm-list-line` (below),
+           which correctly aligns at ancestor bullet columns and scales with
+           nesting depth. Hide the span's `::before` here to avoid double-
+           painting over our background-based guides. */
+        display: none;
     }
 
     .cm-list-line {
@@ -526,6 +536,34 @@
            → first-line content and wrapped-line content align perfectly. */
         padding-inline-start: calc(calc(var(--indent-level, 0) * var(--list-indent) * 0.1) + 2 * var(--list-bullet-width, 1.375rem) + 1rem);
         text-indent: calc(-1 * calc(var(--list-bullet-width, 1.375rem)));
+
+        /* Obsidian-style indent guides: a 1px vertical line for each ancestor
+           nesting level, drawn via a repeating-linear-gradient on the line's
+           background. For a level-N line, N stripes appear at x-positions
+           `k * list-indent + bullet-width` for k in [0, N-1], matching each
+           ancestor's bullet column.
+
+           Theming (tweakable in the @theme block at the top of this file):
+             --list-guide-color: stripe color (defaults to --ui-primary)
+             --list-guide-width: stripe thickness (defaults to 1px)
+
+           Level-0 lines get `background-size: 0 100%` (zero width) so no
+           stripes are drawn — correct for top-level items.
+
+           `background-origin: border-box` measures `background-position-x`
+           from the line's left edge (unaffected by our `padding-inline-start`),
+           so guide columns stay anchored to ancestor bullet positions. */
+        background-image: repeating-linear-gradient(
+            to right,
+            var(--list-guide-color) 0,
+            var(--list-guide-color) var(--list-guide-width),
+            transparent var(--list-guide-width),
+            transparent var(--list-indent, 1.5rem)
+        );
+        background-repeat: no-repeat;
+        background-size: calc(calc(var(--indent-level, 0) * var(--list-indent, 1.5rem))) 100%;
+        background-position-x: calc(var(--list-bullet-width, 1.375rem));
+        background-origin: border-box;
     }
 
     .cm-obsidian-hidden {
