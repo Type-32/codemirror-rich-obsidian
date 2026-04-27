@@ -7,7 +7,6 @@ import {
 } from '@codemirror/view'
 import { RangeSetBuilder } from '@codemirror/state'
 import { syntaxTree } from '@codemirror/language'
-import { isNodeRangeActive } from '../../utility/tools'
 
 /**
  * Returns the nesting depth of a list line (0 for top-level).
@@ -96,17 +95,24 @@ function buildDecorations(view: EditorView): DecorationSet {
                 //    BULLET lists only. Skipped for:
                 //    - ordered lists (raw `1.`, `2.` render naturally)
                 //    - task items (checkbox widget from proseTaskListPlugin owns this range)
-                //    - when cursor is inside the ListMark range (reveal raw `-` for editing)
+                //
+                //    NOTE: We intentionally do NOT skip the decoration when the
+                //    cursor is inside the ListMark range. Skipping there causes
+                //    the span to toggle between "collapsed width" and "natural
+                //    width" on click/caret movement, which produces a layout
+                //    reflow that confuses CodeMirror's `posAtCoords` scan on the
+                //    next click (first click lands at line start, second click
+                //    lands correctly). The raw `-` text is still present in the
+                //    DOM under the decoration, so editing operations on the
+                //    ListMark continue to work normally — the bullet just stays
+                //    visually rendered even while the caret is on it.
                 if (listMark && !isOrdered && !task) {
                     const markFrom = Math.max(0, Math.min(listMark.from, docLength))
                     const markTo = Math.max(
                         markFrom,
                         Math.min(listMark.to + 1, docLength, line.to)
                     )
-                    if (
-                        markFrom < markTo &&
-                        !isNodeRangeActive(state, listMark.from, listMark.to)
-                    ) {
+                    if (markFrom < markTo) {
                         builder.add(
                             markFrom,
                             markTo,
@@ -165,10 +171,12 @@ export const proseListPlugin = ViewPlugin.fromClass(
         }
 
         update(update: ViewUpdate) {
-            // Rebuild on doc changes, viewport changes, or selection changes.
-            // Selection matters because the formatting span is hidden when the
-            // cursor enters the ListMark range (so the raw `-` can be edited).
-            if (update.docChanged || update.viewportChanged || update.selectionSet) {
+            // Rebuild only on doc or viewport changes. The decoration set
+            // does NOT depend on selection state (see comment in
+            // buildDecorations about why we don't skip on cursor-in-range),
+            // so rebuilding on `selectionSet` would just cause unnecessary
+            // reflows and can disturb `posAtCoords` scanning mid-click.
+            if (update.docChanged || update.viewportChanged) {
                 this.decorations = buildDecorations(update.view)
             }
         }

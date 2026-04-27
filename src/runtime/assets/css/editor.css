@@ -249,30 +249,41 @@
     }
 
     .cm-list-formatting {
-        /* Collapse the decorated `- ` to zero visible width WITHOUT removing
-           text nodes from the DOM. `font-size: 0` on the span keeps both the
-           raw `-` and the trailing space present in the DOM for CodeMirror's
-           `posAtCoords` scanning (which crashes with "side is undefined" when
-           it finds no text rects), while making them take zero visible width.
+        /* We wrap the raw `- ` (ListMark + trailing space) in this span.
+           Goal: render a visible `•` bullet at the position of `- ` without
+           breaking CodeMirror's text-rect measurements.
 
-           `line-height: 1rem` (absolute, independent of the span's own
-           `font-size: 0`) ensures the text nodes still produce rects with
-           valid non-zero HEIGHT so CM's coord-to-pos scan can locate them.
-           Without this, indented list lines see zero-height rects and
-           mis-map clicks to the line start.
+           Strategy (click-safe):
+           - `inline-block` + fixed `width: bullet-width` forces the span
+             to a known, stable pixel width regardless of content or font.
+           - `color: transparent` + `font-size: 0` collapses the raw `-` and
+             trailing space text nodes to zero visible width but keeps them
+             present in the DOM so CodeMirror's `posAtCoords` scan sees real
+             text nodes.
+           - The `::before` pseudo-element renders the `•` bullet as an
+             inline-block with explicit `font-size: 1rem` (restoring normal
+             bullet size) inside the fixed-width slot.
+           - Because the decoration is STATIC with respect to selection
+             (see proseListPlugin.ts), the span's geometry does not change
+             on click, so `posAtCoords` rects stay stable between
+             mousedown→cursor-placement→paint. This eliminates the
+             first-click-jumps-to-line-start bug.
 
-           The visible bullet is drawn by the `::before` pseudo-element, which
-           restores its own font-size and occupies a fixed-width slot that
-           defines the hanging-indent geometry for `.cm-list-line`. */
+           Layout note: `inline-block` participates in the parent block's
+           inline flow, so `.cm-list-line`'s `text-indent` still correctly
+           pulls the first-line bullet into the hanging-indent slot. */
+        display: inline-block;
+        width: var(--list-bullet-width, 1.375rem);
         font-size: 0;
-        line-height: 1rem;
+        color: transparent;
+        vertical-align: baseline;
 
         &.cm-list-formatting-ul::before {
             content: '•';
             @apply text-dimmed inline-block text-start align-baseline;
             font-size: 1rem;
-            line-height: inherit;
-            width: calc(var(--list-bullet-width, 1.375rem));
+            line-height: 1;
+            width: var(--list-bullet-width, 1.375rem);
         }
     }
 
@@ -497,7 +508,7 @@
            First-line content position: (level * list-indent) + 2 * bullet-width
            Wrapped-line content position: (level * list-indent) + 2 * bullet-width (= padding-inline-start)
            → first-line content and wrapped-line content align perfectly. */
-        padding-inline-start: calc(var(--indent-level, 0) * var(--list-indent) + 2 * var(--list-bullet-width, 1.375rem) + 0.3rem);
+        padding-inline-start: calc(var(--indent-level, 0) * var(--list-indent) + 2 * var(--list-bullet-width, 1.375rem) + 1rem);
         text-indent: calc(-1 * calc(var(--list-bullet-width, 1.375rem)));
     }
 
