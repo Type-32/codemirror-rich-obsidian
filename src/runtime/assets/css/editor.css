@@ -15,6 +15,8 @@
 
     --list-indent: 1.5rem;
 
+    --list-bullet-width: 1.375rem;
+
     --indent-level: 0;
 }
 
@@ -246,17 +248,31 @@
         }
     }
 
-    .cm-obsidian-bullet {
-        @apply text-transparent;
+    .cm-list-formatting {
+        /* Collapse the decorated `- ` to zero visible width WITHOUT removing
+           text nodes from the DOM. `font-size: 0` on the span keeps both the
+           raw `-` and the trailing space present in the DOM for CodeMirror's
+           `posAtCoords` scanning (which crashes with "side is undefined" when
+           it finds no text rects), while making them take zero visible width.
+           The visible bullet is drawn by the `::before` pseudo-element, which
+           restores its own font-size and occupies a fixed-width slot that
+           defines the hanging-indent geometry for `.cm-list-line`. */
+        font-size: 0;
 
-        .cm-meta {
-            @apply invisible;
-        }
-
-        &::before {
+        &.cm-list-formatting-ul::before {
             content: '•';
-            @apply text-dimmed absolute;
+            @apply text-dimmed inline-block text-start align-baseline;
+            font-size: 1rem;
+            line-height: 1;
+            width: var(--list-bullet-width, 1.375rem);
         }
+    }
+
+    /* DOM hook for per-nesting-level content styling. Intentionally has no
+       default visual effect; consumers can target
+       `.cm-list-content-0`, `.cm-list-content-1`, etc. for custom themes. */
+    .cm-list-content {
+        /* no-op */
     }
 
     .cm-callout-widget,
@@ -460,21 +476,13 @@
         @apply top-0;
     }
 
-    .cm-list-internal[style*="--indent-level"] {
-        @apply border-primary;
-        text-indent: calc(var(--indent-level) * var(--list-indent));
-        padding-inline-start: calc(var(--indent-level) * var(--list-indent));
-
-    }
-
-    .cm-indent-list-bullet::before {
-        content: '•';
-        @apply text-dimmed border-none absolute;
-        left: 1rem;
-    }
-
-    .cm-indent-list-bullet + .cm-obsidian-bullet {
-        @apply hidden;
+    .cm-list-line {
+        /* Obsidian-style hanging indent:
+           - padding-inline-start pushes the whole block in by (nesting * list-indent) + bullet-width
+           - text-indent: -bullet-width pulls the FIRST line back so the bullet
+             sits in the "negative" slot. Wrapped lines align under the content. */
+        padding-inline-start: calc(var(--indent-level, 0) * var(--list-indent) + var(--list-bullet-width, 1.375rem));
+        text-indent: calc(-1 * var(--list-bullet-width, 1.375rem));
     }
 
     .cm-obsidian-hidden {

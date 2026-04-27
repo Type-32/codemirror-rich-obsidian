@@ -4,7 +4,6 @@ import { syntaxTree } from '@codemirror/language'
 import type { Range } from '@codemirror/state'
 import { cursorInNode } from '../utility/tools'
 import {
-    decorationBullet,
     decorationCode,
     decorationHidden,
     decorationProseHashtag,
@@ -160,8 +159,13 @@ export default class RichEditPlugin implements PluginValue {
                     return false; // Returning false reveals the marks in the current line.
                 }
 
-                if (nodeName === 'ListMark' && node.matchContext(['BulletList', 'ListItem']) && cursor?.from != nodeFrom && cursor?.from != nodeFrom + 1)
-                    widgets.push(decorationBullet.range(nodeFrom, nodeTo));
+                if (nodeName === 'ListMark' && node.matchContext(['BulletList', 'ListItem'])) {
+                    // List bullet styling is now handled by `proseListPlugin` which wraps
+                    // the ListMark in a fixed-width `cm-list-formatting` span and applies
+                    // hanging-indent CSS vars on the line. See:
+                    //   plugins/codemirror-plugin-proses/proseListPlugin.ts
+                    return;
+                }
 
                 // [^2] determines whether the currently iterated node should be added a decoration that hides the current node.
                 if (hideComponentMarkTokens.includes(node.name))

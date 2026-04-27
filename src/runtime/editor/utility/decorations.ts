@@ -1,7 +1,9 @@
 import {Decoration} from "@codemirror/view";
 
 export const decorationHidden = Decoration.replace({class: 'cm-obsidian-hidden cm-obsidian', tagName: 'span'});
-export const decorationBullet = Decoration.mark({class: 'cm-obsidian-bullet cm-obsidian'});
+// `decorationBullet` was removed — list bullet rendering is now handled by
+// `proseListPlugin` (plugins/codemirror-plugin-proses/proseListPlugin.ts),
+// which emits `.cm-list-formatting` spans with a fixed-width bullet slot.
 export const decorationCode = Decoration.mark({class: 'cm-obsidian-code cm-obsidian'});
 export const decorationTag = Decoration.mark({class: 'cm-obsidian-tag cm-obsidian'});
 

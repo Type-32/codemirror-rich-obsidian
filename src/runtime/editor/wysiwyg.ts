@@ -33,7 +33,7 @@ import { editorAttributesPlugin } from './plugins/codemirror-editor-plugins/edit
 import { indentationGuides } from './plugins/codemirror-editor-plugins/indentationGuidesPlugin'
 import { editorLivePreviewField, proseTaskListPlugin } from './plugins/codemirror-plugin-proses/proseTaskListPlugin'
 import { proseCalloutPlugin } from './plugins/codemirror-plugin-proses/proseCalloutPlugin'
-import { indentationListPlugin } from './plugins/codemirror-editor-plugins/indentationListPlugin'
+import { proseListPlugin } from './plugins/codemirror-plugin-proses/proseListPlugin'
 import type { WysiwygPlugin } from './types/editor-types'
 
 export default function (config?: WysiwygPlugin) {
@@ -69,6 +69,7 @@ export default function (config?: WysiwygPlugin) {
             proseQuoteblockCodemirrorViewPlugin,
             proseCalloutPlugin,
             proseTaskListPlugin,
+            proseListPlugin,
 
             editorLivePreviewField.init(() => true),
             editorLinkClickPlugin,
@@ -77,7 +78,6 @@ export default function (config?: WysiwygPlugin) {
             customBracketClosingPlugin,
             customBracketClosingConfig.of(true), // Default to enabled
             indentationGuides(),
-            indentationListPlugin,
             // editorAttributesPlugin,
             syntaxHighlighting(proseStylesPlugin),
 			//@ts-ignore
