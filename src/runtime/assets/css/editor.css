@@ -524,7 +524,7 @@
            First-line content position: (level * list-indent) + 2 * bullet-width
            Wrapped-line content position: (level * list-indent) + 2 * bullet-width (= padding-inline-start)
            → first-line content and wrapped-line content align perfectly. */
-        padding-inline-start: calc(var(--indent-level, 0) * var(--list-indent) + 2 * var(--list-bullet-width, 1.375rem) + 1rem);
+        padding-inline-start: calc(calc(var(--indent-level, 0) * var(--list-indent) * 0.1) + 2 * var(--list-bullet-width, 1.375rem) + 1rem);
         text-indent: calc(-1 * calc(var(--list-bullet-width, 1.375rem)));
     }
 
