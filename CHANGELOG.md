@@ -1,6 +1,22 @@
 # Changelog
 
 
+## v0.1.32
+
+[compare changes](https://github.com/Type-32/codemirror-rich-obsidian/compare/v0.1.31...v0.1.32)
+
+### 🚀 Enhancements
+
+- **editor:** Apply list formatting to ordered lists ([0b6d051](https://github.com/Type-32/codemirror-rich-obsidian/commit/0b6d051))
+
+### 💅 Refactors
+
+- **editor:** Split list-indent variables for UL/OL and add base offset ([d174a92](https://github.com/Type-32/codemirror-rich-obsidian/commit/d174a92))
+
+### ❤️ Contributors
+
+- Type-32 ([@Type-32](https://github.com/Type-32))
+
 ## v0.1.31
 
 [compare changes](https://github.com/Type-32/codemirror-rich-obsidian/compare/v0.1.30...v0.1.31)
