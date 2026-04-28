@@ -1,6 +1,18 @@
 # Changelog
 
 
+## v0.1.31
+
+[compare changes](https://github.com/Type-32/codemirror-rich-obsidian/compare/v0.1.30...v0.1.31)
+
+### 🩹 Fixes
+
+- **editor:** Prevent double-counting indent on list lines ([e055940](https://github.com/Type-32/codemirror-rich-obsidian/commit/e055940))
+
+### ❤️ Contributors
+
+- Type-32 ([@Type-32](https://github.com/Type-32))
+
 ## v0.1.30
 
 [compare changes](https://github.com/Type-32/codemirror-rich-obsidian/compare/v0.1.29...v0.1.30)
