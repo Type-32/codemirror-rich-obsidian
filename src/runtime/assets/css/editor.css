@@ -528,6 +528,21 @@
         display: none;
     }
 
+    .cm-list-line .cm-indent {
+        /* On list lines, our `padding-inline-start` already accounts for the
+           nesting depth via `level * --list-indent`. The visible width of the
+           raw `\t` / 4-space `.cm-indent` spans would DOUBLE-COUNT the indent,
+           pushing first-line content past where wrapped-line content sits.
+
+           Collapse the span's visible width to zero while keeping its text
+           nodes in the DOM for CodeMirror's `posAtCoords` scanning. Use an
+           absolute `line-height` so zero-font-size text nodes still produce
+           valid non-zero-height rects. */
+        min-width: 0;
+        font-size: 0;
+        line-height: 1rem;
+    }
+
     .cm-list-line {
         /* Obsidian-style hanging indent.
            We allocate `2 * bullet-width` of left padding so that after the
@@ -541,7 +556,7 @@
            First-line content position: (level * list-indent) + 2 * bullet-width
            Wrapped-line content position: (level * list-indent) + 2 * bullet-width (= padding-inline-start)
            → first-line content and wrapped-line content align perfectly. */
-        padding-inline-start: calc(calc(var(--indent-level, 0) * var(--list-indent) * 0.1) + 2 * var(--list-bullet-width, 1.375rem) + 1rem);
+        padding-inline-start: calc(var(--indent-level, 0) * var(--list-indent) + 2 * var(--list-bullet-width, 1.375rem) + 1rem);
         text-indent: calc(-1 * calc(var(--list-bullet-width, 1.375rem)));
 
         /* Obsidian-style indent guides: a 1px vertical line for each ancestor
