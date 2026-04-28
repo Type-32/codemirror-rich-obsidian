@@ -19,17 +19,21 @@
        independently.
 
          --ul-nesting-step: horizontal distance added per nesting level (UL).
-         --ul-bullet-gap:   visual gap between the `•` bullet and content text.
+         --ul-bullet-gap:   width of the `•` bullet slot (also the visual gap
+                            between bullet and content text).
          --ol-nesting-step: horizontal distance added per nesting level (OL).
-         --ol-bullet-gap:   visual gap between the `1.` marker and content text.
+         --ol-bullet-gap:   reserved slot width for the `1.` / `2.` marker
+                            (and visual gap between marker and content).
+                            Should be wide enough to hold the largest marker
+                            you expect (default 1.5rem fits up to 3 digits).
          --list-base-offset: shared editor-frame baseline so list-line bullets
                              don't clip against `.cm-content`'s left padding.
     -------------------------------------------------------------------------- */
     --ul-nesting-step: 1.5rem;
-    --ul-bullet-gap:   0.5rem;
+    --ul-bullet-gap:   0.25rem;
 
     --ol-nesting-step: 1rem;
-    --ol-bullet-gap:   -0.25rem;
+    --ol-bullet-gap:   0.5rem;
 
     --list-base-offset: 1rem;
 
@@ -276,42 +280,57 @@
     }
 
     .cm-list-formatting {
-        /* We wrap the raw `- ` (ListMark + trailing space) in this span.
-           Goal: render a visible `•` bullet at the position of `- ` without
-           breaking CodeMirror's text-rect measurements.
+        /* We wrap the raw list-marker range (ListMark + trailing space) in
+           this span for BOTH unordered and ordered lists. Kind-specific
+           rules below (`&.cm-list-formatting-ul` / `&.cm-list-formatting-ol`)
+           override width and text-rendering behavior as appropriate.
 
-           Strategy (click-safe):
-           - `inline-block` + fixed `width: --ul-bullet-gap` forces the span
-             to a known, stable pixel width regardless of content or font.
-           - `color: transparent` + `font-size: 0` collapses the raw `-` and
-             trailing space text nodes to zero visible width but keeps them
-             present in the DOM so CodeMirror's `posAtCoords` scan sees real
-             text nodes.
-           - The `::before` pseudo-element renders the `•` bullet as an
-             inline-block with explicit `font-size: 1rem` (restoring normal
-             bullet size) inside the fixed-width slot.
+           Shared strategy (click-safe):
+           - `inline-block` establishes a known geometric box the parent
+             line's `text-indent` can pull back over.
+           - Keep real text nodes in the DOM so CodeMirror's `posAtCoords`
+             scan sees valid text rects. UL hides them visually via
+             `font-size: 0`; OL keeps them visible and right-aligned.
            - Because the decoration is STATIC with respect to selection
              (see proseListPlugin.ts), the span's geometry does not change
              on click, so `posAtCoords` rects stay stable between
              mousedown→cursor-placement→paint. This eliminates the
-             first-click-jumps-to-line-start bug.
-
-           Layout note: `inline-block` participates in the parent block's
-           inline flow, so `.cm-list-line-ul`'s `text-indent` still correctly
-           pulls the first-line bullet into the hanging-indent slot. */
+             first-click-jumps-to-line-start bug. */
         display: inline-block;
+        vertical-align: baseline;
+    }
+
+    .cm-list-formatting.cm-list-formatting-ul {
+        /* UL: hide the raw `- ` via font-size: 0 + color: transparent so
+           the span collapses to exactly `--ul-bullet-gap` wide. The visible
+           `•` bullet is rendered by `::before` with restored font-size. */
         width: var(--ul-bullet-gap, 0.5rem);
         font-size: 0;
         color: transparent;
-        vertical-align: baseline;
 
-        &.cm-list-formatting-ul::before {
+        &::before {
             content: '•';
             @apply text-dimmed inline-block text-start align-baseline;
             font-size: 1rem;
             line-height: 1;
             width: var(--ul-bullet-gap, 0.5rem);
         }
+    }
+
+    .cm-list-formatting.cm-list-formatting-ol {
+        /* OL: keep the raw `1.` / `2.` marker text VISIBLE inside a
+           fixed-min-width slot. `text-align: end` right-aligns the marker
+           so short numbers (`1.`) hug the content edge. `overflow: visible
+           + white-space: pre` lets longer markers (e.g. `100.`) extend
+           past the slot without wrapping — preserving layout alignment
+           for the common 1-3 digit cases. */
+        min-width: var(--ol-bullet-gap);
+        width: auto;
+        font-size: inherit;
+        color: inherit;
+        text-align: end;
+        white-space: pre;
+        overflow: visible;
     }
 
     /* When the cursor is on the ListMark (detected by
@@ -622,21 +641,24 @@
     }
 
     .cm-list-line-ol {
-        /* Hanging-indent math (OL):
-           Unlike UL, ordered-list markers (`1.`, `2.`, ...) render as raw
-           text with their own natural width — they aren't wrapped in a
-           fixed-width `.cm-list-formatting` span. Therefore we apply NO
-           negative `text-indent`; `padding-inline-start` alone drives the
-           nesting indent and the raw marker sits at the start of the line's
-           content box. Wrapped lines align at `padding-inline-start`;
-           first-line content sits at `padding-inline-start + marker-width`
-           (slightly rightward per item, acceptable trade-off for v1). */
+        /* Hanging-indent math (OL, parallel to UL):
+             First-line marker-slot x:  padding-inline-start + text-indent
+                                     = (level * ol-nesting-step) + ol-bullet-gap + list-base-offset
+             First-line content x:      (level * ol-nesting-step) + 2*ol-bullet-gap + list-base-offset
+             Wrapped-line content x:    same as first-line content (= padding-inline-start,
+                                          since text-indent only applies to the first line).
+
+           OL markers render as raw right-aligned text inside the
+           `.cm-list-formatting-ol` span (min-width: --ol-bullet-gap). Short
+           markers (`1.`, `99.`) fit cleanly in the slot; longer markers
+           (`100.`) overflow visibly without breaking layout for the common
+           1-3 digit cases. */
         padding-inline-start: calc(
             var(--indent-level, 0) * var(--ol-nesting-step, 1rem)
-            + 2 * var(--ol-bullet-gap, 0.5rem)
+            + 2 * var(--ol-bullet-gap, 1.5rem)
             + var(--list-base-offset, 1rem)
         );
-        text-indent: 0;
+        text-indent: calc(-1 * var(--ol-bullet-gap, 1.5rem));
 
         background-image: repeating-linear-gradient(
             to right,
@@ -647,7 +669,7 @@
         );
         background-repeat: no-repeat;
         background-size: calc(var(--indent-level, 0) * var(--ol-nesting-step, 1rem)) 100%;
-        background-position-x: var(--ol-bullet-gap, 0.5rem);
+        background-position-x: var(--ol-bullet-gap, 1.5rem);
         background-origin: border-box;
     }
 
@@ -711,8 +733,8 @@
             var(--list-guide-width, 1px) 100%,
             calc(var(--indent-level, 0) * var(--ol-nesting-step, 1rem)) 100%;
         background-position-x:
-            calc(var(--active-guide-index, 0) * var(--ol-nesting-step, 1rem) + var(--ol-bullet-gap, 0.5rem)),
-            var(--ol-bullet-gap, 0.5rem);
+            calc(var(--active-guide-index, 0) * var(--ol-nesting-step, 1rem) + var(--ol-bullet-gap, 1.5rem)),
+            var(--ol-bullet-gap, 1.5rem);
         background-origin: border-box, border-box;
     }
 

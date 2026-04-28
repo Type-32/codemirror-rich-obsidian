@@ -70,15 +70,19 @@ Customize the editor fonts:
 	   tuned to a tighter or wider nesting than unordered lists.
 
 	     --ul-nesting-step: horizontal distance added per nesting level (UL).
-	     --ul-bullet-gap:   visual gap between the `•` bullet and content text.
+	     --ul-bullet-gap:   width of the `•` bullet slot (also the visual gap
+	                        between bullet and content text).
 	     --ol-nesting-step: horizontal distance added per nesting level (OL).
-	     --ol-bullet-gap:   visual gap between the `1.` marker and content text.
+	     --ol-bullet-gap:   reserved slot width for the `1.` / `2.` marker
+	                        (and visual gap between marker and content).
+	                        Should be wide enough to hold the largest marker
+	                        you expect (default 1.5rem fits up to 3 digits).
 	     --list-base-offset: shared editor-frame left-padding baseline. */
 	--ul-nesting-step: 1.5rem;
-	--ul-bullet-gap:   0.5rem;
+	--ul-bullet-gap:   0.25rem;
 
 	--ol-nesting-step: 1rem;
-	--ol-bullet-gap:   -0.25rem;
+	--ol-bullet-gap:   0.5rem;
 
 	--list-base-offset: 1rem;
 

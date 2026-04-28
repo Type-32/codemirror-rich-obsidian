@@ -101,22 +101,29 @@ function buildDecorations(view: EditorView): DecorationSet {
                 const task = node.node.getChild('Task')
                 const taskMarker = task?.getChild('TaskMarker')
 
-                // 2. Formatting span wrapping ListMark + trailing space for
-                //    BULLET lists only. Skipped for:
-                //    - ordered lists (raw `1.`, `2.` render naturally)
-                //    - task items (checkbox widget from proseTaskListPlugin owns this range)
-                if (listMark && !isOrdered && !task) {
+                // 2. Formatting span wrapping the list marker (ListMark +
+                //    trailing space). Emitted for BOTH unordered and ordered
+                //    list items; the kind-specific class lets CSS apply
+                //    different rendering:
+                //    - UL: span collapses to fixed-width bullet slot, raw
+                //      text hidden, `•` rendered via ::before pseudo.
+                //    - OL: span reserves fixed min-width, raw `1.` / `2.`
+                //      text stays visible and right-aligned inside the slot.
+                //    Skipped only for task items (the checkbox widget from
+                //    proseTaskListPlugin owns this range).
+                if (listMark && !task) {
                     const markFrom = Math.max(0, Math.min(listMark.from, docLength))
                     const markTo = Math.max(
                         markFrom,
                         Math.min(listMark.to + 1, docLength, line.to)
                     )
                     if (markFrom < markTo) {
+                        const kindSuffix = isOrdered ? 'ol' : 'ul'
                         builder.add(
                             markFrom,
                             markTo,
                             Decoration.mark({
-                                class: `cm-list-formatting cm-list-formatting-ul cm-list-formatting-${level}`,
+                                class: `cm-list-formatting cm-list-formatting-${kindSuffix} cm-list-formatting-${level}`,
                                 tagName: 'span',
                             })
                         )
