@@ -1,6 +1,35 @@
 # Changelog
 
 
+## v0.1.30
+
+[compare changes](https://github.com/Type-32/codemirror-rich-obsidian/compare/v0.1.29...v0.1.30)
+
+### 🚀 Enhancements
+
+- Working bullet list indents ([90cf697](https://github.com/Type-32/codemirror-rich-obsidian/commit/90cf697))
+- **editor:** Highlight active indent guide for list lines ([b1bb1d2](https://github.com/Type-32/codemirror-rich-obsidian/commit/b1bb1d2))
+
+### 🩹 Fixes
+
+- **editor:** Fix bullet position and click detection in list lines ([3045f0c](https://github.com/Type-32/codemirror-rich-obsidian/commit/3045f0c))
+- **editor:** Improve bullet rendering to prevent click-jump on list lines ([789ff07](https://github.com/Type-32/codemirror-rich-obsidian/commit/789ff07))
+
+### 🏡 Chore
+
+- Readme ([678114d](https://github.com/Type-32/codemirror-rich-obsidian/commit/678114d))
+- Update deps ([9f2ff00](https://github.com/Type-32/codemirror-rich-obsidian/commit/9f2ff00))
+- Update deps ([408a872](https://github.com/Type-32/codemirror-rich-obsidian/commit/408a872))
+- Css ([cce9234](https://github.com/Type-32/codemirror-rich-obsidian/commit/cce9234))
+- Tweaked multi-line-padding ([8f6a787](https://github.com/Type-32/codemirror-rich-obsidian/commit/8f6a787))
+- Indent lines ([9eeec5d](https://github.com/Type-32/codemirror-rich-obsidian/commit/9eeec5d))
+- Indent lines ([3c151f5](https://github.com/Type-32/codemirror-rich-obsidian/commit/3c151f5))
+- **README:** Add list guide CSS variables and update indent progress ([7833265](https://github.com/Type-32/codemirror-rich-obsidian/commit/7833265))
+
+### ❤️ Contributors
+
+- Type-32 ([@Type-32](https://github.com/Type-32))
+
 ## v0.1.29
 
 [compare changes](https://github.com/Type-32/codemirror-rich-obsidian/compare/v0.1.28...v0.1.29)
