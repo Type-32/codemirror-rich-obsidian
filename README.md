@@ -65,11 +65,24 @@ Customize the editor fonts:
 
 	--font-editor-code: 'Google Sans Code', 'JetBrains Mono', 'Consolas', var(--font-mono, ui-monospace);
 
-	--list-indent: 1.5rem;
+	/* List indentation / spacing.
+	   UL and OL have independent step / gap pairs so ordered lists can be
+	   tuned to a tighter or wider nesting than unordered lists.
 
-	--list-bullet-width: 0.5rem;
+	     --ul-nesting-step: horizontal distance added per nesting level (UL).
+	     --ul-bullet-gap:   visual gap between the `•` bullet and content text.
+	     --ol-nesting-step: horizontal distance added per nesting level (OL).
+	     --ol-bullet-gap:   visual gap between the `1.` marker and content text.
+	     --list-base-offset: shared editor-frame left-padding baseline. */
+	--ul-nesting-step: 1.5rem;
+	--ul-bullet-gap:   0.5rem;
 
-	/* Indent-guide styling for list lines. See `.cm-list-line` below. */
+	--ol-nesting-step: 1rem;
+	--ol-bullet-gap:   -0.25rem;
+
+	--list-base-offset: 1rem;
+
+	/* Indent-guide styling for list lines. See `.cm-list-line-ul` / `.cm-list-line-ol` below. */
 	--list-guide-color: var(--ui-primary);
 	--list-guide-width: 1px;
 	--list-guide-opacity: 0.05;
