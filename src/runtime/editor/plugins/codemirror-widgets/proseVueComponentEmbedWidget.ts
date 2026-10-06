@@ -1,15 +1,19 @@
-import { WidgetType, EditorView } from '@codemirror/view'
-import { createApp, type App, type Component } from 'vue'
+import { WidgetType, type EditorView } from '@codemirror/view'
+import { createVNode, render, type Component } from 'vue'
+import { hostAppFacet } from '../hostAppConfig'
 
+/**
+ * Mounts a host-provided Vue component as a block widget (image embeds, custom code blocks,
+ * note embeds). Rendered as a vnode in the host app's context; torn down in destroy().
+ */
 export class ProseVueComponentEmbedWidget extends WidgetType {
-    private app: App | null = null
+    private container: HTMLElement | null = null
 
     constructor(
-        readonly component: Component, 
-        readonly props: Record<string, any>, 
-        readonly pos: number,
+        readonly component: Component,
+        readonly props: Record<string, unknown>,
         readonly nodeFrom: number,
-        readonly nodeTo: number
+        readonly nodeTo: number,
     ) {
         super()
     }
@@ -17,67 +21,35 @@ export class ProseVueComponentEmbedWidget extends WidgetType {
     toDOM(view: EditorView) {
         const container = document.createElement('div')
         container.className = 'vue-embed-widget'
-        container.dataset.embedPos = String(this.pos)
-
-        container.addEventListener('mousedown', () => {
-            if (view.hasFocus) {
-                view.dom.blur()
-            }
-        })
-
-        this.app = createApp(this.component, this.props)
-        this.app.mount(container)
-
+        container.dataset.embedPos = String(this.nodeFrom)
+        container.addEventListener('mousedown', () => { if (view.hasFocus) view.dom.blur() })
+        // Render inside the host app's context so auto-imported components, Nuxt UI config and
+        // portals resolve; `createApp` per widget would isolate all of that.
+        const vnode = createVNode(this.component, this.props)
+        const host = view.state.facet(hostAppFacet)
+        if (host) vnode.appContext = host._context
+        render(vnode, container)
+        this.container = container
         return container
     }
 
     override destroy() {
-        if (this.app) {
-            this.app.unmount()
-        }
+        if (this.container) render(null, this.container)
+        this.container = null
     }
 
-    override eq(other: ProseVueComponentEmbedWidget): boolean {
-        // Widget is considered equal if:
-        // 1. Same component type
-        // 2. Same position range
-        // 3. Same props (deep comparison of relevant props)
+    override eq(other: ProseVueComponentEmbedWidget) {
         if (this.component !== other.component) return false
-        if (this.nodeFrom !== other.nodeFrom || this.nodeTo !== other.nodeTo) return false
-        
-        // Compare props - do a shallow comparison for performance
-        // Deep comparison could be expensive for large prop objects
-        const thisKeys = Object.keys(this.props)
-        const otherKeys = Object.keys(other.props)
-        
-        if (thisKeys.length !== otherKeys.length) return false
-        
-        for (const key of thisKeys) {
-            if (this.props[key] !== other.props[key]) {
-                // Special handling for objects that might be the same reference
-                if (typeof this.props[key] === 'object' && typeof other.props[key] === 'object') {
-                    // For linkData, filePath, and display - compare by value
-                    if (key === 'linkData') {
-                        const thisLink = this.props[key]
-                        const otherLink = other.props[key]
-                        if (thisLink?.referenceId !== otherLink?.referenceId) return false
-                        if (thisLink?.name !== otherLink?.name) return false
-                        if (thisLink?.filePath !== otherLink?.filePath) return false
-                        continue
-                    }
-                    // For other objects, assume different if not same reference
-                    return false
-                }
-                return false
-            }
-        }
-        
-        return true
+        const a = this.props, b = other.props
+        const keys = Object.keys(a)
+        if (keys.length !== Object.keys(b).length) return false
+        // Props are strings or the host's link/mapping records (which may carry a Vue component —
+        // not serializable, compared by reference via the replacer).
+        const replacer = (_k: string, v: unknown) => (typeof v === 'function' || (v && typeof v === 'object' && ('setup' in v || 'render' in v)) ? undefined : v)
+        return keys.every(k => a[k] === b[k] || JSON.stringify(a[k], replacer) === JSON.stringify(b[k], replacer))
     }
 
-    override ignoreEvent(event: Event): boolean {
-        // Ignore mouse events to prevent the editor from re-focusing,
-        // but allow the Vue component to handle its own interactions.
+    override ignoreEvent(event: Event) {
         return event instanceof MouseEvent
     }
 }

@@ -1,113 +1,64 @@
-import { WidgetType } from '@codemirror/view';
-import type { EditorView } from '@codemirror/view';
-import { syntaxTree } from '@codemirror/language';
-import type { SyntaxNode } from "@lezer/common";
+import { WidgetType, type EditorView } from '@codemirror/view'
 // @ts-ignore
-import MarkdownIt from 'markdown-it';
+import MarkdownIt from 'markdown-it'
 // @ts-ignore
-import markdownItObsidianCallouts from 'markdown-it-obsidian-callouts';
+import markdownItObsidianCallouts from 'markdown-it-obsidian-callouts'
 
-const md = new MarkdownIt({ html: true }).use(markdownItObsidianCallouts);
+// html:false — note content is untrusted; raw HTML in a callout must not reach innerHTML.
+const md = new MarkdownIt({ html: false }).use(markdownItObsidianCallouts)
 
+const EDIT_ICON = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m18 16 4-4-4-4"></path><path d="m6 8-4 4 4 4"></path><path d="m14.5 4-5 16"></path></svg>'
+const FOLD_ICON = '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>'
+
+/** Renders one callout blockquote. Keyed on its source text so edits/undo re-render, moves don't. */
 export class CalloutWidget extends WidgetType {
-    constructor(private sourceNodeFrom: number, private sourceNodeTo: number) {
-        super();
+    constructor(readonly source: string) {
+        super()
     }
-    
-    private findParentBlockquote(node: SyntaxNode | null): SyntaxNode | null {
-        let current = node;
-        while (current) {
-            if (current.name === 'Blockquote') {
-                return current;
-            }
-            current = current.parent;
-        }
-        return null;
+
+    override eq(other: CalloutWidget) {
+        return other.source === this.source
     }
 
     toDOM(view: EditorView): HTMLElement {
-        const state = view.state;
-        const calloutNode = syntaxTree(state).resolve(this.sourceNodeFrom, 1);
-        const parentBlockquote = this.findParentBlockquote(calloutNode);
-        
-        let rawContent = '';
-        if (parentBlockquote) {
-            rawContent = view.state.doc.sliceString(parentBlockquote.from, parentBlockquote.to);
-        }
-
-        const renderedHtml = md.render(rawContent);
-        const tempDiv = document.createElement('div');
-        tempDiv.innerHTML = renderedHtml;
-        
-        const calloutEl = tempDiv.querySelector('.callout') as HTMLElement | null;
-
-        if (!calloutEl) {
-            const fallback = document.createElement('div');
-            fallback.className = `cm-callout-widget callout callout-error`;
-            fallback.textContent = "Error rendering callout";
+        const tmp = document.createElement('div')
+        tmp.innerHTML = md.render(this.source)
+        const el = tmp.querySelector<HTMLElement>('.callout')
+        if (!el) {
+            const fallback = document.createElement('div')
+            fallback.className = 'cm-callout-widget callout callout-error'
+            fallback.textContent = this.source
             return fallback
         }
-        
-        calloutEl.classList.add('cm-callout-widget');
-        calloutEl.setAttribute('contenteditable', 'false');
+        el.classList.add('cm-callout-widget')
+        el.contentEditable = 'false'
 
-        const editButton = document.createElement('div');
-        editButton.className = 'edit-block-button';
-        editButton.setAttribute('aria-label', 'Edit this block');
-        editButton.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m18 16 4-4-4-4"></path><path d="m6 8-4 4 4 4"></path><path d="m14.5 4-5 16"></path></svg>`;
-        editButton.onmousedown = (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-        };
-        editButton.onclick = (e) => {
-            e.stopPropagation();
-            const parentBlockquote = this.findParentBlockquote(syntaxTree(view.state).resolve(this.sourceNodeFrom, 1));
-            if (parentBlockquote) {
-                view.dispatch({ selection: { anchor: parentBlockquote.from } });
-                view.focus();
-            }
-        };
-        
-        const titleDiv = calloutEl.querySelector('.callout-title');
-        if (titleDiv) {
-            const foldDiv = calloutEl.querySelector('.callout-fold');
-            if (foldDiv) {
-                const foldIcon = document.createElement('svg');
-                // foldIcon.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
-                // foldIcon.setAttribute('width', '16');
-                // foldIcon.setAttribute('height', '16');
-                // foldIcon.setAttribute('viewBox', '0 0 24 24');
-                // foldIcon.setAttribute('fill', 'none');
-                // foldIcon.setAttribute('stroke', 'currentColor');
-                // foldIcon.setAttribute('stroke-width', '2');
-                // foldIcon.setAttribute('stroke-linecap', 'round');
-                // foldIcon.setAttribute('stroke-linejoin', 'round');
-                foldIcon.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-chevron-left-icon lucide-chevron-left"><path d="m15 18-6-6 6-6"/></svg>`;
-                
-                foldDiv.appendChild(foldIcon);
-            }
-            titleDiv.appendChild(editButton);
+        const edit = document.createElement('div')
+        edit.className = 'edit-block-button'
+        edit.setAttribute('aria-label', 'Edit this block')
+        edit.innerHTML = EDIT_ICON
+        edit.onmousedown = e => { e.preventDefault(); e.stopPropagation() }
+        edit.onclick = e => {
+            e.stopPropagation()
+            // Widget position is the doc position where this decoration is mounted now.
+            view.dispatch({ selection: { anchor: view.posAtDOM(el) } })
+            view.focus()
+        }
+
+        const title = el.querySelector('.callout-title')
+        if (title) {
+            const fold = el.querySelector('.callout-fold')
+            if (fold) fold.innerHTML = FOLD_ICON
+            title.appendChild(edit)
         } else {
-            calloutEl.prepend(editButton);
+            el.prepend(edit)
         }
-
-        return calloutEl;
+        return el
     }
 
-    override eq(other: CalloutWidget): boolean {
-        // Widgets are equal if they reference the same position range
-        // This prevents unnecessary re-rendering of markdown-it when the callout hasn't moved
-        return other.sourceNodeFrom === this.sourceNodeFrom &&
-            other.sourceNodeTo === this.sourceNodeTo;
-    }
-
-    override ignoreEvent(event: Event): boolean {
-        if ((event.type === "click" || event.type === "mousedown")) {
-            const target = event.target as Element;
-            if (target.closest('.edit-block-button') || target.closest('.callout-fold')) {
-                return true;
-            }
-        }
-        return false;
+    override ignoreEvent(event: Event) {
+        if (event.type !== 'click' && event.type !== 'mousedown') return false
+        const t = event.target as Element
+        return !!(t.closest('.edit-block-button') || t.closest('.callout-fold'))
     }
 }

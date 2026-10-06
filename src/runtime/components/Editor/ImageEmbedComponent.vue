@@ -3,7 +3,6 @@ defineProps<{
     filePath: string;
     display?: string;
 }>();
-console.log('upda')
 </script>
 
 <template>

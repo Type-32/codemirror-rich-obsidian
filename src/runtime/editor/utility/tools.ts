@@ -1,51 +1,63 @@
 import { EditorView } from '@codemirror/view'
-import { EditorState } from '@codemirror/state'
-import { syntaxTree } from '@codemirror/language'
-import { type SyntaxNode, type SyntaxNodeRef } from '@lezer/common'
+import { StateEffect, StateField, type EditorState } from '@codemirror/state'
 
-export function cursorInNode(
-    cursorFrom: number | undefined,
-    cursorTo: number | undefined,
-    nodeFrom: number | undefined,
-    nodeTo: number | undefined
-) {
-    const cf = cursorFrom || 0, ct = cursorTo || 0, nf = nodeFrom || 0, nt = nodeTo || 0
-    return (cf >= nf && cf <= nt) || (ct >= nf && ct <= nt) || (cf <= nf && ct >= nt)
-}
-
-export function cursorSelectionCoveredNode(
-    cursorFrom: number | undefined,
-    cursorTo: number | undefined,
-    nodeFrom: number | undefined,
-    nodeTo: number | undefined
-) {
-    const cf = cursorFrom || 0, ct = cursorTo || 0, nf = nodeFrom || 0, nt = nodeTo || 0
-    return (cf <= nf && ct >= nt)
-}
-
-export function toCursorNodePositions(state: EditorState, node?: SyntaxNodeRef) {
-    const [cursor] = state.selection.ranges
-    return {
-        cursorFrom: cursor?.from || 0,
-        cursorTo: cursor?.to || 0,
-        nodeFrom: node?.from || 0,
-        nodeTo: node?.to || 0
+/**
+ * True when any selection range touches [from, to] (inclusive, so a cursor sitting
+ * right at a node edge counts as "in" it). The single live-preview predicate: show
+ * source when it touches, render otherwise.
+ */
+export function selectionTouches(state: EditorState, from: number, to: number): boolean {
+    for (const r of state.selection.ranges) {
+        if (r.from <= to && r.to >= from) return true
     }
+    return false
 }
 
-export function isNodeRangeActive(state: EditorState, nodeFrom: number, nodeTo: number): boolean {
-    const cursor = state.selection.main
-    if (cursor.empty) {
-        return cursor.from >= nodeFrom && cursor.from <= nodeTo
-    } else {
-        return Math.max(nodeFrom, cursor.from) < Math.min(nodeTo, cursor.to)
+/** True when any selection range lies entirely inside [from, to]. */
+export function selectionWithin(state: EditorState, from: number, to: number): boolean {
+    for (const r of state.selection.ranges) {
+        if (r.from >= from && r.to <= to) return true
     }
+    return false
 }
 
-export function isCursorInRange(state: EditorState, range: [from: number, to: number]) {
-    return state.selection.ranges.some((r) => {
-        const from = Math.min(r.from, r.to)
-        const to = Math.max(r.from, r.to)
-        return from >= range[0] && to <= range[1]
-    })
+/** Nesting depth of a line: each leading tab or 4-space group is one level. */
+export function indentLevel(lineText: string): number {
+    let level = 0
+    for (let i = 0; i < lineText.length; ) {
+        if (lineText[i] === '\t') i++
+        else if (lineText.startsWith('    ', i)) i += 4
+        else break
+        level++
+    }
+    return level
 }
+
+export const setMouseSelecting = StateEffect.define<boolean>()
+
+/**
+ * True while the user is drag-selecting. Prose plugins skip rebuilds during the drag and
+ * rebuild once on release, so marks reveal on mouseup (like Obsidian) instead of flickering
+ * on every mousemove.
+ */
+export const mouseSelectingField = StateField.define<boolean>({
+    create: () => false,
+    update(value, tr) {
+        for (const e of tr.effects) if (e.is(setMouseSelecting)) return e.value
+        return value
+    },
+})
+
+export const mouseSelectingTracker = [
+    mouseSelectingField,
+    EditorView.domEventHandlers({
+        mousedown(_e, view) {
+            const up = () => {
+                window.removeEventListener('mouseup', up)
+                view.dispatch({ effects: setMouseSelecting.of(false) })
+            }
+            window.addEventListener('mouseup', up)
+            view.dispatch({ effects: setMouseSelecting.of(true) })
+        },
+    }),
+]

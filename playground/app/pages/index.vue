@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { ExternalLinkClickDetail, InternalLink, InternalLinkClickDetail, SpecialCodeBlockMapping } from '#codemirror-rich-obsidian-editor/editor-types'
-import { EditorImageEmbedComponent, EditorTestCustomCodeBlock } from '#components'
+import { EditorImageEmbedComponent, TestCustomCodeBlock } from '#components'
 import type { TabsItem } from '@nuxt/ui'
 
 const router = useRouter()
@@ -42,7 +42,7 @@ const internalLinkMap = ref<InternalLink[]>([
 const specialCodeBlockMap = ref<SpecialCodeBlockMapping[]>([
     {
         codeInfo: 'test',
-        component: EditorTestCustomCodeBlock
+        component: TestCustomCodeBlock
     }
 ])
 

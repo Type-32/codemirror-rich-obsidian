@@ -1,117 +1,67 @@
-import {Decoration, type DecorationSet, EditorView} from '@codemirror/view';
-import {StateField, RangeSet} from '@codemirror/state';
-import {syntaxTree} from '@codemirror/language';
-import type {EditorState, Range as EditorRange} from '@codemirror/state';
-import { cursorSelectionCoveredNode, isNodeRangeActive, toCursorNodePositions } from '../../utility/tools'
-import {ProseVueComponentEmbedWidget} from "../codemirror-widgets/proseVueComponentEmbedWidget";
-import ImageEmbedComponent from "../../../components/Editor/ImageEmbedComponent.vue";
+import { Decoration } from '@codemirror/view'
+import { ProseVueComponentEmbedWidget } from '../codemirror-widgets/proseVueComponentEmbedWidget'
+import ImageEmbedComponent from '../../../components/Editor/ImageEmbedComponent.vue'
+import { createProsePlugin } from './createProsePlugin'
 
-function buildLinkDecorations(state: EditorState): EditorRange<Decoration>[] {
-    const decorations: EditorRange<Decoration>[] = [];
-    const widgets: EditorRange<Decoration>[] = [];
+const hidden = Decoration.replace({})
+const IMAGE_URL = /\.(png|jpe?g|gif|svg|webp)(\?.*)?$/i
 
-    syntaxTree(state).iterate({
-        enter({node}) {
-            if (node.name === 'Image') {
-                const poses = toCursorNodePositions(state, node);
-                const isActive = isNodeRangeActive(state, node.from, node.to) || cursorSelectionCoveredNode(poses.cursorFrom, poses.cursorTo, poses.nodeFrom, poses.nodeTo);
-                if (!isActive) {
-                    const urlNode = node.getChild('URL');
-                    const firstMark = node.getChildren('LinkMark')[0];
-                    if (urlNode) {
-                        const url = state.doc.sliceString(urlNode.from, urlNode.to);
-                        let displayString = undefined;
-                        if (firstMark?.to)
-                            displayString = state.doc.sliceString(firstMark?.to, urlNode.from - 2)
-                        decorations.push(Decoration.replace({
-                            widget: new ProseVueComponentEmbedWidget(ImageEmbedComponent, { filePath: url, display: displayString }, node.from),
-                            block: true,
-                        }).range(node.from, node.to));
-                    }
-                }
-                return false;
-            }
-
-            if (node.name === 'Link') {
-                const poses = toCursorNodePositions(state, node)
-                const isActive = isNodeRangeActive(state, node.from, node.to) || cursorSelectionCoveredNode(poses.cursorFrom, poses.cursorTo, poses.nodeFrom, poses.nodeTo);
-                if (!isActive) {
-                    const allMarks = node.getChildren('LinkMark');
-                    const urlNode = node.getChild('URL');
-
-                    const openBracket = allMarks.find(m => state.doc.sliceString(m.from, m.to) === '[');
-                    const closeBracket = allMarks.find(m => state.doc.sliceString(m.from, m.to) === ']');
-
-                    if (urlNode && openBracket && closeBracket) {
-                        const linkTextStart = openBracket.to;
-                        const linkTextEnd = closeBracket.from;
-                        const url = state.doc.sliceString(urlNode.from, urlNode.to);
-                        const text = state.doc.sliceString(linkTextStart, linkTextEnd);
-
-                        const linkAttributes = {
-                            'href': url,
-                            'target': '_blank',
-                            'class': 'cm-clickable-link',
-                            'data-external-link': 'true',
-                            'data-url': url,
-                            'data-text': text
-                        };
-
-                        decorations.push(Decoration.replace({}).range(node.from, linkTextStart));
-                        decorations.push(Decoration.replace({}).range(linkTextEnd, node.to));
-
-                        decorations.push(Decoration.mark({
-                            tagName: 'a',
-                            attributes: linkAttributes
-                        }).range(linkTextStart, linkTextEnd));
-
-                        return false;
-                    }
-                }
-                return false;
-            }
-
-            if (node.name === 'URL') {
-                const url = state.doc.sliceString(node.from, node.to);
-                const isImage = /\.(png|jpg|jpeg|gif|svg|webp)$/i.test(url) || url.includes('picsum.photos');
-
-                if (isImage) {
-                    const line = state.doc.lineAt(node.from);
-                    widgets.push(Decoration.widget({
-                        widget: new ProseVueComponentEmbedWidget(ImageEmbedComponent, { filePath: url }, node.from),
-                        block: true,
-                        side: 1
-                    }).range(line.to));
-                }
-
-                if (!isNodeRangeActive(state, node.from, node.to)) {
-                    decorations.push(Decoration.mark({
-                        tagName: 'a',
-                        attributes: {
-                            href: url,
-                            target: '_blank',
-                            class: 'cm-clickable-link',
-                            'data-external-link': 'true',
-                            'data-url': url
-                        }
-                    }).range(node.from, node.to));
-                }
-            }
+/**
+ * `[text](url)` → <a>text</a>; `![alt](src)` → image embed; bare URLs → <a>. Image/Link nodes
+ * emit block widgets, so this is a StateField.
+ */
+export const proseLinkPlugin = createProsePlugin({
+    block: true,
+    nodes: ['Image', 'Link', 'URL'],
+    decorate(node, state, active, out) {
+        const n = node.node
+        if (node.name === 'Image') {
+            if (active) return false
+            const url = n.getChild('URL')
+            const open = n.getChildren('LinkMark')[0]
+            if (!url) return false
+            const alt = open ? state.doc.sliceString(open.to, Math.max(open.to, url.from - 2)) : undefined
+            out.push(Decoration.replace({
+                widget: new ProseVueComponentEmbedWidget(ImageEmbedComponent, { filePath: state.doc.sliceString(url.from, url.to), display: alt }, node.from, node.to),
+                block: true,
+            }).range(node.from, node.to))
+            return false
         }
-    });
 
-    return [...decorations, ...widgets];
-}
-
-export const proseLinkCodemirrorViewPlugin = StateField.define<DecorationSet>({
-    create(state) {
-        return RangeSet.of(buildLinkDecorations(state), true);
-    },
-    update(value, tr) {
-        if (tr.docChanged || tr.selection) {
-            return RangeSet.of(buildLinkDecorations(tr.state), true);
+        if (node.name === 'Link') {
+            if (active) return false
+            const url = n.getChild('URL')
+            const marks = n.getChildren('LinkMark')
+            const open = marks.find(m => state.doc.sliceString(m.from, m.to) === '[')
+            const close = marks.find(m => state.doc.sliceString(m.from, m.to) === ']')
+            if (!url || !open || !close) return false
+            const href = state.doc.sliceString(url.from, url.to)
+            out.push(hidden.range(node.from, open.to))
+            out.push(Decoration.mark({
+                tagName: 'a',
+                attributes: {
+                    href, target: '_blank', class: 'cm-clickable-link', 'data-external-link': 'true', 'data-url': href,
+                    'data-text': state.doc.sliceString(open.to, close.from),
+                },
+            }).range(open.to, close.from))
+            out.push(hidden.range(close.from, node.to))
+            return false
         }
-        return value.map(tr.changes);
+
+        // Bare URL (autolink). Parent Link/Image already returned false, so this is only reached standalone.
+        const href = state.doc.sliceString(node.from, node.to)
+        if (IMAGE_URL.test(href)) {
+            out.push(Decoration.widget({
+                widget: new ProseVueComponentEmbedWidget(ImageEmbedComponent, { filePath: href }, node.from, node.to),
+                block: true,
+                side: 1,
+            }).range(state.doc.lineAt(node.from).to))
+        }
+        if (!active) {
+            out.push(Decoration.mark({
+                tagName: 'a',
+                attributes: { href, target: '_blank', class: 'cm-clickable-link', 'data-external-link': 'true', 'data-url': href },
+            }).range(node.from, node.to))
+        }
     },
-    provide: f => EditorView.decorations.from(f)
-});
+})

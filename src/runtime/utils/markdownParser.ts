@@ -1,25 +1,12 @@
 import { markdown } from '@codemirror/lang-markdown'
-import { GFM, type MarkdownExtension } from '@lezer/markdown'
-import { CustomOFM } from '../editor/lezer-parsers/customOFMParsers'
-import type { LanguageSupport } from '@codemirror/language'
 import type { Tree } from '@lezer/common'
+import { markdownConfig } from '../editor/wysiwyg'
 
-/**
- * Creates a markdown parser with standard OFM extensions
- * This configuration is used consistently across the codebase
- */
-export function createMarkdownParser(): LanguageSupport {
-	return markdown({
-		extensions: [GFM, CustomOFM as MarkdownExtension[], { remove: ['SetextHeading'] }],
-	})
-}
+// Built once: same extension set the live editor uses, so offline ASTs match on-screen parsing.
+//@ts-ignore lezer extension typing is looser than lang-markdown's
+const parser = markdown(markdownConfig()).language.parser
 
-/**
- * Parses markdown text to AST using the standard OFM parser configuration
- * @param markdownText The markdown text to parse
- * @returns The parsed syntax tree
- */
+/** Parses markdown text to a Lezer tree with the editor's OFM configuration. */
 export function parseMarkdownToAST(markdownText: string): Tree {
-	return createMarkdownParser().language.parser.parse(markdownText)
+	return parser.parse(markdownText)
 }
-

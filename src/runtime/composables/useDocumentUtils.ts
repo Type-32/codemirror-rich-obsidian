@@ -1,16 +1,14 @@
-import { useAlfaaz } from './useAlfaaz'
+import { countWords, countLines } from 'alfaaz'
 import { parseMarkdownToAST } from '../utils/markdownParser'
 import { type TocEntry } from '../editor/types/editor-types'
 
 export function useDocumentUtils() {
-	const alfaaz = useAlfaaz()
-
 	function getWordCount(text: string) {
-		return alfaaz.countWords(text)
+		return countWords(text)
 	}
 
 	function getLineCount(text: string) {
-		return alfaaz.countLines(text)
+		return countLines(text)
 	}
 
 	function getCharacters(text: string) {
@@ -18,8 +16,7 @@ export function useDocumentUtils() {
 	}
 
 	function getReadingTime(text: string, wordsPerMinute = 200) {
-		const wordCount = alfaaz.countWords(text)
-		return Math.ceil(wordCount / wordsPerMinute);
+		return Math.ceil(countWords(text) / wordsPerMinute);
 	}
 
 	function getParagraphs(text: string) {

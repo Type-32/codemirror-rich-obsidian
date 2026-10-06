@@ -1,170 +1,59 @@
-import { Decoration, EditorView } from '@codemirror/view'
-import { StateField, RangeSet, type Transaction } from '@codemirror/state'
-import { syntaxTree } from '@codemirror/language'
-import type { EditorState, Range as EditorRange, SelectionRange } from '@codemirror/state'
-import type { DecorationSet } from '@codemirror/view'
+import { Decoration } from '@codemirror/view'
 import { EndFenceWidget, LanguageFlairWidget } from '../codemirror-widgets/proseCodeBlockWidgets'
-import { specialCodeBlockMapFacet } from '../specialCodeBlockMappingConfig'
 import { ProseVueComponentEmbedWidget } from '../codemirror-widgets/proseVueComponentEmbedWidget'
-import { cursorSelectionCoveredNode, isNodeRangeActive, toCursorNodePositions } from '../../utility/tools'
-import type { SpecialCodeBlockMapping } from '#codemirror-rich-obsidian-editor/editor-types'
+import { specialCodeBlockMapFacet } from '../specialCodeBlockMappingConfig'
+import { selectionTouches } from '../../utility/tools'
+import { createProsePlugin } from './createProsePlugin'
+
+const lineBegin = Decoration.line({ attributes: { class: 'cm-codeblock cm-line-codeblock-begin' } })
+const lineContent = Decoration.line({ attributes: { class: 'cm-codeblock cm-line-codeblock-content' } })
+const lineEnd = Decoration.line({ attributes: { class: 'cm-codeblock cm-line-codeblock-end' } })
 
 /**
- * Finds all FencedCode node ranges in the syntax tree
+ * Fenced code. Code lines stay in the contentDOM (native editing, no widget round-trip); only the
+ * two fence lines are replaced — the opening one by a language flair / copy button — and each
+ * fence is revealed while the selection touches *its own line*. A `codeInfo` with a registered
+ * special component (mermaid, bases, …) replaces the whole block with that component instead.
  */
-function getFencedCodeRanges(state: EditorState): Array<{ from: number, to: number }> {
-    const ranges: Array<{ from: number, to: number }> = []
-    syntaxTree(state).iterate({
-        enter(node) {
-            if (node.name === 'FencedCode') {
-                ranges.push({ from: node.from, to: node.to })
-                return false // Don't descend into children
+export const proseCodeBlockPlugin = createProsePlugin({
+    block: true,
+    nodes: ['FencedCode'],
+    reconfigureOn: [specialCodeBlockMapFacet],
+    decorate(node, state, active, out) {
+        const info = node.node.getChild('CodeInfo')
+        const language = info ? state.doc.sliceString(info.from, info.to) : ''
+        const first = state.doc.lineAt(node.from)
+        // The node may end with trailing whitespace/newlines after the closing fence.
+        let end = node.to
+        while (end > node.from && /\s/.test(state.doc.sliceString(end - 1, end))) end--
+        const last = state.doc.lineAt(end)
+        const code = last.number - first.number >= 2
+            ? state.doc.sliceString(state.doc.line(first.number + 1).from, state.doc.line(last.number - 1).to)
+            : ''
+
+        const special = state.facet(specialCodeBlockMapFacet).find(m => m.codeInfo === language)
+        if (special && !active) {
+            out.push(Decoration.replace({
+                widget: new ProseVueComponentEmbedWidget(special.component, { codeContent: code }, node.from, node.to),
+                block: true,
+            }).range(node.from, node.to))
+            return false
+        }
+
+        for (let n = first.number; n <= last.number; n++) {
+            const line = state.doc.line(n)
+            if (n === first.number) {
+                out.push(lineBegin.range(line.from))
+                if (!selectionTouches(state, line.from, line.to))
+                    out.push(Decoration.replace({ widget: new LanguageFlairWidget(language, code) }).range(line.from, line.to))
+            } else if (n === last.number) {
+                out.push(lineEnd.range(line.from))
+                if (!selectionTouches(state, line.from, line.to))
+                    out.push(Decoration.replace({ widget: new EndFenceWidget() }).range(line.from, line.to))
+            } else {
+                out.push(lineContent.range(line.from))
             }
         }
-    })
-    return ranges
-}
-
-/**
- * Checks if cursor is inside any of the given ranges
- */
-function isCursorInAnyRange(cursor: SelectionRange, ranges: Array<{ from: number, to: number }>): boolean {
-    return ranges.some(range => 
-        (cursor.from >= range.from && cursor.from <= range.to) ||
-        (cursor.to >= range.from && cursor.to <= range.to) ||
-        (cursor.from <= range.from && cursor.to >= range.to)
-    )
-}
-
-function buildCodeBlockDecorations(state: EditorState): EditorRange<Decoration>[] {
-    const decorations: EditorRange<Decoration>[] = []
-    const specialCodeBlocks = state.facet(specialCodeBlockMapFacet)
-
-    syntaxTree(state).iterate({
-        enter(node) {
-            if (node.name === 'FencedCode') {
-                const codeInfoNode = node.node.getChild('CodeInfo')
-                let language = ''
-                if (codeInfoNode) {
-                    language = state.doc.sliceString(codeInfoNode.from, codeInfoNode.to)
-                }
-
-                const specialMapping = specialCodeBlocks.find((m: SpecialCodeBlockMapping) => m.codeInfo === language)
-
-                // --- Extract pure code content ---
-                const firstLineNode = state.doc.lineAt(node.from)
-                let scanPos = node.to
-                while (scanPos > node.from && /\s/.test(state.doc.sliceString(scanPos - 1, scanPos))) {
-                    scanPos--
-                }
-                const lastLineNode = state.doc.lineAt(scanPos > node.from ? scanPos : node.from)
-                let codeText = ''
-                const firstContentLineNum = firstLineNode.number + 1
-                const lastContentLineNum = lastLineNode.number - 1
-                if (firstContentLineNum <= lastContentLineNum) {
-                    const contentStartOffset = state.doc.line(firstContentLineNum).from
-                    const contentEndOffset = state.doc.line(lastContentLineNum).to
-                    codeText = state.doc.sliceString(contentStartOffset, contentEndOffset)
-                }
-                // --- End of code content extraction ---
-
-                const poses = toCursorNodePositions(state, node)
-
-                if (specialMapping != undefined && !(isNodeRangeActive(state, node.from, node.to) || cursorSelectionCoveredNode(poses.cursorFrom, poses.cursorTo, poses.nodeFrom, poses.nodeTo))) {
-                    if (specialMapping)
-                        decorations.push(
-                            Decoration.replace({
-                                widget: new ProseVueComponentEmbedWidget(
-                                    specialMapping.component,
-                                    { codeContent: codeText },
-                                    node.from,
-                                    node.from,
-                                    node.to
-                                ),
-                                block: true,
-                            }).range(node.from, node.to)
-                        )
-                    return false
-                }
-
-                // --- Fallback to default code block styling ---
-                const cursor = state.selection.main
-                for (
-                    let currentLineNum = firstLineNode.number;
-                    currentLineNum <= lastLineNode.number;
-                    currentLineNum++
-                ) {
-                    const line = state.doc.line(currentLineNum)
-                    let lineClasses = ['cm-codeblock']
-                    const cursorFocusedOnThisLine = (cursor.anchor >= line.from && cursor.anchor <= line.to) || cursorSelectionCoveredNode(poses.cursorFrom, poses.cursorTo, poses.nodeFrom, poses.nodeTo)
-
-                    if (currentLineNum === firstLineNode.number) {
-                        lineClasses.push('cm-line-codeblock-begin')
-                        if (!cursorFocusedOnThisLine) {
-                            decorations.push(
-                                Decoration.replace({
-                                    widget: new LanguageFlairWidget(language, codeText),
-                                }).range(line.from, line.to)
-                            )
-                        }
-                    } else if (currentLineNum === lastLineNode.number) {
-                        lineClasses.push('cm-line-codeblock-end')
-                        if (!cursorFocusedOnThisLine) {
-                            decorations.push(
-                                Decoration.replace({
-                                    widget: new EndFenceWidget(),
-                                }).range(line.from, line.to)
-                            )
-                        }
-                    } else {
-                        lineClasses.push('cm-line-codeblock-content')
-                    }
-
-                    decorations.push(
-                        Decoration.line({
-                            attributes: { class: lineClasses.join(' ') },
-                        }).range(line.from)
-                    )
-                }
-                return false
-            }
-        },
-    })
-    return decorations
-}
-
-export const proseCodeBlockCodemirrorViewPlugin = StateField.define<DecorationSet>({
-    create(state: EditorState) {
-        return RangeSet.of(buildCodeBlockDecorations(state), true)
+        return false
     },
-    update(oldDecorations: DecorationSet, tr: Transaction) {
-        // If document changed, rebuild everything
-        if (tr.docChanged) {
-            return RangeSet.of(buildCodeBlockDecorations(tr.state), true)
-        }
-        
-        // If only selection changed, check if cursor entered/left any code blocks
-        if (tr.selection) {
-            const oldCursor = tr.startState.selection.main
-            const newCursor = tr.state.selection.main
-            
-            // Get all FencedCode ranges from syntax tree
-            const codeBlockRanges = getFencedCodeRanges(tr.state)
-            
-            // Check if cursor state changed (entered or left a code block)
-            const wasInCodeBlock = isCursorInAnyRange(oldCursor, codeBlockRanges)
-            const isInCodeBlock = isCursorInAnyRange(newCursor, codeBlockRanges)
-            
-            // Rebuild if cursor entered or left any code block
-            if (wasInCodeBlock !== isInCodeBlock) {
-                return RangeSet.of(buildCodeBlockDecorations(tr.state), true)
-            }
-            
-            // Cursor moved but didn't cross code block boundaries
-            return oldDecorations
-        }
-        
-        return oldDecorations.map(tr.changes)
-    },
-    provide: (f: StateField<DecorationSet>) => EditorView.decorations.from(f),
 })

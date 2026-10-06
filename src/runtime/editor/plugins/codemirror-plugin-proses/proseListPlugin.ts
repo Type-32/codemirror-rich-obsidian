@@ -7,31 +7,7 @@ import {
 } from '@codemirror/view'
 import { RangeSetBuilder } from '@codemirror/state'
 import { syntaxTree } from '@codemirror/language'
-import { isCursorInRange } from '../../utility/tools'
-
-/**
- * Returns the nesting depth of a list line (0 for top-level).
- * Each tab or 4-space group counts as one nesting level.
- */
-function getListNestingLevel(lineText: string): number {
-    const match = lineText.match(/^(?:\t| {4})*/)
-    if (!match) return 0
-    const prefix = match[0]
-    let level = 0
-    let i = 0
-    while (i < prefix.length) {
-        if (prefix[i] === '\t') {
-            level++
-            i++
-        } else if (prefix.slice(i, i + 4) === '    ') {
-            level++
-            i += 4
-        } else {
-            break
-        }
-    }
-    return level
-}
+import { indentLevel, selectionWithin } from '../../utility/tools'
 
 /**
  * Prose plugin responsible for Obsidian-style list rendering:
@@ -79,7 +55,7 @@ function buildDecorations(view: EditorView): DecorationSet {
                 if (seenLines.has(line.from)) return
                 seenLines.add(line.from)
 
-                const level = getListNestingLevel(line.text)
+                const level = indentLevel(line.text)
                 const parentName = node.node.parent?.type.name
                 const isOrdered = parentName === 'OrderedList'
                 const listKindClass = isOrdered ? 'cm-list-line-ol' : 'cm-list-line-ul'
@@ -233,7 +209,7 @@ function buildEditMarkDecorations(view: EditorView): DecorationSet {
                 // bullet to edit it.
                 const revealFrom = listMark.from
                 const revealTo = Math.min(listMark.to + 1, state.doc.length)
-                if (!isCursorInRange(state, [revealFrom, revealTo])) return
+                if (!selectionWithin(state, revealFrom, revealTo)) return
 
                 const line = state.doc.lineAt(node.from)
                 if (seenLines.has(line.from)) return
@@ -316,7 +292,7 @@ function buildActiveGuideDecorations(view: EditorView): DecorationSet {
             }
         }
         if (insideListItem) {
-            cursorLevel = getListNestingLevel(cursorLine.text)
+            cursorLevel = indentLevel(cursorLine.text)
         }
     }
 
@@ -358,7 +334,7 @@ function buildActiveGuideDecorations(view: EditorView): DecorationSet {
         let from = cursorLine.from
         while (from > 0) {
             const prev = state.doc.lineAt(from - 1)
-            const prevLevel = getListNestingLevel(prev.text)
+            const prevLevel = indentLevel(prev.text)
             if (prevLevel >= cursorLevel && isListLine(prev.from)) {
                 groupLines.push({ from: prev.from })
                 from = prev.from
@@ -373,7 +349,7 @@ function buildActiveGuideDecorations(view: EditorView): DecorationSet {
         let to = cursorLine.to
         while (to < state.doc.length) {
             const next = state.doc.lineAt(to + 1)
-            const nextLevel = getListNestingLevel(next.text)
+            const nextLevel = indentLevel(next.text)
             if (nextLevel >= cursorLevel && isListLine(next.from)) {
                 groupLines.push({ from: next.from })
                 to = next.to

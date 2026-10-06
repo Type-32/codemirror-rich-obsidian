@@ -14,8 +14,8 @@ function findKeywords(doc: Text, { query, caseSensitive }: SearchOptions): Range
     const decorations: Range<Decoration>[] = [];
     if (!query) return decorations;
 
-    const flags = caseSensitive ? 'g' : 'gi';
-    const regex = new RegExp(query, flags);
+    // Query is literal text, not a pattern.
+    const regex = new RegExp(query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), caseSensitive ? 'g' : 'gi');
 
     for (let i = 1; i <= doc.lines; i++) {
         const line = doc.line(i);

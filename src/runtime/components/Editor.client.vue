@@ -1,26 +1,16 @@
 <script setup lang="ts">
 import CodeMirror from 'vue-codemirror6'
-import {
-    keymap,
-    EditorView,
-    drawSelection,
-    rectangularSelection,
-    highlightActiveLine,
-    highlightActiveLineGutter,
-    ViewPlugin,
-    Decoration,
-    ViewUpdate,
-} from '@codemirror/view'
-import type { DecorationSet } from '@codemirror/view'
+import { keymap, EditorView, drawSelection, rectangularSelection } from '@codemirror/view'
 import { standardKeymap, history, historyKeymap, indentWithTab } from '@codemirror/commands'
-import { defaultHighlightStyle, syntaxHighlighting, indentOnInput, foldGutter, syntaxTree } from '@codemirror/language'
-import { Compartment, RangeSetBuilder } from '@codemirror/state'
-import { LanguageSupport, LRLanguage } from '@codemirror/language'
+import { defaultHighlightStyle, syntaxHighlighting, indentOnInput, foldGutter } from '@codemirror/language'
+import { Compartment, type Extension, type StateEffect } from '@codemirror/state'
+import type { LanguageSupport } from '@codemirror/language'
 import { languages } from '@codemirror/language-data'
 import wysiwyg from '../editor/wysiwyg'
 import { internalLinkMapFacet } from '../editor/plugins/linkMappingConfig'
 import { specialCodeBlockMapFacet } from '../editor/plugins/specialCodeBlockMappingConfig'
 import { customBracketClosingConfig } from '../editor/plugins/customBracketClosingConfig'
+import { hostAppFacet } from '../editor/plugins/hostAppConfig'
 import { editorKeywordSearchPlugin, searchOptionsFacet } from '../editor/plugins/codemirror-editor-plugins/editorKeywordSearchPlugin'
 import type {
     InternalLink,
@@ -29,7 +19,7 @@ import type {
     ExternalLinkClickDetail,
     SearchOptions
 } from '#codemirror-rich-obsidian-editor/editor-types'
-import {ref, shallowRef, computed, onMounted, onBeforeUnmount, unref, watch} from 'vue';
+import { ref, shallowRef, onMounted, onBeforeUnmount, watch, getCurrentInstance } from 'vue';
 
 const doc = defineModel<string>()
 const props = defineProps<{
@@ -39,41 +29,31 @@ const props = defineProps<{
     bracketClosing?: boolean
     foldGutter?: boolean
     disabled?: boolean
-    debug?: boolean
     searchOptions?: SearchOptions
 }>()
 const emit = defineEmits<{
     'internal-link-click': [detail: InternalLinkClickDetail]
     'external-link-click': [detail: ExternalLinkClickDetail]
 }>()
-const extensions = shallowRef<any[]>([])
+const extensions = shallowRef<Extension[]>([])
 const view = shallowRef<EditorView>()
-const ast = ref([])
 const internalLinkCompartment = new Compartment()
 const specialCodeBlockCompartment = new Compartment()
 const bracketClosingCompartment = new Compartment()
 const foldGutterCompartment = new Compartment()
-const showFrontmatterCompartment = new Compartment()
 const searchCompartment = new Compartment()
 const editorElement = ref<HTMLElement>()
-const keymaps = computed(() => {
-    return props.disabled ? keymap.of([]) : keymap.of([...standardKeymap, ...historyKeymap, indentWithTab])
-})
+const hostApp = getCurrentInstance()?.appContext.app ?? null
+// Prop changes that land before vue-codemirror6 emits @ready are queued here and flushed in handleReady.
+let pendingEffects: StateEffect<unknown>[] = []
 
-async function loadLanguage(info: string): Promise<LanguageSupport> {
-    const lang = languages.find(l => l.name.toLowerCase() === info.toLowerCase() || l.alias.map(a => a.toLowerCase()).includes(info.toLowerCase()))
-    if (lang) {
-        return await lang.load()
-    }
-    // throw new Error(`Language ${info} not found`);
+function loadLanguage(info: string): Promise<LanguageSupport> | null {
+    const lower = info.toLowerCase()
+    const lang = languages.find(l => l.name.toLowerCase() === lower || l.alias.some(a => a.toLowerCase() === lower))
+    return lang ? lang.load() : null
 }
 
 onMounted(() => {
-    const wysiwygPlugin = wysiwyg({
-        lezer: {
-            codeLanguages: loadLanguage,
-        },
-    })
     extensions.value = [
         EditorView.lineWrapping,
         history(),
@@ -81,29 +61,24 @@ onMounted(() => {
         rectangularSelection(),
         indentOnInput(),
         syntaxHighlighting(defaultHighlightStyle),
-        // highlightActiveLine(),
-        // highlightActiveLineGutter(),
-        unref(keymaps),
+        keymap.of(props.disabled ? [] : [...standardKeymap, ...historyKeymap, indentWithTab]),
         internalLinkCompartment.of(internalLinkMapFacet.of(props.internalLinkMap || [])),
         specialCodeBlockCompartment.of(specialCodeBlockMapFacet.of(props.specialCodeBlockMap || [])),
         bracketClosingCompartment.of(customBracketClosingConfig.of(props.bracketClosing ?? true)),
         foldGutterCompartment.of(props.foldGutter ?? true ? foldGutter() : []),
         editorKeywordSearchPlugin,
+        hostAppFacet.of(hostApp),
         searchCompartment.of(searchOptionsFacet.of(props.searchOptions || { query: '' })),
-        wysiwygPlugin,
-        EditorView.editable.of(unref(!props.disabled)),
+        wysiwyg({ lezer: { codeLanguages: loadLanguage } }),
+        EditorView.editable.of(!props.disabled),
     ]
-    if (editorElement.value) {
-        editorElement.value.addEventListener('internal-link-click', handleInternalLinkClick as EventListener)
-        editorElement.value.addEventListener('external-link-click', handleExternalLinkClick as EventListener)
-    }
+    editorElement.value?.addEventListener('internal-link-click', handleInternalLinkClick as EventListener)
+    editorElement.value?.addEventListener('external-link-click', handleExternalLinkClick as EventListener)
 })
 
 onBeforeUnmount(() => {
-    if (editorElement.value) {
-        editorElement.value.removeEventListener('internal-link-click', handleInternalLinkClick as EventListener)
-        editorElement.value.removeEventListener('external-link-click', handleExternalLinkClick as EventListener)
-    }
+    editorElement.value?.removeEventListener('internal-link-click', handleInternalLinkClick as EventListener)
+    editorElement.value?.removeEventListener('external-link-click', handleExternalLinkClick as EventListener)
 })
 
 function handleInternalLinkClick(event: CustomEvent<InternalLinkClickDetail>) {
@@ -114,95 +89,26 @@ function handleExternalLinkClick(event: CustomEvent<ExternalLinkClickDetail>) {
     emit('external-link-click', event.detail)
 }
 
-watch(
-    () => props.internalLinkMap,
-    (newMap) => {
-        if (view.value) {
-            view.value.dispatch({
-                effects: internalLinkCompartment.reconfigure(internalLinkMapFacet.of(newMap || [])),
-            })
-        }
-    },
-    { deep: true }
-)
+function reconfigure(effect: StateEffect<unknown>) {
+    if (view.value) view.value.dispatch({ effects: effect })
+    else pendingEffects.push(effect)
+}
 
-watch(
-    () => props.specialCodeBlockMap,
-    (newMap) => {
-        if (view.value) {
-            view.value.dispatch({
-                effects: specialCodeBlockCompartment.reconfigure(specialCodeBlockMapFacet.of(newMap || [])),
-            })
-        }
-    },
-    { deep: true }
-)
+watch(() => props.internalLinkMap, m => reconfigure(internalLinkCompartment.reconfigure(internalLinkMapFacet.of(m || []))), { deep: true })
+watch(() => props.specialCodeBlockMap, m => reconfigure(specialCodeBlockCompartment.reconfigure(specialCodeBlockMapFacet.of(m || []))), { deep: true })
+watch(() => props.bracketClosing, v => reconfigure(bracketClosingCompartment.reconfigure(customBracketClosingConfig.of(v ?? true))))
+watch(() => props.foldGutter, v => reconfigure(foldGutterCompartment.reconfigure(v ?? true ? foldGutter() : [])))
+watch(() => props.searchOptions, o => reconfigure(searchCompartment.reconfigure(searchOptionsFacet.of(o || { query: '' }))), { deep: true })
 
-watch(
-    () => props.bracketClosing,
-    (newValue) => {
-        if (view.value) {
-            view.value.dispatch({
-                effects: bracketClosingCompartment.reconfigure(customBracketClosingConfig.of(newValue ?? true)),
-            })
-        }
-    },
-)
-
-watch(
-    () => props.foldGutter,
-    (newValue) => {
-        if (view.value) {
-            view.value.dispatch({
-                effects: foldGutterCompartment.reconfigure(newValue ?? true ? foldGutter() : []),
-            })
-        }
-    },
-)
-
-watch(
-    () => props.searchOptions,
-    (newOptions) => {
-        if (view.value) {
-            view.value.dispatch({
-                effects: searchCompartment.reconfigure(searchOptionsFacet.of(newOptions || { query: '' }))
-            })
-        }
-    },
-    { deep: true }
-)
-
-function handleReady(payload: any) {
+function handleReady(payload: { view: EditorView }) {
     view.value = payload.view
-}
-
-function log(...args: any[]) {
-    // console.log(...args)
-}
-
-function iterate() {
-    ast.value = []
-    try {
-        //@ts-ignore
-        view.value?.state?.tree.iterate({
-            from: 0,
-            to: view.value.state.doc.length,
-            //@ts-ignore
-            enter(node) {
-                // @ts-ignore
-                ast.value.push(`Node: ${node.name}, From: ${node.from}, To: ${node.to}, Text: "${view.value?.state.doc.sliceString(node.from, node.to)}"`)
-                // To see highlight tags (more advanced, may need to inspect CM internals or a debug extension)
-                // For now, node.name is the most critical.
-            },
-        })
-    } catch (e) {
-        console.log(e)
+    if (pendingEffects.length) {
+        payload.view.dispatch({ effects: pendingEffects })
+        pendingEffects = []
     }
 }
 
-defineExpose({
-    view,
-})
+defineExpose({ view })
 </script>
 
 <template>
@@ -212,6 +118,7 @@ defineExpose({
                 <CodeMirror
                     v-model="doc"
                     placeholder="Start typing your markdown content here..."
+                    :basic="false"
                     :autofocus="true"
                     :indent-with-tab="true"
                     :tab-size="4"
@@ -219,53 +126,11 @@ defineExpose({
                     :indent-unit="'\t'"
                     :extensions="extensions"
                     @ready="handleReady"
-                    @change="log('change', $event)"
-                    @focus="log('focus', $event)"
-                    @blur="log('blur', $event)"
                     class="w-full h-full cm-rich-editor overflow-visible"
                     :disabled="props.disabled"
                     :readonly="props.disabled"
                 />
             </div>
-            <template v-if="props.debug">
-                <UButton label="Iterate AST" @click="iterate" />
-                <div class="grid grid-cols-1 gap-2 py-2 w-full">
-                    <div v-for="(content, index) in ast" :key="index">{{ content }}</div>
-                </div>
-            </template>
         </ClientOnly>
     </div>
 </template>
-
-<style>
-@reference "../assets/css/editor.css";
-
-.cm-cursor {
-    @apply border-l-primary! border-l-[1.8px]! rounded-lg!;
-}
-
-.cm-selectionBackground {
-    @apply bg-primary/30! z-[150];
-}
-
-.cm-selectionLayer {
-	@apply z-[150]!;
-	pointer-events: none;
-}
-
-div[contenteditable='true']:focus {
-    @apply outline-none border-none h-full shadow-none;
-}
-
-.cm-focused {
-    @apply outline-none!;
-}
-
-.cm-placeholder {
-    @apply font-editor text-muted;
-}
-
-.cm-activeLine {
-    @apply bg-none! border-l-primary border-l-4 relative -left-1 content-[""] mask-no-clip overflow-visible;
-}
-</style>

@@ -21,7 +21,8 @@ export function useEditorUtils(editor: Ref<any>) {
 	 * Helper: Creates a regex from search options
 	 */
 	function createSearchRegex(options: SearchOptions): RegExp {
-		return new RegExp(options.query, options.caseSensitive ? 'g' : 'gi')
+		// Query is literal text, not a pattern.
+		return new RegExp(options.query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), options.caseSensitive ? 'g' : 'gi')
 	}
 
 	/**

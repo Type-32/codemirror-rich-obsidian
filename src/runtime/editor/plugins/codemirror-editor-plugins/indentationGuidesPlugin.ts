@@ -1,162 +1,69 @@
-import { Decoration, type DecorationSet, EditorView, MatchDecorator, ViewPlugin, ViewUpdate } from '@codemirror/view'
-import { StateField, type Extension, Line, RangeSetBuilder } from '@codemirror/state'
+import { Decoration, type DecorationSet, EditorView, MatchDecorator, ViewPlugin, type ViewUpdate } from '@codemirror/view'
+import { StateField, type Extension } from '@codemirror/state'
+import { indentLevel } from '../../utility/tools'
 
-export interface IndentationGuidesSettings {
-    showActiveIndentationGroup: boolean
-    lists: boolean
-    previewLists: boolean
-    uncategorizedIndents: boolean
-    code: boolean
-}
+const tabMark = Decoration.mark({ class: 'cm-indent' })
+const activeTabMark = Decoration.mark({ class: 'cm-indent cm-active-indent' })
+const groupLine = Decoration.line({ attributes: { class: 'cm-indent-group' } })
 
-export const DEFAULT_SETTINGS: IndentationGuidesSettings = {
-    showActiveIndentationGroup: true,
-    lists: true,
-    previewLists: false,
-    uncategorizedIndents: false,
-    code: false,
-}
-
-function getLineIndent(line: Line) {
-    const match = line.text.match(/^((?:\t| {4})+)/)
-
-    if (!match) return 0
-
-    return Math.max(match[1]?.split(/(?:\t| {4})/).length || 0, 1)
-}
-
-const tabMark = Decoration.mark({
-    class: 'cm-indent',
-})
-
-const indentGroupMark = Decoration.mark({
-    class: 'cm-indent cm-active-indent',
-})
-
-const indentationGroupDecoration = Decoration.line({
-    attributes: { class: 'cm-indent-group' },
-})
-
+/** Indent level (tabs / 4-space groups) of the line holding the main cursor. */
 const activeIndentField = StateField.define<number>({
-    create(state) {
-        if (!state.selection?.main) return 0
-        return getLineIndent(state.doc.lineAt(state.selection.main.from))
-    },
-    update(_, tr) {
-        if (!tr.selection) return _.valueOf()
-        const state = tr.state
-        return getLineIndent(state.doc.lineAt(state.selection.main.from))
-    },
+    create: state => indentLevel(state.doc.lineAt(state.selection.main.from).text),
+    update: (value, tr) => tr.selection || tr.docChanged ? indentLevel(tr.state.doc.lineAt(tr.state.selection.main.from).text) : value,
 })
 
-const tabDecoration = (getSettings: () => IndentationGuidesSettings) => {
-    return ViewPlugin.fromClass(
-        class {
-            decorator: MatchDecorator
-            decorations: DecorationSet = Decoration.none
-
-            constructor(public view: EditorView) {
-                this.decorator = new MatchDecorator({
-                    regexp: new RegExp(/(?:\t| {4})/g),
-                    decoration: (match, view) => {
-                        if (!getSettings().showActiveIndentationGroup) {
-                            return tabMark
-                        }
-
-                        const currentIndent = Math.max(view.state.field(activeIndentField), 1)
-                        const thisIndent = match.index / match[0].length + 1
-                        // console.log(thisIndent, currentIndent)
-
-                        return thisIndent === currentIndent ? indentGroupMark : tabMark
-                    },
-                })
-
-                this.decorations = this.decorator.createDeco(view)
-            }
-
-            update(update: ViewUpdate) {
-                if (!getSettings().showActiveIndentationGroup) {
-                    this.decorations = this.decorator.updateDeco(update, this.decorations)
-                } else {
-                    this.decorations = this.decorator.createDeco(update.view)
-                }
+/** Wraps each leading tab / 4-space group in `.cm-indent`; the one at the cursor's depth gets `.cm-active-indent`. */
+const tabGuides = ViewPlugin.fromClass(class {
+    decorations: DecorationSet
+    private decorator = new MatchDecorator({
+        regexp: /^(?:\t| {4})+/g,
+        decorate: (add, from, _to, match, view) => {
+            const active = view.state.field(activeIndentField)
+            const text = match[0]
+            for (let i = 0, level = 1; i < text.length; level++) {
+                const w = text[i] === '\t' ? 1 : 4
+                add(from + i, from + i + w, level === active ? activeTabMark : tabMark)
+                i += w
             }
         },
-        {
-            decorations: (v) => v.decorations,
-        }
-    )
-}
+    })
 
-function tagIndentationGroup(view: EditorView) {
-    const builder = new RangeSetBuilder<Decoration>()
-    const state = view.state
-
-    if (!state.selection?.main) return builder.finish()
-
-    const currentLine = state.doc.lineAt(state.selection.main.from)
-    const currentIndent = view.state.field(activeIndentField)
-
-    if (currentIndent === 0) return builder.finish()
-
-    const indentationGroup: Line[] = [currentLine]
-
-    let from: number = currentLine.from
-    let to: number = currentLine.to
-
-    while (from > 0) {
-        const prevLine = state.doc.lineAt(from - 1)
-        const prevIndent = getLineIndent(prevLine)
-
-        if (prevIndent >= currentIndent) {
-            indentationGroup.push(prevLine)
-            from = prevLine.from
-        } else {
-            break
-        }
+    constructor(view: EditorView) {
+        this.decorations = this.decorator.createDeco(view)
     }
 
-    while (to < state.doc.length - 1) {
-        const nextLine = state.doc.lineAt(to + 1)
-        const nextIndent = getLineIndent(nextLine)
+    update(u: ViewUpdate) {
+        this.decorations = u.startState.field(activeIndentField) !== u.state.field(activeIndentField)
+            ? this.decorator.createDeco(u.view)
+            : this.decorator.updateDeco(u, this.decorations)
+    }
+}, { decorations: v => v.decorations })
 
-        if (nextIndent >= currentIndent) {
-            indentationGroup.push(nextLine)
-            to = nextLine.to
-        } else {
-            break
-        }
+/** Marks the contiguous block of lines around the cursor whose indent is ≥ the cursor's. */
+const indentGroup = ViewPlugin.fromClass(class {
+    decorations: DecorationSet
+
+    constructor(view: EditorView) {
+        this.decorations = this.build(view)
     }
 
-    indentationGroup
-        .sort((a, b) => a.from - b.from)
-        .forEach((line) => {
-            builder.add(line.from, line.from, indentationGroupDecoration)
-        })
-
-    return builder.finish()
-}
-
-const indentationGroup = ViewPlugin.fromClass(
-    class {
-        decorations: DecorationSet
-
-        constructor(view: EditorView) {
-            this.decorations = tagIndentationGroup(view)
-        }
-
-        update(update: ViewUpdate) {
-            this.decorations = tagIndentationGroup(update.view)
-        }
-    },
-    {
-        decorations: (v) => v.decorations,
+    update(u: ViewUpdate) {
+        if (u.docChanged || u.selectionSet || u.viewportChanged) this.decorations = this.build(u.view)
     }
-)
 
-export const indentationGuides = (options: Partial<IndentationGuidesSettings> = {}): Extension => {
-    const settings: IndentationGuidesSettings = { ...DEFAULT_SETTINGS, ...options }
-    const getSettings = () => settings
+    build(view: EditorView) {
+        const { state } = view
+        const level = state.field(activeIndentField)
+        if (level === 0) return Decoration.none
+        const doc = state.doc
+        const cur = doc.lineAt(state.selection.main.from)
+        let first = cur.number, last = cur.number
+        while (first > 1 && indentLevel(doc.line(first - 1).text) >= level) first--
+        while (last < doc.lines && indentLevel(doc.line(last + 1).text) >= level) last++
+        const out = []
+        for (let n = first; n <= last; n++) out.push(groupLine.range(doc.line(n).from))
+        return Decoration.set(out)
+    }
+}, { decorations: v => v.decorations })
 
-    return [activeIndentField, indentationGroup, tabDecoration(getSettings)]
-}
+export const indentationGuides = (): Extension => [activeIndentField, indentGroup, tabGuides]

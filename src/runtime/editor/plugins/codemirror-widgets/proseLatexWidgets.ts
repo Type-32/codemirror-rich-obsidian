@@ -1,57 +1,56 @@
-import {type EditorView, WidgetType} from "@codemirror/view";
-import {syntaxTree} from "@codemirror/language";
-import katex from "katex";
+import { type EditorView, WidgetType } from '@codemirror/view'
+import type katexNs from 'katex'
 
-export class InlineLatexWidget extends WidgetType {
-    constructor (private readonly content: string) {
+type Katex = typeof katexNs
+let katex: Katex | null = null
+let loading: Promise<Katex> | null = null
+// Rendered HTML keyed by `${display}:${source}`. Formulas repeat across a doc and across edits.
+const cache: Record<string, string> = {}
+
+/**
+ * katex is an optional peer: loaded on the first formula widget, not at module import, so hosts
+ * without it still boot. Widgets render a placeholder until it arrives, then fill in.
+ */
+function render(source: string, display: boolean, el: HTMLElement) {
+    const key = `${display ? 'b' : 'i'}:${source}`
+    const paint = () => {
+        el.innerHTML = cache[key] ??= katex!.renderToString(source, { throwOnError: false, displayMode: display })
+    }
+    if (katex) return paint()
+    el.textContent = source
+    loading ??= import('katex').then(m => (katex = m.default ?? m))
+    loading.then(paint, () => { el.textContent = `[katex missing] ${source}` })
+}
+
+class LatexWidget extends WidgetType {
+    constructor(readonly source: string, readonly nodeName: 'TexInline' | 'TexBlock') {
         super()
     }
 
-    toDOM (view: EditorView): HTMLElement {
-        const container = document.createElement('span')
-        katex.render(this.content, container, {
-            throwOnError: false
-        })
+    override eq(other: LatexWidget) {
+        return other.source === this.source && other.nodeName === this.nodeName
+    }
 
-        container.addEventListener('click', () => {
-            const pos = view.posAtDOM(container)
-            const tree = syntaxTree(view.state)
-            const node = tree.resolve(pos)
-            if (node.name === 'TexInline') {
-                view.dispatch({
-                    selection: { anchor: node.from, head: node.to }
-                })
-            }
+    toDOM(view: EditorView) {
+        const display = this.nodeName === 'TexBlock'
+        const el = document.createElement(display ? 'div' : 'span')
+        render(this.source, display, el)
+        el.addEventListener('click', () => {
+            const pos = view.posAtDOM(el)
+            view.dispatch({ selection: { anchor: pos } })
         })
+        return el
+    }
 
-        return container
+    override ignoreEvent() {
+        return false
     }
 }
 
+export class InlineLatexWidget extends LatexWidget {
+    constructor(source: string) { super(source, 'TexInline') }
+}
 
-export class BlockLatexWidget extends WidgetType {
-    constructor (private readonly content: string) {
-        super()
-    }
-
-    toDOM (view: EditorView): HTMLElement {
-        const container = document.createElement('div')
-        katex.render(this.content, container, {
-            throwOnError: false,
-            displayMode: true
-        })
-
-        container.addEventListener('click', () => {
-            const pos = view.posAtDOM(container)
-            const tree = syntaxTree(view.state)
-            const node = tree.resolve(pos)
-            if (node.name === 'TexBlock') {
-                view.dispatch({
-                    selection: { anchor: node.from, head: node.to }
-                })
-            }
-        })
-
-        return container
-    }
+export class BlockLatexWidget extends LatexWidget {
+    constructor(source: string) { super(source, 'TexBlock') }
 }

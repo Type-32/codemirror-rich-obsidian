@@ -1,106 +1,34 @@
-import { Decoration, EditorView } from '@codemirror/view';
-import { StateField, RangeSet } from '@codemirror/state';
-import { syntaxTree } from '@codemirror/language';
-import type { EditorState, Range as EditorRange } from '@codemirror/state';
-import type { DecorationSet } from '@codemirror/view';
-import { cursorInNode, cursorSelectionCoveredNode } from '../../utility/tools'
+import { Decoration } from '@codemirror/view'
+import { selectionTouches } from '../../utility/tools'
+import { createProsePlugin } from './createProsePlugin'
 
-function isCursorOnLine(state: EditorState, lineStart: number, lineEnd: number): boolean {
-    const cursor = state.selection.main;
-    return cursor.from >= lineStart && cursor.from <= lineEnd;
-}
+const quoteMark = Decoration.mark({ class: 'cm-formatting cm-formatting-quote cm-meta' })
+const quoteMarkActive = Decoration.mark({ class: 'cm-formatting cm-formatting-quote cm-meta cm-formatting-quote-active' })
+const quoteText = Decoration.mark({ class: 'cm-quote' })
+const lineDeco: Record<string, Decoration> = {}
+for (const pos of ['single', 'start', 'middle', 'end'])
+    lineDeco[pos] = Decoration.line({ attributes: { class: `cm-quoteblock cm-quoteblock-${pos}` } })
 
-function buildQuoteblockDecorations(state: EditorState): EditorRange<Decoration>[] {
-    const decorations: EditorRange<Decoration>[] = [];
-
-    syntaxTree(state).iterate({
-        enter(node) {
-            if (node.name === 'Blockquote') {
-                // Get all lines in this blockquote
-                const firstLine = state.doc.lineAt(node.from);
-                const lastLine = state.doc.lineAt(node.to);
-                const lineCount = lastLine.number - firstLine.number + 1;
-
-                const [cursor] = state.selection.ranges
-                const cursorFrom = cursor?.from || 0,
-                    cursorTo = cursor?.to || 0,
-                    nodeFrom = node.from || 0,
-                    nodeTo = node.to || 0
-
-                // Process each line in the blockquote
-                for (let i = firstLine.number; i <= lastLine.number; i++) {
-                    const line = state.doc.line(i);
-                    let lineClass = 'cm-quoteblock';
-
-                    // Determine line position styling
-                    if (lineCount === 1) {
-                        lineClass += ' cm-quoteblock-single';
-                    } else if (i === firstLine.number) {
-                        lineClass += ' cm-quoteblock-start';
-                    } else if (i === lastLine.number) {
-                        lineClass += ' cm-quoteblock-end';
-                    } else {
-                        lineClass += ' cm-quoteblock-middle';
-                    }
-
-                    // Add line-level decoration
-                    decorations.push(
-                        Decoration.line({
-                            attributes: { class: lineClass }
-                        }).range(line.from)
-                    );
-
-                    // Check if cursor is on this line
-                    const isCursorActive = isCursorOnLine(state, line.from, line.to) || cursorSelectionCoveredNode(cursorFrom, cursorTo, nodeFrom, nodeTo);
-
-                    // Style the quote marks and content on this line
-                    const lineText = line.text;
-                    const markMatch = lineText.match(/^(\s*>+)/);
-
-                    if (markMatch) {
-                        const markEnd = line.from + markMatch[0].length;
-                        let markClass = 'cm-formatting cm-formatting-quote cm-meta';
-
-                        // Add active class if cursor is on this line
-                        if (isCursorActive) {
-                            markClass += ' cm-formatting-quote-active';
-                        }
-
-                        // Style the quote mark(s)
-                        decorations.push(
-                            Decoration.mark({
-                                class: markClass
-                            }).range(line.from, markEnd)
-                        );
-
-                        // Style content after marks (if any)
-                        if (markEnd < line.to) {
-                            decorations.push(
-                                Decoration.mark({
-                                    class: 'cm-quote'
-                                }).range(markEnd, line.to)
-                            );
-                        }
-                    }
-                }
-
-                return false; // Don't process children
-            }
+/**
+ * Line classes for blockquotes (start/middle/end for the bar styling) and a mark on each `>`
+ * so it can be dimmed or shown active. Callout blockquotes are replaced by proseCalloutPlugin;
+ * when they're not (cursor inside / nested) this styling is what the user sees.
+ */
+export const proseQuoteblockPlugin = createProsePlugin({
+    nodes: ['Blockquote'],
+    decorate(node, state, _active, out) {
+        if (node.node.parent?.name === 'Blockquote') return false // outer pass styles all lines once
+        const first = state.doc.lineAt(node.from).number, last = state.doc.lineAt(node.to).number
+        for (let n = first; n <= last; n++) {
+            const line = state.doc.line(n)
+            const pos = first === last ? 'single' : n === first ? 'start' : n === last ? 'end' : 'middle'
+            out.push(lineDeco[pos]!.range(line.from))
+            const m = /^\s*(>\s*)+/.exec(line.text)
+            if (!m) continue
+            const markEnd = line.from + m[0].length
+            out.push((selectionTouches(state, line.from, line.to) ? quoteMarkActive : quoteMark).range(line.from, markEnd))
+            if (markEnd < line.to) out.push(quoteText.range(markEnd, line.to))
         }
-    });
-
-    return decorations;
-}
-
-export const proseQuoteblockCodemirrorViewPlugin = StateField.define<DecorationSet>({
-    create(state) {
-        return RangeSet.of(buildQuoteblockDecorations(state), true);
+        return false
     },
-    update(value, tr) {
-        if (tr.docChanged || tr.selection) {
-            return RangeSet.of(buildQuoteblockDecorations(tr.state), true);
-        }
-        return value.map(tr.changes);
-    },
-    provide: f => EditorView.decorations.from(f)
-});
+})

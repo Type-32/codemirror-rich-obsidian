@@ -1,14 +1,8 @@
-import { Decoration, EditorView, ViewPlugin, ViewUpdate, WidgetType } from '@codemirror/view'
-import { StateField } from '@codemirror/state'
+import { Decoration, EditorView, ViewPlugin, ViewUpdate, WidgetType, type DecorationSet } from '@codemirror/view'
+import type { Range } from '@codemirror/state'
 import { syntaxTree } from '@codemirror/language'
-import { isCursorInRange } from '../../utility/tools'
+import { selectionWithin } from '../../utility/tools'
 import { TreeCursor } from '@lezer/common'
-
-// Since we are not in the obsidian context, we will mock the editorLivePreviewField
-export const editorLivePreviewField = StateField.define<boolean>({
-    create: () => true,
-    update: (value) => value,
-})
 
 class CheckboxWidget extends WidgetType {
     constructor(
@@ -66,10 +60,9 @@ export const proseTaskListPlugin = ViewPlugin.fromClass(
             }
         }
 
-        buildDecorations(view: EditorView) {
-            const decorations = new Set<any>()
+        buildDecorations(view: EditorView): DecorationSet {
+            const decorations: Range<Decoration>[] = []
             const { state } = view
-            const isLivePreview = state.field(editorLivePreviewField)
 
             for (const { from, to } of view.visibleRanges) {
                 syntaxTree(state).iterate({
@@ -98,7 +91,7 @@ export const proseTaskListPlugin = ViewPlugin.fromClass(
 
                         if (isChecked) {
                             const line = state.doc.lineAt(listItem.from)
-                            decorations.add(
+                            decorations.push(
                                 Decoration.line({
                                     attributes: { class: 'cm-task-checked' },
                                 }).range(line.from),
@@ -106,13 +99,12 @@ export const proseTaskListPlugin = ViewPlugin.fromClass(
                         }
 
                         if (
-                            isLivePreview &&
-                            (isCursorInRange(state, [listMark.from, listMark.to]) ||
-                                isCursorInRange(state, [taskMarker.from, taskMarker.to]))
+                            selectionWithin(state, listMark.from, listMark.to) ||
+                            selectionWithin(state, taskMarker.from, taskMarker.to)
                         )
                             return
 
-                        decorations.add(
+                        decorations.push(
                             Decoration.replace({
                                 widget: new CheckboxWidget(
                                     state.doc.sliceString(taskMarker.from + 1, taskMarker.to - 1),
@@ -125,7 +117,7 @@ export const proseTaskListPlugin = ViewPlugin.fromClass(
                 })
             }
 			
-            return Decoration.set([...decorations])
+            return Decoration.set(decorations, true)
         }
     },
     {

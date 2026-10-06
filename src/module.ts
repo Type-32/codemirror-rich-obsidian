@@ -40,8 +40,6 @@ export default defineNuxtModule<ModuleOptions>({
 			'@codemirror/autocomplete',
 			'@codemirror/commands',
 			'@codemirror/lang-markdown',
-			'@codemirror/lang-json',
-			'@codemirror/lang-yaml',
 			'@codemirror/language-data',
 			'@codemirror/search',
 			'@codemirror/lint',
