@@ -1,6 +1,6 @@
 {
   "name": "@type32/codemirror-rich-obsidian-editor",
-  "version": "0.1.32",
+  "version": "0.1.33",
   "description": "OFM Editor Component for Nuxt.",
   "repository": "https://github.com/Type-32/codemirror-rich-obsidian",
   "license": "MIT",
@@ -28,7 +28,7 @@
     "dev": "pnpm run dev:prepare && pnpx nuxi dev playground",
     "dev:build": "pnpx nuxi build playground",
     "dev:prepare": "pnpx nuxt-module-build build --stub && pnpx nuxt-module-build prepare && pnpx nuxi prepare playground",
-    "release": "bun run prepack && pnpx changelogen --release && bun publish && git push --follow-tags",
+    "release": "pnpm run prepack && pnpx changelogen --release && pnpm publish && git push --follow-tags",
     "lint": "pnpx eslint .",
     "test": "pnpx vitest run",
     "test:watch": "pnpx vitest watch",

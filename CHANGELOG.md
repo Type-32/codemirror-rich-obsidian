@@ -1,6 +1,18 @@
 # Changelog
 
 
+## v0.1.33
+
+[compare changes](https://github.com/Type-32/codemirror-rich-obsidian/compare/v0.1.32...v0.1.33)
+
+### 🏡 Chore
+
+- Remove playground lockfile ([3a07283](https://github.com/Type-32/codemirror-rich-obsidian/commit/3a07283))
+
+### ❤️ Contributors
+
+- Type-32 ([@Type-32](https://github.com/Type-32))
+
 ## v0.1.32
 
 [compare changes](https://github.com/Type-32/codemirror-rich-obsidian/compare/v0.1.31...v0.1.32)
