@@ -372,7 +372,10 @@ div[contenteditable='true']:focus {
     }
 
     .cm-table-widget {
-        @apply my-2 overflow-x-auto;
+        /* overflow-x:auto also clips on y, which cut off the focus ring and the outer
+           cell borders. Pad inside the scroll box (and pull back with a negative margin so
+           the footprint is unchanged) so edge decorations have room to paint. */
+        @apply my-2 overflow-x-auto p-1 -mx-1;
 
         table {
             @apply w-full border-collapse text-sm;
