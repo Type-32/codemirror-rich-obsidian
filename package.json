@@ -24,18 +24,18 @@
     "dist"
   ],
   "scripts": {
-    "prepack": "pnpx nuxt-module-build build",
-    "dev": "pnpm run dev:prepare && pnpx nuxi dev playground",
-    "dev:build": "pnpx nuxi build playground",
-    "dev:prepare": "pnpx nuxt-module-build build --stub && pnpx nuxt-module-build prepare && pnpx nuxi prepare playground",
-    "release": "pnpm run prepack && pnpx changelogen --release && pnpm publish && git push --follow-tags",
-    "lint": "pnpx eslint .",
-    "test": "pnpx vitest run",
-    "test:watch": "pnpx vitest watch",
-    "test:types": "pnpx vue-tsc --noEmit && cd playground && pnpx vue-tsc --noEmit"
+    "prepack": "bunx nuxt-module-build build",
+    "dev": "bun run dev:prepare && bunx nuxi dev playground",
+    "dev:build": "bunx nuxi build playground",
+    "dev:prepare": "bunx nuxt-module-build build --stub && bunx nuxt-module-build prepare && bunx nuxi prepare playground",
+    "release": "bun run prepack && bunx changelogen --release && bun publish && git push --follow-tags",
+    "lint": "bunx eslint .",
+    "test": "bunx vitest run",
+    "test:watch": "bunx vitest watch",
+    "test:types": "bunx vue-tsc --noEmit && cd playground && bunx vue-tsc --noEmit"
   },
   "dependencies": {
-    "@nuxt/kit": "^4.5.2",
+    "@nuxt/kit": "^4.6.0",
     "alfaaz": "^1.1.0",
     "js-yaml": "^5.4.2",
     "lezer-markdown-obsidian": "^0.0.3",
@@ -88,7 +88,7 @@
     "@nuxt/icon": "2.5.1",
     "@nuxt/image": "2.1.0",
     "@nuxt/module-builder": "^1.0.3",
-    "@nuxt/schema": "^4.5.2",
+    "@nuxt/schema": "^4.6.0",
     "@nuxt/test-utils": "^4.3.3",
     "@types/js-yaml": "^4.0.9",
     "@types/node": "^26.6.4",
@@ -113,5 +113,6 @@
     "vue-demi",
     "js-yaml",
     "alfaaz"
-  ]
+  ],
+  "packageManager": "bun@1.4.2"
 }
