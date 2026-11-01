@@ -1,6 +1,18 @@
 # Changelog
 
 
+## v0.2.3
+
+[compare changes](https://github.com/Type-32/codemirror-rich-obsidian/compare/v0.2.2...v0.2.3)
+
+### 🏡 Chore
+
+- **playground:** Add Bun lockfile ([904212f](https://github.com/Type-32/codemirror-rich-obsidian/commit/904212f))
+
+### ❤️ Contributors
+
+- Type-32 ([@Type-32](https://github.com/Type-32))
+
 ## v0.2.2
 
 [compare changes](https://github.com/Type-32/codemirror-rich-obsidian/compare/v0.2.1...v0.2.2)
