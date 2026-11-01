@@ -1,4 +1,4 @@
-import { defineNuxtModule, addPlugin, createResolver, addComponentsDir, addImportsDir } from '@nuxt/kit'
+import { defineNuxtModule, addPlugin, createResolver, addComponentsDir, addImportsDir, extendViteConfig } from '@nuxt/kit'
 
 // Module options TypeScript interface definition
 export interface ModuleOptions {
@@ -50,7 +50,7 @@ export default defineNuxtModule<ModuleOptions>({
 			'vue-codemirror6',
 		]
 
-		_nuxt.hook('vite:extendConfig', (config) => {
+		extendViteConfig((config) => {
 			config.resolve ??= {}
 			config.resolve.dedupe ??= []
 			config.resolve.dedupe.push(...codemirrorPackages)

@@ -18,7 +18,7 @@ import type {
     InternalLinkClickDetail,
     ExternalLinkClickDetail,
     SearchOptions
-} from '#codemirror-rich-obsidian-editor/editor-types'
+} from '../editor/types/editor-types'
 import { ref, shallowRef, onMounted, onBeforeUnmount, watch, getCurrentInstance } from 'vue';
 
 const doc = defineModel<string>()
