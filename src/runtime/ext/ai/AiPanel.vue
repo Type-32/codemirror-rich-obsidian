@@ -4,7 +4,8 @@ import { useCompletion } from '@ai-sdk/vue'
 import { diffWords } from 'diff'
 import { ActionList, filterActions, floatingContent, keepEditorFocus, virtualAnchor, type EditorAction, type EditorContext } from '../../kit'
 import { buildPrompt, cleanOutput, cursorPresets, selectionPresets, type AiPreset } from './prompt'
-import { acceptProposal, aiField, aiOptions, discardProposal, refreshProposal, rejectAll, type Proposal } from './state'
+import { AI_ROUTE, acceptProposal, aiField, aiOptions, discardProposal, refreshProposal, rejectAll, type Proposal } from './state'
+import { useDirectCompletion } from './direct'
 
 const props = defineProps<{ editor: EditorContext }>()
 const { view } = props.editor
@@ -14,10 +15,21 @@ const queue = computed(() => props.editor.state.value.field(aiField, false) ?? [
 const active = computed(() => queue.value[0] ?? null)
 const options = computed(() => props.editor.state.value.facet(aiOptions))
 
-// `useCompletion` fixes `api` at creation; resolving it per request lets the `api` option change live.
-const { completion, complete, stop, isLoading, error } = useCompletion({
-    fetch: (_url, init) => fetch(options.value.api ?? '/api/ai', init),
+// Two transports with one shape: `api` through `useCompletion` (it fixes `api` at creation, so the
+// URL is resolved per request to let the option change live), or `endpoint` straight from the browser.
+const remote = useCompletion({
+    fetch: (_url, init) => fetch(options.value.api ?? AI_ROUTE, init),
 })
+const direct = useDirectCompletion()
+/** Transport of the latest request. */
+const viaDirect = ref(false)
+const completion = computed(() => (viaDirect.value ? direct.completion.value : remote.completion.value))
+const isLoading = computed(() => !!(viaDirect.value ? direct.isLoading.value : remote.isLoading.value))
+const error = computed(() => (viaDirect.value ? direct.error.value : remote.error.value))
+function stop() {
+    remote.stop()
+    direct.stop()
+}
 
 const instruction = ref('')
 /** The result as it will be inserted; editable before accepting. */
@@ -66,7 +78,8 @@ watch(() => active.value?.id, (id, old) => {
     editing.value = false
     selected.value = -1
     lastRun.value = ''
-    error.value = undefined
+    remote.error.value = undefined
+    direct.error.value = undefined
     const p = active.value
     if (id === undefined || !p) return
     reference.value = anchor()
@@ -92,11 +105,12 @@ async function run(text: string) {
     editing.value = false
     draft.value = ''
     focusInput()
-    const { headers, body } = options.value
-    const result = await complete(buildPrompt(view.state, p, text), {
-        headers,
-        body: { ...body, preset: ranPreset.value?.id, mode: p.mode },
-    })
+    const { endpoint, headers, body } = options.value
+    const prompt = buildPrompt(view.state, p, text)
+    viaDirect.value = !!endpoint
+    const result = endpoint
+        ? await direct.complete(endpoint, prompt)
+        : await remote.complete(prompt, { headers, body: { ...body, preset: ranPreset.value?.id, mode: p.mode } })
     const now = view.state.field(aiField, false)?.find(q => q.id === p.id)
     if (!now || result == null) return
     draft.value = cleanOutput(result, now.mode, view.state.sliceDoc(now.from - 1, now.from))

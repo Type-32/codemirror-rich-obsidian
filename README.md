@@ -126,7 +126,7 @@ const extensions = computed(() => [
 
 Entry points:
 - `@type32/codemirror-rich-obsidian-editor/ext`: default extensions.
-- `@type32/codemirror-rich-obsidian-editor/ext/ai` (+ `/ext/ai/tools` for servers): the opt-in AI assistant; needs the optional peers `ai` and `@ai-sdk/vue`.
+- `@type32/codemirror-rich-obsidian-editor/ext/ai` (+ `/ext/ai/tools` for servers): the opt-in AI assistant; needs the optional peers `ai`, `@ai-sdk/vue` and `@ai-sdk/openai-compatible`.
 - `@type32/codemirror-rich-obsidian-editor/kit`: the authoring API those defaults are built on. A default extension imports nothing a user extension can't.
 
 ### Selection toolbar
@@ -182,26 +182,42 @@ Known limits: dragging doesn't auto-scroll near the edges (the mouse wheel still
 - **If the target text changes while a preview is open**, Accept is disabled until you Retry.
 - **Brainstorm results are notes, not edits:** Insert below or Copy, never Accept.
 
-It needs the optional peers `ai` and `@ai-sdk/vue` (`bun add ai @ai-sdk/vue`). Without them, `/ext/ai` resolves to a stand-in with the same exports: `aiAssistant()` logs a warning and adds nothing, so the editor keeps working.
+It needs the optional peers `ai`, `@ai-sdk/vue` and `@ai-sdk/openai-compatible` (`bun add ai @ai-sdk/vue @ai-sdk/openai-compatible`). Without them, `/ext/ai` resolves to a stand-in with the same exports: `aiAssistant()` logs a warning and adds nothing, so the editor keeps working.
 
-The editor streams through ai-sdk's `useCompletion`. Your server route receives `{ prompt, preset, mode, ...body }` and answers with a UI message stream. The prompt is complete: instruction, outline, surrounding text, and output rules.
+#### Choosing the endpoint
+
+Point it at any OpenAI-compatible API: Ollama, LM Studio, vLLM, OpenRouter, OpenAI, and so on. Two ways:
+
+**Server (default; the key stays on the server).** Configure it in `nuxt.config`:
 
 ```ts
-// server/api/ai.post.ts
-import { streamText } from 'ai'
-
-export default defineEventHandler(async (event) => {
-	const { prompt } = await readBody(event)
-	return streamText({ model: 'openai/gpt-4o-mini', prompt }).toUIMessageStreamResponse()
+export default defineNuxtConfig({
+	modules: ['@type32/codemirror-rich-obsidian-editor'],
+	cmOfmEditor: {
+		ai: { baseURL: 'http://localhost:11434/v1', model: 'llama3.2' }, // + apiKey?, headers?
+	},
 })
 ```
 
+- Each field can be overridden per environment: `NUXT_CM_OFM_EDITOR_AI_BASE_URL`, `NUXT_CM_OFM_EDITOR_AI_MODEL`, `NUXT_CM_OFM_EDITOR_AI_API_KEY`.
+- The module serves `POST /api/_cm-editor/ai` (`AI_ROUTE`), which `aiAssistant()` uses by default. It streams from your endpoint through ai-sdk's `useCompletion` / `streamText`.
+- **The route is public, like any API route.** Guard it with your auth middleware, or set `ai.route: false` and serve your own route (then pass `aiAssistant({ api })`). It accepts `{ prompt, preset, mode, ...body }` and answers with `toUIMessageStreamResponse()`.
+
+**Browser (bring your own key, SPA, local models).** The browser calls the endpoint directly, and `endpoint` overrides `api`:
+
 ```ts
-aiAssistant() // api: '/api/ai', toolbar + slash items, Mod-j
+aiAssistant({ endpoint: { baseURL: 'http://localhost:11434/v1', model: 'llama3.2' } }) // + apiKey?, headers?
+```
+
+- Anyone using the page can read `apiKey`, so use this for local models or keys your users enter themselves.
+- The endpoint must allow the page's origin (CORS). Ollama allows `localhost` origins by default; set `OLLAMA_ORIGINS` for others.
+
+#### Options
+
+```ts
+aiAssistant() // module route, toolbar + slash items, Mod-j
 aiAssistant({
-	api: '/api/rewrite',
-	headers: { authorization: token },
-	body: { documentId }, // merged into every request
+	api: '/api/rewrite', headers: { authorization: token }, body: { documentId }, // server mode: your route
 	presets: { selection: [...selectionPresets, myPreset], cursor: cursorPresets },
 	toolbar: false, slash: true, shortcut: 'Mod-Shift-a', // shortcut: false = none
 })
@@ -215,19 +231,21 @@ An `AiPreset` is `{ id, label, icon?, keywords?, instruction, mode? }`. The `mod
 
 `openAi(view, preset?)` opens the panel from your own buttons.
 
+#### Chat
+
 **Chat lives in your app; the editor supplies the tools.** `editorTools` (from `/ext/ai/tools`, server-safe, imports only `ai`) are `readDocument`, `readSelection`, `proposeEdit({ find, replace })`, and `proposeInsert({ text, after? })`. They have no `execute`: tool calls reach the browser, where `runEditorTool` shows proposals in the same preview.
 - A call resolves `{ status: 'accepted' | 'rejected', text? }` once the user decides, so the model learns the outcome.
 - `find` and `after` must match the document exactly once; otherwise the model gets an `{ error }` telling it to quote more text.
 - Several proposals queue up ("1 of 3").
 
 ```ts
-// server/api/chat.post.ts
+// server/api/chat.post.ts: `useEditorAiModel()` (auto-imported) is the model at `cmOfmEditor.ai`.
 import { convertToModelMessages, streamText } from 'ai'
 import { editorTools } from '@type32/codemirror-rich-obsidian-editor/ext/ai/tools'
 
 export default defineEventHandler(async (event) => {
 	const { messages } = await readBody(event)
-	return streamText({ model, messages: await convertToModelMessages(messages), tools: editorTools }).toUIMessageStreamResponse()
+	return streamText({ model: useEditorAiModel(), messages: await convertToModelMessages(messages), tools: editorTools }).toUIMessageStreamResponse()
 })
 ```
 
@@ -249,11 +267,7 @@ const chat = new Chat({
 })
 ```
 
-The playground (`playground/server/utils/model.ts`) uses the first provider it finds:
-1. Local Ollama (`OLLAMA_BASE_URL`, `OLLAMA_MODEL`).
-2. OpenRouter (`OPENROUTER_API_KEY`).
-3. Vercel AI Gateway (`AI_GATEWAY_API_KEY`).
-4. Any OpenAI-compatible endpoint (`OPENAI_COMPATIBLE_BASE_URL`).
+The playground sets `cmOfmEditor.ai` to a local Ollama, and has a switch that calls it from the browser instead.
 
 Known limits:
 - Context is fixed windows (about 1500 characters before the target and 500 after, cut to whole blocks).

@@ -15,7 +15,7 @@ const $eutils = useEditorUtils(editor)
 const content = useState<string>('content', () => '')
 const codeLanguage = ref('js')
 
-const toolbarOn = ref(true), uppercaseOn = ref(true), slashOn = ref(true), handleOn = ref(true), aiOn = ref(true)
+const toolbarOn = ref(true), uppercaseOn = ref(true), slashOn = ref(true), handleOn = ref(true), aiOn = ref(true), aiDirect = ref(false)
 
 // Host-side outline: the README's "Table of contents" snippet.
 const outline = ref<Heading[]>([])
@@ -34,7 +34,7 @@ const extensions = computed(() => [
 	uppercaseOn.value ? uppercaseButton : [],
 	slashOn.value ? slashMenu() : [],
 	handleOn.value ? blockDragHandle() : [],
-	aiOn.value ? aiAssistant() : [],
+	aiOn.value ? aiAssistant(aiDirect.value ? { endpoint: { baseURL: 'http://localhost:11434/v1', model: 'gemma4:latest' } } : {}) : [],
 	outlineListener,
 	wordCount,
 ])
@@ -171,6 +171,7 @@ function test3() {
 	<USwitch v-model="slashOn" label="Slash menu"/>
 	<USwitch v-model="handleOn" label="Block drag handle"/>
 	<USwitch v-model="aiOn" label="AI assistant"/>
+	<USwitch v-model="aiDirect" label="AI: call Ollama from the browser"/>
 	<UColorModeButton/>
 	<UButton @click="test" label="Test"/>
 </template>

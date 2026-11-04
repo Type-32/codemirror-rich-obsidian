@@ -8,14 +8,15 @@
         "@catppuccin/codemirror": "^1.0.3",
         "@nuxt/kit": "^4.6.4",
         "alfaaz": "^1.1.0",
-        "diff": "^9",
+        "diff": "^9.0.0",
         "js-yaml": "^5.5.0",
         "lezer-markdown-obsidian": "^0.0.3",
         "markdown-it": "^15.0.3",
         "markdown-it-obsidian-callouts": "^0.3.5",
       },
       "devDependencies": {
-        "@ai-sdk/vue": "^4",
+        "@ai-sdk/openai-compatible": "^3.0.84",
+        "@ai-sdk/vue": "^4.0.162",
         "@codemirror/autocomplete": "^6.20.4",
         "@codemirror/lang-markdown": "^6.5.2",
         "@codemirror/language": "^6.13.1",
@@ -37,7 +38,7 @@
         "@types/js-yaml": "^4.0.9",
         "@types/node": "^26.6.6",
         "@vitejs/plugin-vue": "^6.0.10",
-        "ai": "^7",
+        "ai": "^7.0.162",
         "changelogen": "^0.6.2",
         "codemirror": "^6.0.2",
         "eslint": "^10.14.0",
@@ -50,6 +51,7 @@
         "vue-tsc": "^3.3.14",
       },
       "peerDependencies": {
+        "@ai-sdk/vue": "^4.0.0",
         "@codemirror/autocomplete": "^6.20.0",
         "@codemirror/commands": "^6.11.1",
         "@codemirror/lang-markdown": "^6.5.0",
@@ -63,12 +65,15 @@
         "@lezer/highlight": "^1.2.5",
         "@lezer/markdown": "^1.6.3",
         "@nuxt/ui": "^4.12.0",
+        "ai": "^7.0.0",
         "codemirror": "^6.0.2",
         "katex": "^0.16.33",
         "tailwindcss": "^4.2.1",
         "vue-codemirror6": "^1.4.2",
       },
       "optionalPeers": [
+        "@ai-sdk/vue",
+        "ai",
         "katex",
       ],
     },
@@ -84,6 +89,8 @@
   ],
   "packages": {
     "@ai-sdk/gateway": ["@ai-sdk/gateway@4.0.135", "", { "dependencies": { "@ai-sdk/provider": "4.0.35", "@ai-sdk/provider-utils": "5.0.74", "@vercel/oidc": "3.2.0" }, "peerDependencies": { "zod": "^3.25.76 || ^4.1.8" } }, "sha512-gnMpZP42WIhy24fpnbbtV7SBqEhYY8ZSMsfgoNRh5r41D1HwnJTm1k7d4uYSIpiaEb5J8IPTHVSzwgWmGoSFEA=="],
+
+    "@ai-sdk/openai-compatible": ["@ai-sdk/openai-compatible@3.0.84", "", { "dependencies": { "@ai-sdk/provider": "4.0.35", "@ai-sdk/provider-utils": "5.0.74" }, "peerDependencies": { "zod": "^3.25.76 || ^4.1.8" } }, "sha512-rcqkCXegblp0iOe1DTwF8IZNnhTRwldZhoK7T6q2jjoCPBi96c4LPrQg0oamTNFUewxsf2HjpRmUlxrg3q5LFQ=="],
 
     "@ai-sdk/provider": ["@ai-sdk/provider@4.0.35", "", { "dependencies": { "json-schema": "^0.4.0" } }, "sha512-yBz6fmLS8MSCIzy7NiHEUAq56ZLD4ZA1GR6bpXBxgbwUacP1La7LuwAr/xy9jSzthem4F8Xu2OrhvU/JrE9fYA=="],
 

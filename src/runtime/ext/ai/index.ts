@@ -1,5 +1,5 @@
-// `@type32/codemirror-rich-obsidian-editor/ext/ai`. Needs the optional peers `ai` and `@ai-sdk/vue`;
-// without them the module aliases this path to `unavailable.ts`.
+// `@type32/codemirror-rich-obsidian-editor/ext/ai`. Needs the optional peers `ai`, `@ai-sdk/vue` and
+// `@ai-sdk/openai-compatible`; without them the module aliases this path to `unavailable.ts`.
 import type { Extension } from '@codemirror/state'
 import { keymap } from '@codemirror/view'
 import { vueOverlay, type EditorAction } from '../../kit'

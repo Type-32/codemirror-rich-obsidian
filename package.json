@@ -73,6 +73,7 @@
     "markdown-it-obsidian-callouts": "^0.3.5"
   },
   "peerDependencies": {
+    "@ai-sdk/openai-compatible": "^3.0.0",
     "@ai-sdk/vue": "^4.0.0",
     "ai": "^7.0.0",
     "@codemirror/autocomplete": "^6.20.0",
@@ -94,6 +95,9 @@
     "vue-codemirror6": "^1.4.2"
   },
   "peerDependenciesMeta": {
+    "@ai-sdk/openai-compatible": {
+      "optional": true
+    },
     "@ai-sdk/vue": {
       "optional": true
     },
@@ -105,6 +109,7 @@
     }
   },
   "devDependencies": {
+    "@ai-sdk/openai-compatible": "^3.0.84",
     "@ai-sdk/vue": "^4.0.162",
     "@codemirror/autocomplete": "^6.20.4",
     "@codemirror/lang-markdown": "^6.5.2",

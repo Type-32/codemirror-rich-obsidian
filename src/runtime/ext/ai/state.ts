@@ -3,12 +3,33 @@ import { Decoration, EditorView, keymap, type DecorationSet } from '@codemirror/
 import { blockInsertion } from '../../kit'
 import type { AiPreset, ProposalMode } from './prompt'
 
-export interface AiAssistantOptions {
-    /** Endpoint answering ai-sdk `useCompletion` requests (`{ prompt, preset, mode, ...body }`) with `toUIMessageStreamResponse()`. Default `/api/ai`. */
-    api?: string
+/** An OpenAI-compatible API, e.g. `{ baseURL: 'http://localhost:11434/v1', model: 'llama3.2' }`. */
+export interface AiEndpoint {
+    baseURL: string
+    model: string
+    apiKey?: string
     headers?: Record<string, string>
-    /** Extra JSON merged into every request body. */
+}
+
+/** The module's server route, which calls the endpoint configured in `cmOfmEditor.ai` (nuxt.config). */
+export const AI_ROUTE = '/api/_cm-editor/ai'
+
+export interface AiAssistantOptions {
+    /**
+     * Route answering ai-sdk `useCompletion` requests (`{ prompt, preset, mode, ...body }`) with
+     * `toUIMessageStreamResponse()`. Default `AI_ROUTE`, served by the module from `cmOfmEditor.ai`.
+     */
+    api?: string
+    /** Request headers for `api`. */
+    headers?: Record<string, string>
+    /** Extra JSON merged into every `api` request body. */
     body?: Record<string, unknown>
+    /**
+     * Call this endpoint from the browser instead of `api`. Anyone using the page can read `apiKey`
+     * and the endpoint must allow the page's origin (CORS): meant for local models and keys the
+     * user supplies. Takes precedence over `api`.
+     */
+    endpoint?: AiEndpoint
     /** Presets offered on a selection / at a cursor (also the slash items). Default: `selectionPresets` / `cursorPresets`. */
     presets?: { selection?: AiPreset[], cursor?: AiPreset[] }
     /** Add an "Ask AI" button to the selection toolbar. Default `true`. */
