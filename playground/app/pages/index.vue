@@ -2,7 +2,10 @@
 import type { ExternalLinkClickDetail, InternalLink, InternalLinkClickDetail, SpecialCodeBlockMapping } from '#codemirror-rich-obsidian-editor/editor-types'
 import { EditorImageEmbedComponent, TestCustomCodeBlock } from '#components'
 import type { TabsItem } from '@nuxt/ui'
+import { EditorView } from '@codemirror/view'
+import { headingsField, type Heading } from '@type32/codemirror-rich-obsidian-editor/kit'
 import { blockDragHandle, selectionToolbar, slashMenu } from '@type32/codemirror-rich-obsidian-editor/ext'
+import { aiAssistant } from '@type32/codemirror-rich-obsidian-editor/ext/ai'
 import { uppercaseButton, wordCount } from '~/extensions'
 
 const router = useRouter()
@@ -12,13 +15,27 @@ const $eutils = useEditorUtils(editor)
 const content = useState<string>('content', () => '')
 const codeLanguage = ref('js')
 
-const toolbarOn = ref(true), uppercaseOn = ref(true), slashOn = ref(true), handleOn = ref(true)
+const toolbarOn = ref(true), uppercaseOn = ref(true), slashOn = ref(true), handleOn = ref(true), aiOn = ref(true)
+
+// Host-side outline: the README's "Table of contents" snippet.
+const outline = ref<Heading[]>([])
+const outlineListener = [headingsField, EditorView.updateListener.of((u) => {
+	outline.value = u.state.field(headingsField)
+})]
+function jumpTo(h: Heading) {
+	const view: EditorView | undefined = editor.value?.view
+	view?.dispatch({ selection: { anchor: h.from }, effects: EditorView.scrollIntoView(h.from, { y: 'start' }) })
+	view?.focus()
+}
+
 // `[]` is an empty extension: switch one off without touching the others.
 const extensions = computed(() => [
 	toolbarOn.value ? selectionToolbar() : [],
 	uppercaseOn.value ? uppercaseButton : [],
 	slashOn.value ? slashMenu() : [],
 	handleOn.value ? blockDragHandle() : [],
+	aiOn.value ? aiAssistant() : [],
+	outlineListener,
 	wordCount,
 ])
 
@@ -109,19 +126,31 @@ function test3() {
 			<div class="w-full overflow-visible flex flex-col justify-start items-center my-10">
 				<UButton @click="test2" label="Test 2"/>
 				<UButton @click="test3" label="Test 3"/>
-				<Editor
-					v-model="content"
-					ref="editor"
-					class="h-full w-2xl"
-					:internal-link-map
-					:special-code-block-map="specialCodeBlockMap"
-					@internal-link-click="handleInternalLinkClick"
-					@external-link-click="handleExternalLinkClick"
-					:disabled="editorDisabled"
-					:extensions="extensions"
-					:fold-gutter="false"
-					debug
-				/>
+				<div class="flex items-start gap-6">
+					<nav class="w-48 sticky top-4 flex flex-col text-sm" aria-label="Outline">
+						<button
+							v-for="h in outline"
+							:key="h.from"
+							class="text-start truncate text-muted hover:text-default py-0.5"
+							:style="{ paddingInlineStart: `${(h.level - 1) * 0.75}rem` }"
+							@click="jumpTo(h)"
+						>{{ h.text }}</button>
+					</nav>
+					<Editor
+						v-model="content"
+						ref="editor"
+						class="h-full w-2xl"
+						:internal-link-map
+						:special-code-block-map="specialCodeBlockMap"
+						@internal-link-click="handleInternalLinkClick"
+						@external-link-click="handleExternalLinkClick"
+						:disabled="editorDisabled"
+						:extensions="extensions"
+						:fold-gutter="false"
+						debug
+					/>
+					<ChatPanel :view="editor?.view" class="sticky top-4" />
+				</div>
 			</div>
 		</template>
 		<template #code>
@@ -141,6 +170,7 @@ function test3() {
 	<USwitch v-model="uppercaseOn" label="Uppercase button"/>
 	<USwitch v-model="slashOn" label="Slash menu"/>
 	<USwitch v-model="handleOn" label="Block drag handle"/>
+	<USwitch v-model="aiOn" label="AI assistant"/>
 	<UColorModeButton/>
 	<UButton @click="test" label="Test"/>
 </template>

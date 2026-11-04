@@ -18,6 +18,14 @@
     "./ext": {
       "types": "./dist/runtime/ext/index.d.ts",
       "import": "./dist/runtime/ext/index.js"
+    },
+    "./ext/ai": {
+      "types": "./dist/runtime/ext/ai/index.d.ts",
+      "import": "./dist/runtime/ext/ai/index.js"
+    },
+    "./ext/ai/tools": {
+      "types": "./dist/runtime/ext/ai/tools.d.ts",
+      "import": "./dist/runtime/ext/ai/tools.js"
     }
   },
   "main": "./dist/module.mjs",
@@ -31,6 +39,12 @@
       ],
       "ext": [
         "./dist/runtime/ext/index.d.ts"
+      ],
+      "ext/ai": [
+        "./dist/runtime/ext/ai/index.d.ts"
+      ],
+      "ext/ai/tools": [
+        "./dist/runtime/ext/ai/tools.d.ts"
       ]
     }
   },
@@ -52,12 +66,15 @@
     "@catppuccin/codemirror": "^1.0.3",
     "@nuxt/kit": "^4.6.4",
     "alfaaz": "^1.1.0",
+    "diff": "^9.0.0",
     "js-yaml": "^5.5.0",
     "lezer-markdown-obsidian": "^0.0.3",
     "markdown-it": "^15.0.3",
     "markdown-it-obsidian-callouts": "^0.3.5"
   },
   "peerDependencies": {
+    "@ai-sdk/vue": "^4.0.0",
+    "ai": "^7.0.0",
     "@codemirror/autocomplete": "^6.20.0",
     "@codemirror/commands": "^6.11.1",
     "@codemirror/lang-markdown": "^6.5.0",
@@ -77,11 +94,18 @@
     "vue-codemirror6": "^1.4.2"
   },
   "peerDependenciesMeta": {
+    "@ai-sdk/vue": {
+      "optional": true
+    },
+    "ai": {
+      "optional": true
+    },
     "katex": {
       "optional": true
     }
   },
   "devDependencies": {
+    "@ai-sdk/vue": "^4.0.162",
     "@codemirror/autocomplete": "^6.20.4",
     "@codemirror/lang-markdown": "^6.5.2",
     "@codemirror/language": "^6.13.1",
@@ -103,6 +127,7 @@
     "@types/js-yaml": "^4.0.9",
     "@types/node": "^26.6.6",
     "@vitejs/plugin-vue": "^6.0.10",
+    "ai": "^7.0.162",
     "changelogen": "^0.6.2",
     "codemirror": "^6.0.2",
     "eslint": "^10.14.0",

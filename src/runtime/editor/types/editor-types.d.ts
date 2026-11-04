@@ -1,6 +1,5 @@
 import type { Component } from 'vue'
 import type { LanguageSupport } from '@codemirror/language'
-import type { SyntaxNode } from '@lezer/common'
 
 /**
  * Represents a resolvable internal link within the editor.
@@ -97,12 +96,6 @@ export type Frontmatter<T extends object = {}> = {
 } & T
 
 export type UnicodeRange = number[][]
-
-export interface TocEntry {
-	level: number
-	text: string,
-    node: SyntaxNode
-}
 
 export interface SearchMatch {
 	from: number;

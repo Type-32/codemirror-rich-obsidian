@@ -901,3 +901,61 @@ div[contenteditable='true']:focus {
     @apply absolute z-20 h-0.5 rounded-full bg-primary pointer-events-none;
     transform: translateY(-50%);
 }
+
+/* AI assistant (`/ext/ai`). Target highlight lives in the editor; the panel is portalled to <body>. */
+.cm-ai-target {
+    @apply bg-primary/15 rounded-sm;
+}
+
+.cm-ai-panel {
+    @apply flex flex-col gap-2 p-2 w-[28rem] max-w-[calc(100vw-2rem)];
+}
+
+.cm-ai-panel-header {
+    @apply flex items-center gap-1.5 px-1 text-xs font-medium text-muted;
+}
+
+.cm-ai-panel-icon {
+    @apply size-3.5 text-primary;
+}
+
+.cm-ai-panel-title {
+    @apply flex-1 truncate;
+}
+
+.cm-ai-panel-count {
+    @apply text-dimmed;
+}
+
+.cm-ai-output {
+    @apply max-h-72 overflow-y-auto rounded-md bg-elevated/50 px-2.5 py-2;
+}
+
+.cm-ai-text {
+    @apply text-sm text-default whitespace-pre-wrap break-words;
+}
+
+.cm-ai-diff {
+    del {
+        @apply text-error line-through decoration-error/60 bg-error/10;
+    }
+    ins {
+        @apply text-success no-underline bg-success/10;
+    }
+}
+
+.cm-ai-editor {
+    @apply w-full;
+}
+
+.cm-ai-input {
+    @apply w-full;
+}
+
+.cm-ai-actions {
+    @apply flex flex-wrap items-center gap-1.5;
+}
+
+.cm-ai-discard {
+    @apply ms-auto;
+}

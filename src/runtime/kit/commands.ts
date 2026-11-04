@@ -1,4 +1,4 @@
-import { EditorSelection, type SelectionRange, type TransactionSpec } from '@codemirror/state'
+import { EditorSelection, type EditorState, type SelectionRange, type TransactionSpec } from '@codemirror/state'
 import type { Command, EditorView } from '@codemirror/view'
 import { MARKS, linkAt, markAt, wikilinkAt, type MarkType } from './queries'
 
@@ -117,22 +117,25 @@ export function setLinePrefix(prefix: string): Command {
 }
 
 /**
- * Insert a multi-line block `before` + `after` with the cursor between them. Replaces the cursor
- * line when it is blank, otherwise goes below it after a blank line. A blank line is kept before
- * following content, so the block can't absorb it (e.g. a paragraph becoming a table row).
+ * Spec inserting a multi-line block `before` + `after` at the line of `pos`, cursor between them.
+ * Replaces that line when it is blank, otherwise goes below it after a blank line. A blank line is
+ * kept before following content, so the block can't absorb it (e.g. a paragraph becoming a table row).
  */
-export function insertBlock(before: string, after = ''): Command {
-    return (view) => {
-        const { doc } = view.state
-        const line = doc.lineAt(view.state.selection.main.head)
-        const next = line.number < doc.lines ? doc.line(line.number + 1) : null
-        const block = before + after + (next?.text.trim() ? '\n' : '')
-        const blank = !line.text.trim()
-        const from = blank ? line.from : line.to
-        const insert = blank ? block : `\n\n${block}`
-        return run(view, {
-            changes: { from, to: line.to, insert },
-            selection: { anchor: from + insert.length - block.length + before.length },
-        })
+export function blockInsertion(state: EditorState, pos: number, before: string, after = ''): TransactionSpec {
+    const { doc } = state
+    const line = doc.lineAt(pos)
+    const next = line.number < doc.lines ? doc.line(line.number + 1) : null
+    const block = before + after + (next?.text.trim() ? '\n' : '')
+    const blank = !line.text.trim()
+    const from = blank ? line.from : line.to
+    const insert = blank ? block : `\n\n${block}`
+    return {
+        changes: { from, to: line.to, insert },
+        selection: { anchor: from + insert.length - block.length + before.length },
     }
+}
+
+/** Insert a multi-line block at the cursor line (see `blockInsertion`). */
+export function insertBlock(before: string, after = ''): Command {
+    return view => run(view, blockInsertion(view.state, view.state.selection.main.head, before, after))
 }

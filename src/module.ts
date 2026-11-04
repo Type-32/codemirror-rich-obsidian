@@ -1,4 +1,4 @@
-import { defineNuxtModule, addPlugin, createResolver, addComponentsDir, addImportsDir, extendViteConfig } from '@nuxt/kit'
+import { defineNuxtModule, addPlugin, createResolver, addComponentsDir, addImportsDir, extendViteConfig, tryResolveModule, directoryToURL } from '@nuxt/kit'
 
 // Module options TypeScript interface definition
 export interface ModuleOptions {
@@ -14,7 +14,7 @@ export default defineNuxtModule<ModuleOptions>({
 			version: '>=4.4.0'
 		}
 	},
-	setup(_options, _nuxt) {
+	async setup(_options, _nuxt) {
 		const resolver = createResolver(import.meta.url)
 
 		addComponentsDir({
@@ -73,8 +73,17 @@ export default defineNuxtModule<ModuleOptions>({
 
 		// Pin the public subpaths to this module's runtime, so the stub build (src) and the published
 		// build (dist) both load the same facet/field instances as Editor.client.vue.
-		_nuxt.options.alias['@type32/codemirror-rich-obsidian-editor/kit'] = resolver.resolve('./runtime/kit')
-		_nuxt.options.alias['@type32/codemirror-rich-obsidian-editor/ext'] = resolver.resolve('./runtime/ext')
+		// `/ext/ai` needs the optional peers `ai` + `@ai-sdk/vue`; when the host lacks them it gets a
+		// fallback with the same exports that warns at use instead of failing the build.
+		// More specific keys first: the alias plugin takes the first prefix match.
+		const hostDirs = [_nuxt.options.rootDir, ..._nuxt.options.modulesDir].map(directoryToURL)
+		const has = async (id: string) => !!(await tryResolveModule(id, hostDirs))
+		const [hasAi, hasAiVue] = await Promise.all([has('ai'), has('@ai-sdk/vue')])
+		const pkg = '@type32/codemirror-rich-obsidian-editor'
+		_nuxt.options.alias[`${pkg}/ext/ai/tools`] = resolver.resolve(hasAi ? './runtime/ext/ai/tools' : './runtime/ext/ai/tools-unavailable')
+		_nuxt.options.alias[`${pkg}/ext/ai`] = resolver.resolve(hasAi && hasAiVue ? './runtime/ext/ai' : './runtime/ext/ai/unavailable')
+		_nuxt.options.alias[`${pkg}/kit`] = resolver.resolve('./runtime/kit')
+		_nuxt.options.alias[`${pkg}/ext`] = resolver.resolve('./runtime/ext')
 
 		_nuxt.options.css.unshift(resolver.resolve('./runtime/assets/css/editor.css'))
 	},

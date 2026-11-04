@@ -12,12 +12,15 @@
     "lint:fix": "eslint --fix ."
   },
   "dependencies": {
+    "@ai-sdk/openai-compatible": "^3",
+    "@ai-sdk/vue": "^4",
     "@iconify-json/lucide": "^1.2.86",
     "@iconify-json/simple-icons": "^1.2.67",
     "@nuxt/fonts": "0.13.0",
     "@nuxt/icon": "2.2.1",
     "@nuxt/image": "2.0.0",
     "@nuxt/ui": "^4.4.0",
+    "ai": "^7",
     "nuxt": "^4.3.0"
   },
   "devDependencies": {

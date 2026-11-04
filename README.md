@@ -124,8 +124,9 @@ const extensions = computed(() => [
 </template>
 ```
 
-Two entry points:
+Entry points:
 - `@type32/codemirror-rich-obsidian-editor/ext`: default extensions.
+- `@type32/codemirror-rich-obsidian-editor/ext/ai` (+ `/ext/ai/tools` for servers): the opt-in AI assistant; needs the optional peers `ai` and `@ai-sdk/vue`.
 - `@type32/codemirror-rich-obsidian-editor/kit`: the authoring API those defaults are built on. A default extension imports nothing a user extension can't.
 
 ### Selection toolbar
@@ -172,6 +173,116 @@ Contribute items from another extension with `slashItems.of([...])`. Only action
 
 Known limits: dragging doesn't auto-scroll near the edges (the mouse wheel still scrolls), and drops always land as a sibling (there's no nesting by horizontal offset).
 
+### AI assistant
+
+`aiAssistant()` from `@type32/codemirror-rich-obsidian-editor/ext/ai`. AI here only ever **proposes**:
+- **Nothing appears unless invoked.** The entry points are the selection toolbar's **Ask AI** button, the slash menu's AI items (Ask AI, Continue writing, Outline, Brainstorm ideas), and `Mod-j`. There's no ghost text or auto-suggest.
+- **Every result opens in a floating preview** over its target text. Rewrites show a word diff; you can edit the result, refine the instruction and re-run, Retry, or Discard (Esc).
+- **Only Accept (⌘/Ctrl+Enter) writes**, as one undo step tagged `userEvent: 'input.ai'`. The library stores nothing about AI in the document; filter `tr.isUserEvent('input.ai')` if your app wants provenance.
+- **If the target text changes while a preview is open**, Accept is disabled until you Retry.
+- **Brainstorm results are notes, not edits:** Insert below or Copy, never Accept.
+
+It needs the optional peers `ai` and `@ai-sdk/vue` (`bun add ai @ai-sdk/vue`). Without them, `/ext/ai` resolves to a stand-in with the same exports: `aiAssistant()` logs a warning and adds nothing, so the editor keeps working.
+
+The editor streams through ai-sdk's `useCompletion`. Your server route receives `{ prompt, preset, mode, ...body }` and answers with a UI message stream. The prompt is complete: instruction, outline, surrounding text, and output rules.
+
+```ts
+// server/api/ai.post.ts
+import { streamText } from 'ai'
+
+export default defineEventHandler(async (event) => {
+	const { prompt } = await readBody(event)
+	return streamText({ model: 'openai/gpt-4o-mini', prompt }).toUIMessageStreamResponse()
+})
+```
+
+```ts
+aiAssistant() // api: '/api/ai', toolbar + slash items, Mod-j
+aiAssistant({
+	api: '/api/rewrite',
+	headers: { authorization: token },
+	body: { documentId }, // merged into every request
+	presets: { selection: [...selectionPresets, myPreset], cursor: cursorPresets },
+	toolbar: false, slash: true, shortcut: 'Mod-Shift-a', // shortcut: false = none
+})
+```
+
+An `AiPreset` is `{ id, label, icon?, keywords?, instruction, mode? }`. The `mode` says where the result goes:
+- `replace`: the default with a selection.
+- `insert`: inline at the cursor; the default without a selection.
+- `block`: its own block at the cursor line.
+- `reference`: shown only.
+
+`openAi(view, preset?)` opens the panel from your own buttons.
+
+**Chat lives in your app; the editor supplies the tools.** `editorTools` (from `/ext/ai/tools`, server-safe, imports only `ai`) are `readDocument`, `readSelection`, `proposeEdit({ find, replace })`, and `proposeInsert({ text, after? })`. They have no `execute`: tool calls reach the browser, where `runEditorTool` shows proposals in the same preview.
+- A call resolves `{ status: 'accepted' | 'rejected', text? }` once the user decides, so the model learns the outcome.
+- `find` and `after` must match the document exactly once; otherwise the model gets an `{ error }` telling it to quote more text.
+- Several proposals queue up ("1 of 3").
+
+```ts
+// server/api/chat.post.ts
+import { convertToModelMessages, streamText } from 'ai'
+import { editorTools } from '@type32/codemirror-rich-obsidian-editor/ext/ai/tools'
+
+export default defineEventHandler(async (event) => {
+	const { messages } = await readBody(event)
+	return streamText({ model, messages: await convertToModelMessages(messages), tools: editorTools }).toUIMessageStreamResponse()
+})
+```
+
+```ts
+// client
+import { Chat } from '@ai-sdk/vue'
+import { DefaultChatTransport, lastAssistantMessageIsCompleteWithToolCalls } from 'ai'
+import { isEditorTool, runEditorTool } from '@type32/codemirror-rich-obsidian-editor/ext/ai'
+
+const chat = new Chat({
+	transport: new DefaultChatTransport({ api: '/api/chat' }),
+	sendAutomaticallyWhen: lastAssistantMessageIsCompleteWithToolCalls,
+	onToolCall({ toolCall }) {
+		if (!isEditorTool(toolCall)) return
+		// Don't await inside onToolCall: the result arrives when the user accepts or rejects.
+		runEditorTool(editor.value.view, toolCall).then(output =>
+			chat.addToolOutput({ tool: toolCall.toolName, toolCallId: toolCall.toolCallId, output }))
+	},
+})
+```
+
+The playground (`playground/server/utils/model.ts`) uses the first provider it finds:
+1. Local Ollama (`OLLAMA_BASE_URL`, `OLLAMA_MODEL`).
+2. OpenRouter (`OPENROUTER_API_KEY`).
+3. Vercel AI Gateway (`AI_GATEWAY_API_KEY`).
+4. Any OpenAI-compatible endpoint (`OPENAI_COMPATIBLE_BASE_URL`).
+
+Known limits:
+- Context is fixed windows (about 1500 characters before the target and 500 after, cut to whole blocks).
+- `readDocument` returns the whole document.
+- The diff is word-level, not markdown-aware.
+- There's no AI entry in the block menu yet.
+
+### Table of contents
+
+There's no built-in UI; the outline is data for your sidebar.
+- `headingsField` keeps the top-level ATX headings (`{ level, text, from }[]`) current as the document and its syntax tree change.
+- `headings(state)` reads them, from the field when it's configured.
+- `headingAt(state, pos)` is the section containing `pos`.
+
+```ts
+import { EditorView } from '@codemirror/view'
+import { headingsField, type Heading } from '@type32/codemirror-rich-obsidian-editor/kit'
+
+const outline = ref<Heading[]>([])
+const extensions = [headingsField, EditorView.updateListener.of(u => { outline.value = u.state.field(headingsField) })]
+
+function jumpTo(view: EditorView, h: Heading) {
+	view.dispatch({ selection: { anchor: h.from }, effects: EditorView.scrollIntoView(h.from, { y: 'start' }) })
+	view.focus()
+}
+```
+
+**Breaking:** `useDocumentUtils().getTableOfContents(text)` now returns the same `Heading[]` (with `from` instead of `node: SyntaxNode`), and the `TocEntry` type is gone. Headings inside quotes and lists are no longer included, and closing `#`s are dropped from `text`.
+
 ### Writing your own
 
 ```ts
@@ -203,8 +314,8 @@ Rules that keep extensions hot-pluggable:
 
 The kit also exports what the built-ins are made of:
 - **Inline commands:** `toggleMark(type)`, `toggleWikilink`, `setLink(url)`
-- **Block commands:** `setLinePrefix(prefix)`, `insertBlock(before, after?)`, `moveBlock(block, dir)`, `moveBlockTo(block, target, side)`, `deleteBlock(block)`
-- **Queries:** `markAt`, `linkAt`, `wikilinkAt`, `formattableRange`, `blockAt`, `dropTarget`, `canMoveBlock`
+- **Block commands:** `setLinePrefix(prefix)`, `insertBlock(before, after?)`, `blockInsertion(state, pos, before, after?)` (the same insertion as a transaction spec), `moveBlock(block, dir)`, `moveBlockTo(block, target, side)`, `deleteBlock(block)`
+- **Queries:** `markAt`, `linkAt`, `wikilinkAt`, `formattableRange`, `blockAt`, `dropTarget`, `canMoveBlock`, `headings`, `headingAt`, `headingsOf(tree, doc)`
 - **Surfaces:**
   - `defineItemsFacet()`, to build your own contribution point like `toolbarItems`/`slashItems`
   - `resolveActions`, `filterActions`
