@@ -109,7 +109,7 @@
     "katex": "^0.19.1",
     "nuxt": "^4.6.4",
     "tailwindcss": "^4.3.4",
-    "typescript": "7.0.2",
+    "typescript": "6.0.3",
     "vitest": "^5.1.0",
     "vue-codemirror6": "^1.7.0",
     "vue-tsc": "^3.3.14"
