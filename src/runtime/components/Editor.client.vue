@@ -10,7 +10,7 @@ import wysiwyg from '../editor/wysiwyg'
 import { internalLinkMapFacet } from '../editor/plugins/linkMappingConfig'
 import { specialCodeBlockMapFacet } from '../editor/plugins/specialCodeBlockMappingConfig'
 import { customBracketClosingConfig } from '../editor/plugins/customBracketClosingConfig'
-import { hostAppFacet } from '../editor/plugins/hostAppConfig'
+import { vueContextFacet } from '../editor/plugins/hostAppConfig'
 import { editorKeywordSearchPlugin, searchOptionsFacet } from '../editor/plugins/codemirror-editor-plugins/editorKeywordSearchPlugin'
 import type {
     InternalLink,
@@ -19,7 +19,7 @@ import type {
     ExternalLinkClickDetail,
     SearchOptions
 } from '../editor/types/editor-types'
-import { ref, shallowRef, onMounted, onBeforeUnmount, watch, getCurrentInstance } from 'vue';
+import { ref, shallowRef, onMounted, onBeforeUnmount, watch, getCurrentInstance, type AppContext } from 'vue';
 
 const doc = defineModel<string>()
 const props = defineProps<{
@@ -30,20 +30,29 @@ const props = defineProps<{
     foldGutter?: boolean
     disabled?: boolean
     searchOptions?: SearchOptions
+    /** Extra CodeMirror extensions (e.g. from `/ext` or your own). Reactive: changing the array reconfigures live. */
+    extensions?: Extension[]
 }>()
 const emit = defineEmits<{
     'internal-link-click': [detail: InternalLinkClickDetail]
     'external-link-click': [detail: ExternalLinkClickDetail]
 }>()
-const extensions = shallowRef<Extension[]>([])
+const cmExtensions = shallowRef<Extension[]>([])
 const view = shallowRef<EditorView>()
 const internalLinkCompartment = new Compartment()
 const specialCodeBlockCompartment = new Compartment()
 const bracketClosingCompartment = new Compartment()
 const foldGutterCompartment = new Compartment()
 const searchCompartment = new Compartment()
+const extensionsCompartment = new Compartment()
 const editorElement = ref<HTMLElement>()
-const hostApp = getCurrentInstance()?.appContext.app ?? null
+const instance = getCurrentInstance()
+// Components CodeMirror mounts render as if they were children of this one: a root vnode's provides
+// inherit from `appContext.provides`, so swap in this instance's provides chain (which reaches <UApp>).
+// `instance.provides` is Vue-internal (untyped) but stable since 3.0.
+const vueContext = instance
+    ? { ...instance.appContext, provides: (instance as unknown as { provides: AppContext['provides'] }).provides }
+    : null
 // Prop changes that land before vue-codemirror6 emits @ready are queued here and flushed in handleReady.
 let pendingEffects: StateEffect<unknown>[] = []
 
@@ -54,7 +63,7 @@ function loadLanguage(info: string): Promise<LanguageSupport> | null {
 }
 
 onMounted(() => {
-    extensions.value = [
+    cmExtensions.value = [
         EditorView.lineWrapping,
         history(),
         drawSelection(),
@@ -67,10 +76,11 @@ onMounted(() => {
         bracketClosingCompartment.of(customBracketClosingConfig.of(props.bracketClosing ?? true)),
         foldGutterCompartment.of(props.foldGutter ?? true ? foldGutter() : []),
         editorKeywordSearchPlugin,
-        hostAppFacet.of(hostApp),
+        vueContextFacet.of(vueContext),
         searchCompartment.of(searchOptionsFacet.of(props.searchOptions || { query: '' })),
         wysiwyg({ lezer: { codeLanguages: loadLanguage } }),
         EditorView.editable.of(!props.disabled),
+        extensionsCompartment.of(props.extensions ?? []),
     ]
     editorElement.value?.addEventListener('internal-link-click', handleInternalLinkClick as EventListener)
     editorElement.value?.addEventListener('external-link-click', handleExternalLinkClick as EventListener)
@@ -99,6 +109,7 @@ watch(() => props.specialCodeBlockMap, m => reconfigure(specialCodeBlockCompartm
 watch(() => props.bracketClosing, v => reconfigure(bracketClosingCompartment.reconfigure(customBracketClosingConfig.of(v ?? true))))
 watch(() => props.foldGutter, v => reconfigure(foldGutterCompartment.reconfigure(v ?? true ? foldGutter() : [])))
 watch(() => props.searchOptions, o => reconfigure(searchCompartment.reconfigure(searchOptionsFacet.of(o || { query: '' }))), { deep: true })
+watch(() => props.extensions, e => reconfigure(extensionsCompartment.reconfigure(e ?? [])))
 
 function handleReady(payload: { view: EditorView }) {
     view.value = payload.view
@@ -124,7 +135,7 @@ defineExpose({ view })
                     :tab-size="4"
                     :tab="true"
                     :indent-unit="'\t'"
-                    :extensions="extensions"
+                    :extensions="cmExtensions"
                     @ready="handleReady"
                     class="w-full h-full cm-rich-editor overflow-visible"
                     :disabled="props.disabled"

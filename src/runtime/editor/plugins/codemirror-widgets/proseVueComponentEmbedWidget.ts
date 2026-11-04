@@ -1,13 +1,13 @@
 import { WidgetType, type EditorView } from '@codemirror/view'
-import { createVNode, render, type Component } from 'vue'
-import { hostAppFacet } from '../hostAppConfig'
+import type { Component } from 'vue'
+import { mountVueComponent } from '../../../kit/vue'
 
 /**
  * Mounts a host-provided Vue component as a block widget (image embeds, custom code blocks,
  * note embeds). Rendered as a vnode in the host app's context; torn down in destroy().
  */
 export class ProseVueComponentEmbedWidget extends WidgetType {
-    private container: HTMLElement | null = null
+    private unmount: (() => void) | null = null
 
     constructor(
         readonly component: Component,
@@ -23,19 +23,13 @@ export class ProseVueComponentEmbedWidget extends WidgetType {
         container.className = 'vue-embed-widget'
         container.dataset.embedPos = String(this.nodeFrom)
         container.addEventListener('mousedown', () => { if (view.hasFocus) view.dom.blur() })
-        // Render inside the host app's context so auto-imported components, Nuxt UI config and
-        // portals resolve; `createApp` per widget would isolate all of that.
-        const vnode = createVNode(this.component, this.props)
-        const host = view.state.facet(hostAppFacet)
-        if (host) vnode.appContext = host._context
-        render(vnode, container)
-        this.container = container
+        this.unmount = mountVueComponent(view, container, this.component, this.props)
         return container
     }
 
     override destroy() {
-        if (this.container) render(null, this.container)
-        this.container = null
+        this.unmount?.()
+        this.unmount = null
     }
 
     override eq(other: ProseVueComponentEmbedWidget) {

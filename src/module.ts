@@ -29,6 +29,8 @@ export default defineNuxtModule<ModuleOptions>({
 			'js-yaml',
 			'lezer-markdown-obsidian',
 			'markdown-it-obsidian-callouts',
+			// /kit and /ext ship `.vue` files that rely on Nuxt auto-imports (UButton, …).
+			resolver.resolve('./runtime'),
 		)
 
 		// Ensure there is only ever one instance of these singleton packages
@@ -68,6 +70,11 @@ export default defineNuxtModule<ModuleOptions>({
 		_nuxt.options.alias['#codemirror-rich-obsidian-editor#css'] = resolver.resolve(
 			'./runtime/assets/css',
 		)
+
+		// Pin the public subpaths to this module's runtime, so the stub build (src) and the published
+		// build (dist) both load the same facet/field instances as Editor.client.vue.
+		_nuxt.options.alias['@type32/codemirror-rich-obsidian-editor/kit'] = resolver.resolve('./runtime/kit')
+		_nuxt.options.alias['@type32/codemirror-rich-obsidian-editor/ext'] = resolver.resolve('./runtime/ext')
 
 		_nuxt.options.css.unshift(resolver.resolve('./runtime/assets/css/editor.css'))
 	},

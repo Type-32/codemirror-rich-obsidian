@@ -103,6 +103,78 @@ Customize the editor fonts:
 }
 ```
 
+## Extensions
+
+Extensions are plain CodeMirror `Extension`s passed through the `extensions` prop. The prop is reactive: change the array and the editor reconfigures in place. `[]` is an empty extension, so toggling one off is a ternary:
+
+```vue
+<script setup lang="ts">
+import { selectionToolbar } from '@type32/codemirror-rich-obsidian-editor/ext'
+
+const showToolbar = ref(true)
+const extensions = computed(() => [
+	showToolbar.value ? selectionToolbar() : [],
+])
+</script>
+
+<template>
+	<Editor v-model="doc" :extensions="extensions" />
+</template>
+```
+
+Two entry points:
+- `@type32/codemirror-rich-obsidian-editor/ext`: default extensions.
+- `@type32/codemirror-rich-obsidian-editor/kit`: the authoring API those defaults are built on. A default extension imports nothing a user extension can't.
+
+### Selection toolbar
+
+A formatting bar centred above the selection. It appears after a mouse selection is released or a keyboard selection settles (150 ms), only for selections inside a single paragraph or heading. It never appears in code blocks, tables, frontmatter, or across blocks.
+
+```ts
+selectionToolbar() // default: [['bold', 'italic', 'strikethrough', 'highlight'], ['link', 'wikilink']]
+selectionToolbar({ items: ['bold', 'italic'] }) // flat list = one group
+selectionToolbar({ items: [['bold'], ['link', myAction]] }) // nested arrays = separated groups
+selectionToolbar({ items: [] }) // only contributed items (see below); hidden if there are none
+```
+
+Built-in action ids: `bold`, `italic`, `strikethrough`, `highlight`, `link` (`[text](url)` via an inline URL input; on an existing link it edits the URL, and an empty URL removes the link), `wikilink` (`[[text]]`).
+
+### Writing your own
+
+```ts
+import { vueOverlay, type EditorAction } from '@type32/codemirror-rich-obsidian-editor/kit'
+import { toolbarItems } from '@type32/codemirror-rich-obsidian-editor/ext'
+import WordCount from './WordCount.vue'
+
+// A Vue component mounted once per editor, receiving `editor: EditorContext` as a prop.
+export const wordCount = vueOverlay(WordCount)
+
+// Add a button to the default toolbar without touching its config.
+const uppercase: EditorAction = {
+	id: 'uppercase', label: 'Uppercase', icon: 'i-lucide-case-upper',
+	run: (view) => {
+		const { from, to } = view.state.selection.main
+		view.dispatch({ changes: { from, to, insert: view.state.sliceDoc(from, to).toUpperCase() } })
+	},
+}
+export const uppercaseButton = toolbarItems.of([uppercase])
+```
+
+Rules that keep extensions hot-pluggable:
+- **Create plugins at module level.** `vueOverlay(...)`, `ViewPlugin`s and `StateField`s must be module constants. CodeMirror keeps a plugin alive across reconfigures only while the *same* plugin object stays in the config. A fresh call inside a `computed` remounts it on every change.
+- **Pass per-use options through a `Facet`.** `myFacet.of(options)` can be a new value on every render. That's how `selectionToolbar({ items })` updates without remounting.
+- **Overlay components get `editor: EditorContext`**: `{ view, state, update, focused }`. `state` and `update` are shallow refs replaced on every view update. Watch `update` with `flush: 'sync'` if you need every update rather than the last one per tick.
+- **Component-mounted UI sees the full Vue tree.** Overlays and widgets render with the Editor's app context *and* its ancestors' provides, so Nuxt UI components that need `<UApp>` (tooltips, toasts) work.
+
+`EditorAction` (`{ id, label, icon?, kbds?, keywords?, run?, panel?, isActive?, isEnabled? }`) is the shared item model. `panel` is a component rendered in place of the action's button (props `{ editor, close }`) for actions that need input, like `link`.
+
+The kit also exports the markdown commands and syntax queries the built-ins use:
+- Commands: `toggleMark(type)`, `toggleWikilink`, `setLink(url)`
+- Queries: `markAt`, `linkAt`, `wikilinkAt`, `formattableRange`
+- Helpers: `mountVueComponent`, `mouseSelectingField`
+
+Ship `.vue` files in an extension? Style them with Nuxt UI props or your own CSS. Tailwind v4 doesn't scan `node_modules`, so utility classes inside a published package won't be generated in the host app.
+
 ## Known Issues
 - Ordered List sequencing is different than that of Obsidian. We think that they probably use a sort of counter to keep track of lists of the same level beneath the hood, but we don't know for sure.
 - Light/Dark themes are not yet supported in code-block syntax highlighting.

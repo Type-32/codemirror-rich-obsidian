@@ -817,3 +817,20 @@ div[contenteditable='true']:focus {
         @apply block w-full h-px bg-accented;
     }
 }
+
+/* Selection toolbar (`/ext`). Popover content is portalled to <body>, so these sit outside `.cm-rich-editor`. */
+.cm-selection-toolbar {
+    @apply flex items-center gap-0.5 p-1;
+}
+
+.cm-selection-toolbar-separator {
+    @apply mx-1 h-5 w-px bg-accented;
+}
+
+.cm-link-panel {
+    @apply flex items-center gap-1 w-72;
+
+    > :first-child {
+        @apply flex-1;
+    }
+}

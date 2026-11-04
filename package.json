@@ -10,6 +10,14 @@
     ".": {
       "types": "./dist/types.d.mts",
       "import": "./dist/module.mjs"
+    },
+    "./kit": {
+      "types": "./dist/runtime/kit/index.d.ts",
+      "import": "./dist/runtime/kit/index.js"
+    },
+    "./ext": {
+      "types": "./dist/runtime/ext/index.d.ts",
+      "import": "./dist/runtime/ext/index.js"
     }
   },
   "main": "./dist/module.mjs",
@@ -17,6 +25,12 @@
     "*": {
       ".": [
         "./dist/types.d.mts"
+      ],
+      "kit": [
+        "./dist/runtime/kit/index.d.ts"
+      ],
+      "ext": [
+        "./dist/runtime/ext/index.d.ts"
       ]
     }
   },

@@ -2,6 +2,8 @@
 import type { ExternalLinkClickDetail, InternalLink, InternalLinkClickDetail, SpecialCodeBlockMapping } from '#codemirror-rich-obsidian-editor/editor-types'
 import { EditorImageEmbedComponent, TestCustomCodeBlock } from '#components'
 import type { TabsItem } from '@nuxt/ui'
+import { selectionToolbar } from '@type32/codemirror-rich-obsidian-editor/ext'
+import { uppercaseButton, wordCount } from '~/extensions'
 
 const router = useRouter()
 const editorDisabled = ref(false), showFrontmatter = ref(false)
@@ -9,6 +11,14 @@ const editor = ref()
 const $eutils = useEditorUtils(editor)
 const content = useState<string>('content', () => '')
 const codeLanguage = ref('js')
+
+const toolbarOn = ref(true), uppercaseOn = ref(true)
+// `[]` is an empty extension: switch one off without touching the others.
+const extensions = computed(() => [
+	toolbarOn.value ? selectionToolbar() : [],
+	uppercaseOn.value ? uppercaseButton : [],
+	wordCount,
+])
 
 const internalLinkMap = ref<InternalLink[]>([
     {
@@ -106,6 +116,7 @@ function test3() {
 					@internal-link-click="handleInternalLinkClick"
 					@external-link-click="handleExternalLinkClick"
 					:disabled="editorDisabled"
+					:extensions="extensions"
 					:fold-gutter="false"
 					debug
 				/>
@@ -124,6 +135,8 @@ function test3() {
 		</template>
 	</UTabs>
 	<USwitch v-model="editorDisabled" label="Disabled"/>
+	<USwitch v-model="toolbarOn" label="Selection toolbar"/>
+	<USwitch v-model="uppercaseOn" label="Uppercase button"/>
 	<UColorModeButton/>
 	<UButton @click="test" label="Test"/>
 </template>
