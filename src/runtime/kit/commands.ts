@@ -95,3 +95,44 @@ export function setLink(url: string): Command {
         })
     }
 }
+
+/** Block syntax at the start of a line (after indentation): heading, task, list, callout, quote. */
+const BLOCK_PREFIX = /^(?:#{1,6}\s+|[-*+]\s+\[[ xX]\]\s+|[-*+]\s+|\d+[.)]\s+|>\s?\[![^\]]*\][+-]?\s*|>\s?)/
+
+/**
+ * Turn each cursor line into another block type: replace its block prefix (heading, list, task,
+ * quote, callout) with `prefix`, keeping indentation and text. `''` makes it a plain paragraph.
+ */
+export function setLinePrefix(prefix: string): Command {
+    return (view) => {
+        const { state } = view
+        return run(view, state.changeByRange((range) => {
+            const line = state.doc.lineAt(range.head)
+            const from = line.from + /^\s*/.exec(line.text)![0].length
+            const old = BLOCK_PREFIX.exec(state.sliceDoc(from, line.to))?.[0] ?? ''
+            const changes = state.changes({ from, to: from + old.length, insert: prefix })
+            return { changes, range: range.map(changes, 1) }
+        }))
+    }
+}
+
+/**
+ * Insert a multi-line block `before` + `after` with the cursor between them. Replaces the cursor
+ * line when it is blank, otherwise goes below it after a blank line. A blank line is kept before
+ * following content, so the block can't absorb it (e.g. a paragraph becoming a table row).
+ */
+export function insertBlock(before: string, after = ''): Command {
+    return (view) => {
+        const { doc } = view.state
+        const line = doc.lineAt(view.state.selection.main.head)
+        const next = line.number < doc.lines ? doc.line(line.number + 1) : null
+        const block = before + after + (next?.text.trim() ? '\n' : '')
+        const blank = !line.text.trim()
+        const from = blank ? line.from : line.to
+        const insert = blank ? block : `\n\n${block}`
+        return run(view, {
+            changes: { from, to: line.to, insert },
+            selection: { anchor: from + insert.length - block.length + before.length },
+        })
+    }
+}

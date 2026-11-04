@@ -834,3 +834,70 @@ div[contenteditable='true']:focus {
         @apply flex-1;
     }
 }
+
+/* Shared action list (kit `ActionList`): slash menu, block menu. */
+.cm-action-list {
+    @apply flex flex-col p-1 min-w-52;
+}
+
+.cm-action-list-item {
+    @apply flex items-center gap-2 w-full px-2 py-1.5 rounded-md text-sm text-default text-start cursor-pointer select-none outline-none;
+
+    &[aria-selected='true'], &:hover:not(:disabled) {
+        @apply bg-elevated;
+    }
+    &:disabled {
+        @apply opacity-50 cursor-not-allowed;
+    }
+    &[data-color] .cm-action-list-icon {
+        color: inherit;
+    }
+    &[data-color='primary'] { @apply text-primary; }
+    &[data-color='secondary'] { @apply text-secondary; }
+    &[data-color='success'] { @apply text-success; }
+    &[data-color='info'] { @apply text-info; }
+    &[data-color='warning'] { @apply text-warning; }
+    &[data-color='error'] { @apply text-error; }
+}
+
+.cm-action-list-icon {
+    @apply size-4 shrink-0 text-dimmed;
+}
+
+.cm-action-list-label {
+    @apply flex-1 truncate;
+}
+
+.cm-action-list-kbds {
+    @apply flex gap-0.5 ms-auto;
+}
+
+.cm-action-list-separator {
+    @apply h-px my-1 -mx-1 bg-accented;
+}
+
+.cm-slash-menu {
+    @apply max-h-80 overflow-y-auto;
+}
+
+/* Block drag handle (`/ext`): positioned inside the editor root by BlockHandle.vue. */
+.cm-block-handle {
+    @apply absolute z-10 flex items-center w-7 h-6 ps-1 rounded-md text-dimmed cursor-grab touch-none select-none;
+    transform: translateY(-50%);
+
+    &:hover, &[data-dragging] {
+        @apply text-default bg-elevated/70;
+    }
+    &[data-dragging] {
+        @apply cursor-grabbing;
+    }
+}
+
+.cm-block-handle-icon {
+    @apply size-4;
+}
+
+.cm-block-drop {
+    @apply absolute z-20 h-0.5 rounded-full bg-primary pointer-events-none;
+    transform: translateY(-50%);
+}

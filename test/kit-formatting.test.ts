@@ -1,34 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import { EditorSelection, EditorState } from '@codemirror/state'
-import { ensureSyntaxTree } from '@codemirror/language'
-import { markdown } from '@codemirror/lang-markdown'
-import { GFM } from '@lezer/markdown'
-import type { Command, EditorView } from '@codemirror/view'
-import { CustomOFM } from '../src/runtime/editor/lezer-parsers/customOFMParsers'
 import { formattableRange, linkAt, markAt, type MarkType } from '../src/runtime/kit/queries'
 import { setLink, toggleMark, toggleWikilink } from '../src/runtime/kit/commands'
-
-// Mirrors `markdownConfig()` (wysiwyg.ts imports Vue widgets, which vitest can't load without a plugin).
-// @ts-ignore lezer extension typing is looser than lang-markdown's
-const lang = markdown({ extensions: [GFM, CustomOFM, { remove: ['SetextHeading'] }] })
-
-function parsed(s: EditorState) {
-    ensureSyntaxTree(s, s.doc.length, 5000)
-    return s
-}
-
-/** `«b»` selects `b`; `«»` is a cursor. */
-function state(src: string) {
-    const from = src.indexOf('«'), to = src.indexOf('»') - 1
-    return parsed(EditorState.create({ doc: src.replace(/[«»]/g, ''), extensions: lang, selection: EditorSelection.single(from, to) }))
-}
-
-/** Run `cmd` against a minimal view (commands only read `state` and `dispatch`); returns text + selected text. */
-function exec(start: EditorState | string, cmd: Command) {
-    let s = typeof start === 'string' ? state(start) : start
-    cmd({ get state() { return s }, dispatch: (tr: { state: EditorState }) => { s = parsed(tr.state) } } as unknown as EditorView)
-    return { text: s.doc.toString(), sel: s.sliceDoc(s.selection.main.from, s.selection.main.to), state: s }
-}
+import { exec, lang, parsed, state } from './helpers'
 
 const isActive = (src: string, type: MarkType) => {
     const s = state(src)

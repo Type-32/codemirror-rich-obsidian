@@ -1,3 +1,5 @@
 // Default extensions: `@type32/codemirror-rich-obsidian-editor/ext`.
 // Built only on the public kit (`/kit`); anything here can be rebuilt in user land.
-export { selectionToolbar, toolbarItems, type SelectionToolbarOptions, type ToolbarItems } from './selection-toolbar'
+export { selectionToolbar, toolbarItems, type SelectionToolbarOptions } from './selection-toolbar'
+export { slashMenu, slashItems, type SlashMenuOptions } from './slash-menu'
+export { blockDragHandle } from './block-handle'

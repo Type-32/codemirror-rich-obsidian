@@ -109,11 +109,13 @@ Extensions are plain CodeMirror `Extension`s passed through the `extensions` pro
 
 ```vue
 <script setup lang="ts">
-import { selectionToolbar } from '@type32/codemirror-rich-obsidian-editor/ext'
+import { blockDragHandle, selectionToolbar, slashMenu } from '@type32/codemirror-rich-obsidian-editor/ext'
 
 const showToolbar = ref(true)
 const extensions = computed(() => [
 	showToolbar.value ? selectionToolbar() : [],
+	slashMenu(),
+	blockDragHandle(),
 ])
 </script>
 
@@ -138,6 +140,37 @@ selectionToolbar({ items: [] }) // only contributed items (see below); hidden if
 ```
 
 Built-in action ids: `bold`, `italic`, `strikethrough`, `highlight`, `link` (`[text](url)` via an inline URL input; on an existing link it edits the URL, and an empty URL removes the link), `wikilink` (`[[text]]`).
+
+### Slash menu
+
+Type `/` at the start of a line or after a space (outside code, math, and frontmatter) to open a block menu below it.
+- **Filtering:** typing filters by label, id, and keywords (`/h1`, `/todo`, `/latex`).
+- **Keys:** ↑/↓ select, Enter or Tab runs, Escape closes.
+- **Closing:** it also closes when nothing matches or the cursor leaves the `/…` text.
+- **Running an item:** the `/query` text is removed and the action runs on that line. Line types (headings, lists, quote, callout) replace the line's current block prefix. Multi-line blocks (code, math, table, divider) replace an empty line or go below a filled one.
+
+```ts
+slashMenu() // default: [[paragraph, heading1–3], [bulletList, orderedList, taskList], [quote, callout, codeBlock, mathBlock, table, divider]]
+slashMenu({ items: [['heading1', 'heading2'], ['codeBlock', myAction]] })
+```
+
+Contribute items from another extension with `slashItems.of([...])`. Only actions with `run` are listed.
+
+### Block drag handle
+
+`blockDragHandle()` shows a grip left of the hovered block.
+
+**What counts as a block:** a paragraph, heading, code block, math block, table, divider, quote, or callout, each moved as a whole; or a list item, which moves with its nested children. Frontmatter is pinned.
+
+**Dragging:**
+- A line marks where the block will land. Escape cancels.
+- List item onto list item: it becomes a sibling, re-indented and taking the target list's marker and its tight/loose spacing.
+- Anything else moves between top-level blocks, and blank lines are padded so neighbouring paragraphs, quotes, or callouts never merge.
+- Ordered lists on both ends are renumbered. Every move is a single undo step.
+
+**Clicking** (without dragging) opens Move up / Move down / Delete. Up and down swap with the neighbouring sibling and are disabled at a boundary (the first or last item of a list, or next to frontmatter).
+
+Known limits: dragging doesn't auto-scroll near the edges (the mouse wheel still scrolls), and drops always land as a sibling (there's no nesting by horizontal offset).
 
 ### Writing your own
 
@@ -166,12 +199,18 @@ Rules that keep extensions hot-pluggable:
 - **Overlay components get `editor: EditorContext`**: `{ view, state, update, focused }`. `state` and `update` are shallow refs replaced on every view update. Watch `update` with `flush: 'sync'` if you need every update rather than the last one per tick.
 - **Component-mounted UI sees the full Vue tree.** Overlays and widgets render with the Editor's app context *and* its ancestors' provides, so Nuxt UI components that need `<UApp>` (tooltips, toasts) work.
 
-`EditorAction` (`{ id, label, icon?, kbds?, keywords?, run?, panel?, isActive?, isEnabled? }`) is the shared item model. `panel` is a component rendered in place of the action's button (props `{ editor, close }`) for actions that need input, like `link`.
+`EditorAction` (`{ id, label, icon?, kbds?, keywords?, color?, run?, panel?, isActive?, isEnabled? }`) is the shared item model. `panel` is a component rendered in place of the action's button (props `{ editor, close }`) for actions that need input, like `link`. `color` (e.g. `'error'`) tints the item in menus.
 
-The kit also exports the markdown commands and syntax queries the built-ins use:
-- Commands: `toggleMark(type)`, `toggleWikilink`, `setLink(url)`
-- Queries: `markAt`, `linkAt`, `wikilinkAt`, `formattableRange`
-- Helpers: `mountVueComponent`, `mouseSelectingField`
+The kit also exports what the built-ins are made of:
+- **Inline commands:** `toggleMark(type)`, `toggleWikilink`, `setLink(url)`
+- **Block commands:** `setLinePrefix(prefix)`, `insertBlock(before, after?)`, `moveBlock(block, dir)`, `moveBlockTo(block, target, side)`, `deleteBlock(block)`
+- **Queries:** `markAt`, `linkAt`, `wikilinkAt`, `formattableRange`, `blockAt`, `dropTarget`, `canMoveBlock`
+- **Surfaces:**
+  - `defineItemsFacet()`, to build your own contribution point like `toolbarItems`/`slashItems`
+  - `resolveActions`, `filterActions`
+  - `ActionList`, the menu component used by the slash and block menus
+  - `virtualAnchor`, `floatingContent`, `keepEditorFocus`
+- **Helpers:** `mountVueComponent`, `mouseSelectingField`
 
 Ship `.vue` files in an extension? Style them with Nuxt UI props or your own CSS. Tailwind v4 doesn't scan `node_modules`, so utility classes inside a published package won't be generated in the host app.
 

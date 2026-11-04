@@ -1,17 +1,17 @@
 import type { Extension } from '@codemirror/state'
-import { vueOverlay } from '../../kit'
-import { toolbarItems, type ToolbarItems } from './items'
+import { vueOverlay, type ActionItems } from '../../kit'
+import { toolbarItems } from './items'
 import SelectionToolbar from './SelectionToolbar.vue'
 
-export { toolbarItems, type ToolbarItems }
+export { toolbarItems }
 
-const DEFAULT_ITEMS: ToolbarItems = [['bold', 'italic', 'strikethrough', 'highlight'], ['link', 'wikilink']]
+const DEFAULT_ITEMS: ActionItems = [['bold', 'italic', 'strikethrough', 'highlight'], ['link', 'wikilink']]
 
 const overlay = vueOverlay(SelectionToolbar)
 
 export interface SelectionToolbarOptions {
     /** Default: `[['bold', 'italic', 'strikethrough', 'highlight'], ['link', 'wikilink']]`. `[]` = none. */
-    items?: ToolbarItems
+    items?: ActionItems
 }
 
 /**

@@ -2,7 +2,7 @@
 import { computed, onBeforeUnmount, ref, shallowRef, watch } from 'vue'
 import { EditorView, type ViewUpdate } from '@codemirror/view'
 import type { EditorState } from '@codemirror/state'
-import { formattableRange, mouseSelectingField, resolveActions, type EditorAction, type EditorContext } from '../../kit'
+import { floatingContent, formattableRange, keepEditorFocus, mouseSelectingField, resolveActions, virtualAnchor, type EditorAction, type EditorContext } from '../../kit'
 import { toolbarItems } from './items'
 
 const KEYBOARD_SETTLE_MS = 150
@@ -13,26 +13,13 @@ const { view } = props.editor
 const open = ref(false)
 const panel = shallowRef<EditorAction | null>(null)
 const root = ref<HTMLElement>()
+const anchor = () => virtualAnchor(view, () => view.state.selection.main)
 const reference = shallowRef(anchor())
 let timer: ReturnType<typeof setTimeout> | undefined
 /** True while one of our actions runs, so its own edits reposition the bar instead of hiding it. */
 let running = false
 
 const groups = computed(() => props.editor.state.value.facet(toolbarItems).map(resolveActions).filter(g => g.length))
-
-/** Virtual element spanning the selection: top of its first line to bottom of its last, horizontal union. */
-function anchor() {
-    return {
-        contextElement: view.scrollDOM,
-        getBoundingClientRect() {
-            const { from, to } = view.state.selection.main
-            const a = view.coordsAtPos(from, 1), b = view.coordsAtPos(to, -1)
-            if (!a || !b) return new DOMRect(-9999, -9999, 0, 0)
-            const left = Math.min(a.left, b.left), right = Math.max(a.right, b.right)
-            return new DOMRect(left, a.top, right - left, b.bottom - a.top)
-        },
-    }
-}
 
 const focusInside = () => !!root.value?.contains(document.activeElement)
 
@@ -105,28 +92,16 @@ function closePanel() {
     view.focus()
 }
 
-/** Keep editor focus and selection when clicking buttons; inputs (panels) still get focus. */
-function keepFocus(e: MouseEvent) {
-    if (!(e.target as Element).closest('input, textarea, select')) e.preventDefault()
-}
-
 const isActive = (a: EditorAction) => !!a.isActive?.(props.editor.state.value)
 const isDisabled = (a: EditorAction) => !!a.isEnabled && !a.isEnabled(props.editor.state.value)
 
-const contentProps = {
-    side: 'top' as const,
-    align: 'center' as const,
-    sideOffset: 8,
-    collisionPadding: 8,
-    onOpenAutoFocus: (e: Event) => e.preventDefault(),
-    onCloseAutoFocus: (e: Event) => e.preventDefault(),
-}
+const contentProps = floatingContent('top')
 </script>
 
 <template>
     <UPopover :open="open" :reference="reference" :dismissible="false" :content="contentProps">
         <template #content>
-            <div ref="root" class="cm-selection-toolbar" role="toolbar" @mousedown="keepFocus">
+            <div ref="root" class="cm-selection-toolbar" role="toolbar" @mousedown="keepEditorFocus">
                 <component :is="panel.panel" v-if="panel" :editor="editor" :close="closePanel" />
                 <template v-else>
                     <template v-for="(group, i) in groups" :key="i">

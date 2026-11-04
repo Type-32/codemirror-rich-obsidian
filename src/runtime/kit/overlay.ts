@@ -45,3 +45,33 @@ export function vueOverlay(component: Component) {
         }
     })
 }
+
+/**
+ * Floating-UI virtual element spanning `range()` (read lazily on every measure, so it follows edits
+ * and scrolling): top of the first line to bottom of the last, horizontal union across lines.
+ * Off-screen ranges collapse to a far-away point.
+ */
+export function virtualAnchor(view: EditorView, range: () => { from: number, to: number }) {
+    return {
+        contextElement: view.scrollDOM,
+        getBoundingClientRect() {
+            const { from, to } = range()
+            const a = view.coordsAtPos(from, 1), b = view.coordsAtPos(to, -1)
+            if (!a || !b) return new DOMRect(-9999, -9999, 0, 0)
+            const left = Math.min(a.left, b.left), right = Math.max(a.right, b.right)
+            return new DOMRect(left, a.top, right - left, b.bottom - a.top)
+        },
+    }
+}
+
+const preventDefault = (e: Event) => e.preventDefault()
+
+/** `UPopover` `content` props for editor surfaces: opening or closing never moves focus out of the editor. */
+export function floatingContent(side: 'top' | 'bottom' | 'left' | 'right', align: 'start' | 'center' | 'end' = 'center') {
+    return { side, align, sideOffset: 8, collisionPadding: 8, onOpenAutoFocus: preventDefault, onCloseAutoFocus: preventDefault }
+}
+
+/** mousedown handler for surfaces: keeps editor focus and selection on clicks, except on form fields. */
+export function keepEditorFocus(e: MouseEvent) {
+    if (!(e.target as Element).closest('input, textarea, select')) e.preventDefault()
+}
