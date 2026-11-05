@@ -1,6 +1,18 @@
 # Changelog
 
 
+## v0.3.2
+
+[compare changes](https://github.com/Type-32/codemirror-rich-obsidian/compare/v0.3.1...v0.3.2)
+
+### 🩹 Fixes
+
+- **ext:** Use createUIMessageStreamResponse for AI endpoint ([f5d4ba1](https://github.com/Type-32/codemirror-rich-obsidian/commit/f5d4ba1))
+
+### ❤️ Contributors
+
+- Type-32 ([@Type-32](https://github.com/Type-32))
+
 ## v0.3.1
 
 [compare changes](https://github.com/Type-32/codemirror-rich-obsidian/compare/v0.3.0...v0.3.1)
