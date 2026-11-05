@@ -9,6 +9,10 @@ export interface AiEndpoint {
     model: string
     apiKey?: string
     headers?: Record<string, string>
+    /** Custom transport for the requests, e.g. a desktop app routing them through its native side. Default `globalThis.fetch`. */
+    fetch?: typeof globalThis.fetch
+    /** System prompt sent with every request. */
+    system?: string
 }
 
 /** The module's server route, which calls the endpoint configured in `cmOfmEditor.ai` (nuxt.config). */
@@ -25,9 +29,9 @@ export interface AiAssistantOptions {
     /** Extra JSON merged into every `api` request body. */
     body?: Record<string, unknown>
     /**
-     * Call this endpoint from the browser instead of `api`. Anyone using the page can read `apiKey`
-     * and the endpoint must allow the page's origin (CORS): meant for local models and keys the
-     * user supplies. Takes precedence over `api`.
+     * Call this endpoint from the browser (or through `endpoint.fetch`) instead of `api`. Anyone
+     * using the page can read `apiKey` and the endpoint must allow the page's origin (CORS): meant
+     * for local models and keys the user supplies. Takes precedence over `api`.
      */
     endpoint?: AiEndpoint
     /** Presets offered on a selection / at a cursor (also the slash items). Default: `selectionPresets` / `cursorPresets`. */

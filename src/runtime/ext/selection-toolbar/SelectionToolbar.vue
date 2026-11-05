@@ -19,7 +19,10 @@ let timer: ReturnType<typeof setTimeout> | undefined
 /** True while one of our actions runs, so its own edits reposition the bar instead of hiding it. */
 let running = false
 
-const groups = computed(() => props.editor.state.value.facet(toolbarItems).map(resolveActions).filter(g => g.length))
+const groups = computed(() => {
+    const state = props.editor.state.value
+    return state.facet(toolbarItems).map(g => resolveActions(g, state)).filter(g => g.length)
+})
 
 const focusInside = () => !!root.value?.contains(document.activeElement)
 

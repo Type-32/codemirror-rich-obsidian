@@ -3,6 +3,7 @@ import { Facet, type EditorState } from '@codemirror/state'
 import type { EditorView } from '@codemirror/view'
 import { insertBlock, setLinePrefix, toggleMark, toggleWikilink } from './commands'
 import { linkAt, markAt, wikilinkAt, type MarkType } from './queries'
+import { label } from './labels'
 import LinkPanel from './components/LinkPanel.vue'
 
 /**
@@ -87,13 +88,19 @@ export const builtinActions: Record<string, EditorAction> = {
     divider: { id: 'divider', label: 'Divider', icon: 'i-lucide-minus', keywords: ['hr', 'rule', 'separator'], run: insertBlock('---\n') },
 }
 
-/** Resolve ids to built-ins; unknown ids are dropped with a console warning. */
-export function resolveActions(entries: readonly ActionEntry[]): EditorAction[] {
+/**
+ * Resolve ids to built-ins; unknown ids are dropped with a console warning. With `state`, labels
+ * come from `editorLabels` by action id (the action's own `label` is the fallback).
+ */
+export function resolveActions(entries: readonly ActionEntry[], state?: EditorState): EditorAction[] {
     return entries.flatMap((e) => {
-        if (typeof e !== 'string') return [e]
-        const action = builtinActions[e]
-        if (!action) console.warn(`[codemirror-rich-obsidian-editor] unknown action "${e}"`)
-        return action ? [action] : []
+        const action = typeof e === 'string' ? builtinActions[e] : e
+        if (!action) {
+            console.warn(`[codemirror-rich-obsidian-editor] unknown action "${e}"`)
+            return []
+        }
+        const text = state ? label(state, action.id, action.label) : action.label
+        return [text === action.label ? action : { ...action, label: text }]
     })
 }
 

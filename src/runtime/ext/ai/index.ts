@@ -12,13 +12,14 @@ export * from './api'
 
 const overlay = vueOverlay(AiPanel)
 
+// Ids double as `editorLabels` keys: `askAi`, and each preset's own id.
 const askAi: EditorAction = {
-    id: 'ai', label: 'Ask AI', icon: 'i-lucide-sparkles', keywords: ['assistant', 'prompt'],
+    id: 'askAi', label: 'Ask AI', icon: 'i-lucide-sparkles', keywords: ['assistant', 'prompt'],
     run: (view) => { openAi(view) },
 }
 
 const presetAction = (preset: AiPreset): EditorAction => ({
-    id: `ai-${preset.id}`, label: preset.label, icon: preset.icon, keywords: ['ai', ...(preset.keywords ?? [])],
+    id: preset.id, label: preset.label, icon: preset.icon, keywords: ['ai', ...(preset.keywords ?? [])],
     run: (view) => { openAi(view, preset) },
 })
 

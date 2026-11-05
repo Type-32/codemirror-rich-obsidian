@@ -211,6 +211,11 @@ aiAssistant({ endpoint: { baseURL: 'http://localhost:11434/v1', model: 'llama3.2
 
 - Anyone using the page can read `apiKey`, so use this for local models or keys your users enter themselves.
 - The endpoint must allow the page's origin (CORS). Ollama allows `localhost` origins by default; set `OLLAMA_ORIGINS` for others.
+- `endpoint.fetch` replaces the transport, e.g. a desktop app (Tauri, Electron) routing requests through its native side so the key never enters the page: leave `apiKey` unset and add it there. `endpoint.system` is a system prompt sent with every request (browser mode only; on the server, wrap the model in your own route).
+
+```ts
+aiAssistant({ endpoint: { baseURL, model, fetch: nativeFetch, system: 'Answer in British English.' } })
+```
 
 #### Options
 
@@ -297,6 +302,41 @@ function jumpTo(view: EditorView, h: Heading) {
 
 **Breaking:** `useDocumentUtils().getTableOfContents(text)` now returns the same `Heading[]` (with `from` instead of `node: SyntaxNode`), and the `TocEntry` type is gone. Headings inside quotes and lists are no longer included, and closing `#`s are dropped from `text`.
 
+### Labels / localization
+
+Every visible string of the ready-made extensions goes through `editorLabels` (from `/kit`). Pass only the keys you translate; the rest stay English. Values merge per key and, as with other single-value options here, the first (highest-precedence) value wins, so `Prec.high(editorLabels.of(...))` overrides a plain one.
+
+```ts
+import { editorLabels } from '@type32/codemirror-rich-obsidian-editor/kit'
+
+const extensions = computed(() => [selectionToolbar(), slashMenu(), aiAssistant(), editorLabels.of({ bold: '粗体', 'ui.ai.accept': '接受' })])
+```
+
+Action labels are keyed by action id, custom actions included (`resolveActions(entries, state)` applies them):
+- Formatting: `bold`, `italic`, `strikethrough`, `highlight`, `link`, `wikilink`
+- Blocks: `paragraph`, `heading1`, `heading2`, `heading3`, `bulletList`, `orderedList`, `taskList`, `quote`, `callout`, `codeBlock`, `mathBlock`, `table`, `divider`
+- Block menu: `moveUp`, `moveDown`, `delete`
+- AI: `askAi`, and the preset ids `improve`, `fix`, `shorten`, `expand`, `simplify`, `continue`, `outline`, `brainstorm` (your own presets by their `id`). Instructions sent to the model stay as written.
+
+UI strings:
+
+| Key | English |
+| --- | --- |
+| `ui.blockHandle` | Drag to move block, click for options |
+| `ui.linkPlaceholder` | Paste a link… |
+| `ui.linkApply` / `ui.linkRemove` | Apply link / Remove link |
+| `ui.ai.suggestedEdit` / `ui.ai.suggestedInsertion` | Suggested edit / Suggested insertion |
+| `ui.ai.count` | {n} of {total} |
+| `ui.ai.thinking` | Thinking… |
+| `ui.ai.stale` | The text changed since this was generated. Retry to use the current text. |
+| `ui.ai.staleTool` | The text changed since this was suggested. |
+| `ui.ai.instructionPlaceholder` | Ask AI to… |
+| `ui.ai.refinePlaceholder` | Refine, e.g. “more formal” |
+| `ui.ai.accept`, `ui.ai.discard`, `ui.ai.retry`, `ui.ai.stop` | Accept, Discard, Retry, Stop |
+| `ui.ai.edit`, `ui.ai.done`, `ui.ai.copy`, `ui.ai.insertBelow` | Edit, Done, Copy, Insert below |
+
+In your own components, `label(state, key, fallback)` reads the same facet.
+
 ### Writing your own
 
 ```ts
@@ -332,7 +372,8 @@ The kit also exports what the built-ins are made of:
 - **Queries:** `markAt`, `linkAt`, `wikilinkAt`, `formattableRange`, `blockAt`, `dropTarget`, `canMoveBlock`, `headings`, `headingAt`, `headingsOf(tree, doc)`
 - **Surfaces:**
   - `defineItemsFacet()`, to build your own contribution point like `toolbarItems`/`slashItems`
-  - `resolveActions`, `filterActions`
+  - `resolveActions(entries, state?)` (with `state`, labels from `editorLabels`), `filterActions`
+  - `editorLabels`, `label(state, key, fallback)`: see [Labels / localization](#labels--localization)
   - `ActionList`, the menu component used by the slash and block menus
   - `virtualAnchor`, `floatingContent`, `keepEditorFocus`
 - **Helpers:** `mountVueComponent`, `mouseSelectingField`

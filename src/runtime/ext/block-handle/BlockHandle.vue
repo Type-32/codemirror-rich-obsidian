@@ -2,7 +2,7 @@
 import { computed, onBeforeUnmount, ref, shallowRef, watch } from 'vue'
 import { EditorView } from '@codemirror/view'
 import {
-    ActionList, blockAt, canMoveBlock, deleteBlock, dropTarget, floatingContent, moveBlock, moveBlockTo,
+    ActionList, blockAt, canMoveBlock, deleteBlock, dropTarget, floatingContent, label, moveBlock, moveBlockTo, resolveActions,
     type Block, type EditorAction, type EditorContext, type Side,
 } from '../../kit'
 
@@ -186,13 +186,14 @@ onBeforeUnmount(() => {
 const menuGroups = computed<EditorAction[][]>(() => {
     const b = menuBlock.value
     if (!b) return []
-    return [
+    const groups: EditorAction[][] = [
         [
             { id: 'moveUp', label: 'Move up', icon: 'i-lucide-arrow-up', run: moveBlock(b, -1), isEnabled: s => canMoveBlock(s, b, -1) },
             { id: 'moveDown', label: 'Move down', icon: 'i-lucide-arrow-down', run: moveBlock(b, 1), isEnabled: s => canMoveBlock(s, b, 1) },
         ],
         [{ id: 'delete', label: 'Delete', icon: 'i-lucide-trash-2', color: 'error', run: deleteBlock(b) }],
     ]
+    return groups.map(g => resolveActions(g, props.editor.state.value))
 })
 
 function closeMenu() {
@@ -214,7 +215,7 @@ const contentProps = floatingContent('bottom', 'start')
         ref="handle"
         class="cm-block-handle"
         role="button"
-        aria-label="Drag to move block, click for options"
+        :aria-label="label(editor.state.value, 'ui.blockHandle', 'Drag to move block, click for options')"
         :data-dragging="dragging || undefined"
         :style="{ top: `${handlePos?.top ?? 0}px`, left: `${handlePos?.left ?? 0}px` }"
         @pointerdown="onPointerDown"

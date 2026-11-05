@@ -2,7 +2,7 @@
 import { computed, nextTick, onBeforeUnmount, ref, shallowRef, watch } from 'vue'
 import { useCompletion } from '@ai-sdk/vue'
 import { diffWords } from 'diff'
-import { ActionList, filterActions, floatingContent, keepEditorFocus, virtualAnchor, type EditorAction, type EditorContext } from '../../kit'
+import { ActionList, filterActions, floatingContent, keepEditorFocus, label, resolveActions, virtualAnchor, type EditorAction, type EditorContext } from '../../kit'
 import { buildPrompt, cleanOutput, cursorPresets, selectionPresets, type AiPreset } from './prompt'
 import { AI_ROUTE, acceptProposal, aiField, aiOptions, discardProposal, refreshProposal, rejectAll, type Proposal } from './state'
 import { useDirectCompletion } from './direct'
@@ -14,6 +14,7 @@ const { view } = props.editor
 const queue = computed(() => props.editor.state.value.field(aiField, false) ?? [])
 const active = computed(() => queue.value[0] ?? null)
 const options = computed(() => props.editor.state.value.facet(aiOptions))
+const t = (key: string, fallback: string) => label(props.editor.state.value, key, fallback)
 
 // Two transports with one shape: `api` through `useCompletion` (it fixes `api` at creation, so the
 // URL is resolved per request to let the option change live), or `endpoint` straight from the browser.
@@ -48,16 +49,14 @@ const presets = computed<AiPreset[]>(() => {
     const sets = options.value.presets
     return p && p.to > p.from ? sets?.selection ?? selectionPresets : sets?.cursor ?? cursorPresets
 })
-const presetActions = computed<EditorAction[]>(() => filterActions(
-    presets.value.map(({ id, label, icon, keywords }) => ({ id, label, icon, keywords })),
-    instruction.value,
-))
+// Presets are labelled by id like any action (`editorLabels`); their instructions stay as given.
+const presetActions = computed<EditorAction[]>(() => filterActions(resolveActions(presets.value, props.editor.state.value), instruction.value))
 const ranPreset = computed(() => presets.value.find(x => x.instruction === lastRun.value))
 const title = computed(() => {
     const p = active.value
     if (!p) return ''
-    if (p.source === 'tool') return p.mode === 'replace' ? 'Suggested edit' : 'Suggested insertion'
-    return ranPreset.value?.label ?? 'Ask AI'
+    if (p.source === 'tool') return p.mode === 'replace' ? t('ui.ai.suggestedEdit', 'Suggested edit') : t('ui.ai.suggestedInsertion', 'Suggested insertion')
+    return ranPreset.value ? t(ranPreset.value.id, ranPreset.value.label) : t('askAi', 'Ask AI')
 })
 const original = computed(() => (active.value ? props.editor.state.value.sliceDoc(active.value.from, active.value.to) : ''))
 const diff = computed(() => (active.value?.mode === 'replace' && !isLoading.value && !editing.value
@@ -195,7 +194,7 @@ const contentProps = floatingContent('bottom', 'start')
                 <div class="cm-ai-panel-header">
                     <UIcon name="i-lucide-sparkles" class="cm-ai-panel-icon" />
                     <span class="cm-ai-panel-title">{{ title }}</span>
-                    <span v-if="queue.length > 1" class="cm-ai-panel-count">1 of {{ queue.length }}</span>
+                    <span v-if="queue.length > 1" class="cm-ai-panel-count">{{ t('ui.ai.count', '{n} of {total}').replace('{n}', '1').replace('{total}', String(queue.length)) }}</span>
                 </div>
 
                 <div v-if="phase === 'result'" class="cm-ai-output">
@@ -207,7 +206,7 @@ const contentProps = floatingContent('bottom', 'start')
                             <span v-else>{{ part.value }}</span>
                         </template>
                     </div>
-                    <div v-else class="cm-ai-text">{{ shown || (isLoading ? 'Thinking…' : '') }}</div>
+                    <div v-else class="cm-ai-text">{{ shown || (isLoading ? t('ui.ai.thinking', 'Thinking…') : '') }}</div>
                 </div>
 
                 <UAlert v-if="error" color="error" variant="subtle" icon="i-lucide-circle-alert" :description="error.message" />
@@ -216,14 +215,14 @@ const contentProps = floatingContent('bottom', 'start')
                     color="warning"
                     variant="subtle"
                     icon="i-lucide-triangle-alert"
-                    :description="isTool ? 'The text changed since this was suggested.' : 'The text changed since this was generated. Retry to use the current text.'"
+                    :description="isTool ? t('ui.ai.staleTool', 'The text changed since this was suggested.') : t('ui.ai.stale', 'The text changed since this was generated. Retry to use the current text.')"
                 />
 
                 <UInput
                     v-if="!isTool"
                     ref="input"
                     v-model="instruction"
-                    :placeholder="phase === 'prompt' ? 'Ask AI to…' : 'Refine, e.g. “more formal”'"
+                    :placeholder="phase === 'prompt' ? t('ui.ai.instructionPlaceholder', 'Ask AI to…') : t('ui.ai.refinePlaceholder', 'Refine, e.g. “more formal”')"
                     :loading="isLoading"
                     icon="i-lucide-message-square-text"
                     size="sm"
@@ -241,19 +240,19 @@ const contentProps = floatingContent('bottom', 'start')
                 />
 
                 <div v-if="phase === 'result'" class="cm-ai-actions">
-                    <UButton v-if="isLoading" label="Stop" icon="i-lucide-square" color="neutral" variant="subtle" size="sm" @click="stop()" />
+                    <UButton v-if="isLoading" :label="t('ui.ai.stop', 'Stop')" icon="i-lucide-square" color="neutral" variant="subtle" size="sm" @click="stop()" />
                     <template v-else-if="active.mode === 'reference'">
-                        <UButton label="Insert below" icon="i-lucide-corner-down-left" size="sm" :disabled="!canAccept" @click="accept" />
-                        <UButton label="Copy" icon="i-lucide-copy" color="neutral" variant="subtle" size="sm" :disabled="!draft" @click="copy" />
+                        <UButton :label="t('ui.ai.insertBelow', 'Insert below')" icon="i-lucide-corner-down-left" size="sm" :disabled="!canAccept" @click="accept" />
+                        <UButton :label="t('ui.ai.copy', 'Copy')" icon="i-lucide-copy" color="neutral" variant="subtle" size="sm" :disabled="!draft" @click="copy" />
                     </template>
                     <template v-else>
-                        <UButton label="Accept" icon="i-lucide-check" size="sm" :disabled="!canAccept" @click="accept">
+                        <UButton :label="t('ui.ai.accept', 'Accept')" icon="i-lucide-check" size="sm" :disabled="!canAccept" @click="accept">
                             <template #trailing>
                                 <UKbd value="meta" size="sm" /><UKbd value="enter" size="sm" />
                             </template>
                         </UButton>
                         <UButton
-                            :label="editing ? 'Done' : 'Edit'"
+                            :label="editing ? t('ui.ai.done', 'Done') : t('ui.ai.edit', 'Edit')"
                             icon="i-lucide-pencil"
                             color="neutral"
                             variant="subtle"
@@ -262,8 +261,8 @@ const contentProps = floatingContent('bottom', 'start')
                             @click="editing = !editing"
                         />
                     </template>
-                    <UButton v-if="!isTool && !isLoading" label="Retry" icon="i-lucide-rotate-ccw" color="neutral" variant="ghost" size="sm" @click="run(instruction)" />
-                    <UButton label="Discard" color="neutral" variant="ghost" size="sm" class="cm-ai-discard" @click="discard">
+                    <UButton v-if="!isTool && !isLoading" :label="t('ui.ai.retry', 'Retry')" icon="i-lucide-rotate-ccw" color="neutral" variant="ghost" size="sm" @click="run(instruction)" />
+                    <UButton :label="t('ui.ai.discard', 'Discard')" color="neutral" variant="ghost" size="sm" class="cm-ai-discard" @click="discard">
                         <template #trailing>
                             <UKbd value="escape" size="sm" />
                         </template>

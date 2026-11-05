@@ -21,9 +21,10 @@ export function useDirectCompletion() {
         error.value = undefined
         isLoading.value = true
         try {
-            const { baseURL, model, apiKey, headers } = endpoint
+            const { baseURL, model, apiKey, headers, fetch, system } = endpoint
             const result = streamText({
-                model: createOpenAICompatible({ name: 'cm-ofm-editor', baseURL, apiKey, headers }).chatModel(model),
+                model: createOpenAICompatible({ name: 'cm-ofm-editor', baseURL, apiKey, headers, fetch }).chatModel(model),
+                instructions: system,
                 prompt,
                 abortSignal: own.signal,
             })

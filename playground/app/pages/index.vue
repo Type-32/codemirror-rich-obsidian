@@ -3,7 +3,7 @@ import type { ExternalLinkClickDetail, InternalLink, InternalLinkClickDetail, Sp
 import { EditorImageEmbedComponent, TestCustomCodeBlock } from '#components'
 import type { TabsItem } from '@nuxt/ui'
 import { EditorView } from '@codemirror/view'
-import { headingsField, type Heading } from '@type32/codemirror-rich-obsidian-editor/kit'
+import { editorLabels, headingsField, type Heading } from '@type32/codemirror-rich-obsidian-editor/kit'
 import { blockDragHandle, selectionToolbar, slashMenu } from '@type32/codemirror-rich-obsidian-editor/ext'
 import { aiAssistant } from '@type32/codemirror-rich-obsidian-editor/ext/ai'
 import { uppercaseButton, wordCount } from '~/extensions'
@@ -15,7 +15,9 @@ const $eutils = useEditorUtils(editor)
 const content = useState<string>('content', () => '')
 const codeLanguage = ref('js')
 
-const toolbarOn = ref(true), uppercaseOn = ref(true), slashOn = ref(true), handleOn = ref(true), aiOn = ref(true), aiDirect = ref(false)
+const toolbarOn = ref(true), uppercaseOn = ref(true), slashOn = ref(true), handleOn = ref(true), aiOn = ref(true), aiDirect = ref(false), zhLabels = ref(false)
+// The README's "Labels / localization" example.
+const zh = editorLabels.of({ bold: '粗体', heading1: '标题 1', moveUp: '上移', askAi: '问 AI', 'ui.ai.accept': '接受', 'ui.ai.discard': '放弃' })
 
 // Host-side outline: the README's "Table of contents" snippet.
 const outline = ref<Heading[]>([])
@@ -37,6 +39,7 @@ const extensions = computed(() => [
 	aiOn.value ? aiAssistant(aiDirect.value ? { endpoint: { baseURL: 'http://localhost:11434/v1', model: 'gemma4:latest' } } : {}) : [],
 	outlineListener,
 	wordCount,
+	zhLabels.value ? zh : [],
 ])
 
 const internalLinkMap = ref<InternalLink[]>([
@@ -172,6 +175,7 @@ function test3() {
 	<USwitch v-model="handleOn" label="Block drag handle"/>
 	<USwitch v-model="aiOn" label="AI assistant"/>
 	<USwitch v-model="aiDirect" label="AI: call Ollama from the browser"/>
+	<USwitch v-model="zhLabels" label="Chinese labels (editorLabels)"/>
 	<UColorModeButton/>
 	<UButton @click="test" label="Test"/>
 </template>

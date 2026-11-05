@@ -2,6 +2,7 @@
 import { ref } from 'vue'
 import type { EditorContext } from '../overlay'
 import { setLink } from '../commands'
+import { label } from '../labels'
 import { linkAt } from '../queries'
 
 const props = defineProps<{ editor: EditorContext, close: () => void }>()
@@ -23,7 +24,7 @@ function commit() {
             autofocus
             size="sm"
             variant="none"
-            placeholder="Paste a link…"
+            :placeholder="label(editor.state.value, 'ui.linkPlaceholder', 'Paste a link…')"
             @keydown.esc.prevent="close"
         />
         <UButton
@@ -32,7 +33,7 @@ function commit() {
             color="neutral"
             variant="ghost"
             :icon="existing && !url ? 'i-lucide-unlink' : 'i-lucide-corner-down-left'"
-            :aria-label="existing && !url ? 'Remove link' : 'Apply link'"
+            :aria-label="existing && !url ? label(editor.state.value, 'ui.linkRemove', 'Remove link') : label(editor.state.value, 'ui.linkApply', 'Apply link')"
         />
     </form>
 </template>

@@ -1,6 +1,23 @@
 # Changelog
 
 
+## v0.3.3
+
+[compare changes](https://github.com/Type-32/codemirror-rich-obsidian/compare/v0.3.2...v0.3.3)
+
+### 🚀 Enhancements
+
+- **kit:** `editorLabels` facet and `label()` helper; built-in extensions resolve every visible string through them
+- **ext:** AI `endpoint.fetch` (custom transport) and `endpoint.system` (system prompt)
+
+### ⚠️ Breaking Changes
+
+- **ext:** AI action ids are now `askAi` (was `ai`) and the preset id (was `ai-<id>`), matching their label keys
+
+### ❤️ Contributors
+
+- Type-32 ([@Type-32](https://github.com/Type-32))
+
 ## v0.3.2
 
 [compare changes](https://github.com/Type-32/codemirror-rich-obsidian/compare/v0.3.1...v0.3.2)

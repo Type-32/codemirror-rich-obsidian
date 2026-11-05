@@ -29,7 +29,7 @@ const NO_TRIGGER: Record<string, true> = {
 /** Matching runnable actions for `query`, grouped; empty groups dropped. */
 export function slashMatches(state: EditorState, query: string): EditorAction[][] {
     return state.facet(slashItems)
-        .map(group => filterActions(resolveActions(group).filter(a => a.run), query))
+        .map(group => filterActions(resolveActions(group, state).filter(a => a.run), query))
         .filter(group => group.length)
 }
 
