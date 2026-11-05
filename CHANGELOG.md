@@ -1,6 +1,18 @@
 # Changelog
 
 
+## v0.3.4
+
+[compare changes](https://github.com/Type-32/codemirror-rich-obsidian/compare/v0.3.2...v0.3.4)
+
+### 🚀 Enhancements
+
+- **kit:** Add editorLabels facet for localizing built-in UI strings ([697be04](https://github.com/Type-32/codemirror-rich-obsidian/commit/697be04))
+
+### ❤️ Contributors
+
+- Type-32 ([@Type-32](https://github.com/Type-32))
+
 ## v0.3.3
 
 [compare changes](https://github.com/Type-32/codemirror-rich-obsidian/compare/v0.3.2...v0.3.3)
