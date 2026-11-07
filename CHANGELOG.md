@@ -1,6 +1,18 @@
 # Changelog
 
 
+## v0.3.6
+
+[compare changes](https://github.com/Type-32/codemirror-rich-obsidian/compare/v0.3.5...v0.3.6)
+
+### 🚀 Enhancements
+
+- **ext:** Accept AI proposals with Mod-Enter from the editor ([0562c56](https://github.com/Type-32/codemirror-rich-obsidian/commit/0562c56))
+
+### ❤️ Contributors
+
+- Type-32 ([@Type-32](https://github.com/Type-32))
+
 ## v0.3.5
 
 [compare changes](https://github.com/Type-32/codemirror-rich-obsidian/compare/v0.3.4...v0.3.5)
