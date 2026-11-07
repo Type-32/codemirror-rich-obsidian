@@ -184,7 +184,9 @@ onBeforeUnmount(() => {
     rejectAll(known)
 })
 
-const contentProps = floatingContent('bottom', 'start')
+// A proposal taller than the view (a whole note) leaves no room above or below it: overlap it rather than open off
+// screen (`prioritizePosition`), and still hide once it has scrolled fully out of view (`hideWhenDetached`).
+const contentProps = {...floatingContent('bottom', 'start'), prioritizePosition: true, hideWhenDetached: true}
 </script>
 
 <template>
