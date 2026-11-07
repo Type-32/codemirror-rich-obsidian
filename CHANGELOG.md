@@ -1,6 +1,18 @@
 # Changelog
 
 
+## v0.3.5
+
+[compare changes](https://github.com/Type-32/codemirror-rich-obsidian/compare/v0.3.4...v0.3.5)
+
+### 🩹 Fixes
+
+- **ext:** Keep AI proposal panel on screen for tall content ([1f9fc9c](https://github.com/Type-32/codemirror-rich-obsidian/commit/1f9fc9c))
+
+### ❤️ Contributors
+
+- Type-32 ([@Type-32](https://github.com/Type-32))
+
 ## v0.3.4
 
 [compare changes](https://github.com/Type-32/codemirror-rich-obsidian/compare/v0.3.2...v0.3.4)
