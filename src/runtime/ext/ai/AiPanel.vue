@@ -4,7 +4,7 @@ import { useCompletion } from '@ai-sdk/vue'
 import { diffWords } from 'diff'
 import { ActionList, filterActions, floatingContent, keepEditorFocus, label, resolveActions, virtualAnchor, type EditorAction, type EditorContext } from '../../kit'
 import { buildPrompt, cleanOutput, cursorPresets, selectionPresets, type AiPreset } from './prompt'
-import { AI_ROUTE, acceptProposal, aiField, aiOptions, discardProposal, refreshProposal, rejectAll, type Proposal } from './state'
+import { AI_ROUTE, acceptProposal, aiField, aiOptions, discardProposal, refreshProposal, rejectAll, setPanelAccept, type Proposal } from './state'
 import { useDirectCompletion } from './direct'
 
 const props = defineProps<{ editor: EditorContext }>()
@@ -125,12 +125,15 @@ function close(p: Proposal) {
     if (p.source === 'action') view.focus()
 }
 
+/** Accepts the shown proposal with the draft; false when there's nothing to accept yet. */
 function accept() {
     const p = active.value
-    if (!p || !canAccept.value) return
+    if (!p || !canAccept.value) return false
     acceptProposal(view, p.id, draft.value)
     close(p)
+    return true
 }
+setPanelAccept(view, accept)
 
 function discard() {
     const p = active.value
@@ -182,6 +185,7 @@ watch(queue, (q) => {
 onBeforeUnmount(() => {
     stop()
     rejectAll(known)
+    setPanelAccept(view, null)
 })
 
 // A proposal taller than the view (a whole note) leaves no room above or below it: overlap it rather than open off

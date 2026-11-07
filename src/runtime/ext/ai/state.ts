@@ -167,7 +167,18 @@ export function rejectAll(ids: readonly number[]) {
     for (const id of ids) settle(id, { status: 'rejected' })
 }
 
-/** Escape in the editor discards the shown proposal. */
+/**
+ * Each editor's panel accept (the panel holds the draft, which the user may have edited), so Mod-Enter accepts from the
+ * editor too, not only with focus in the panel. Set by `AiPanel` while mounted.
+ */
+const panelAccept = new WeakMap<EditorView, () => boolean>()
+
+export function setPanelAccept(view: EditorView, accept: (() => boolean) | null) {
+    if (accept) panelAccept.set(view, accept)
+    else panelAccept.delete(view)
+}
+
+/** In the editor: Escape discards the shown proposal, Mod-Enter accepts it (before the default keymap's blank line). */
 export const aiKeymap = Prec.high(keymap.of([{
     key: 'Escape',
     run: (view) => {
@@ -176,4 +187,7 @@ export const aiKeymap = Prec.high(keymap.of([{
         discardProposal(view, p.id)
         return true
     },
+}, {
+    key: 'Mod-Enter',
+    run: view => panelAccept.get(view)?.() ?? false,
 }]))
