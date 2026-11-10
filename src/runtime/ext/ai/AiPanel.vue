@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, nextTick, onBeforeUnmount, ref, shallowRef, watch } from 'vue'
+import { EditorView } from '@codemirror/view'
 import { useCompletion } from '@ai-sdk/vue'
 import { diffWords } from 'diff'
 import { ActionList, filterActions, floatingContent, keepEditorFocus, label, resolveActions, virtualAnchor, type EditorAction, type EditorContext } from '../../kit'
@@ -72,6 +73,17 @@ function focusInput() {
     nextTick(() => input.value?.inputRef?.focus())
 }
 
+/**
+ * Brings a proposal the user didn't start (a tool's) into view, centred, unless its start is already on screen; in a
+ * long note it may be far from where they are.
+ */
+function reveal(p: Proposal) {
+    const at = view.coordsAtPos(p.from, 1)
+    const box = view.scrollDOM.getBoundingClientRect()
+    if (at && at.top >= Math.max(box.top, 0) && at.bottom <= Math.min(box.bottom, window.innerHeight)) return
+    view.dispatch({ effects: EditorView.scrollIntoView(p.from, { y: 'center' }) })
+}
+
 watch(() => active.value?.id, (id, old) => {
     if (old !== undefined && isLoading.value) stop()
     editing.value = false
@@ -86,6 +98,7 @@ watch(() => active.value?.id, (id, old) => {
     if (p.source === 'tool') {
         draft.value = p.text ?? ''
         phase.value = 'result'
+        reveal(p)
         return
     }
     draft.value = ''
