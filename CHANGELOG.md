@@ -1,6 +1,18 @@
 # Changelog
 
 
+## v0.3.7
+
+[compare changes](https://github.com/Type-32/codemirror-rich-obsidian/compare/v0.3.6...v0.3.7)
+
+### 🚀 Enhancements
+
+- **ext:** Scroll tool AI proposals into view when they arrive ([30aaed9](https://github.com/Type-32/codemirror-rich-obsidian/commit/30aaed9))
+
+### ❤️ Contributors
+
+- Type-32 ([@Type-32](https://github.com/Type-32))
+
 ## v0.3.6
 
 [compare changes](https://github.com/Type-32/codemirror-rich-obsidian/compare/v0.3.5...v0.3.6)
