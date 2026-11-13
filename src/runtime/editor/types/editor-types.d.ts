@@ -1,5 +1,5 @@
 import type { Component } from 'vue'
-import type { LanguageSupport } from '@codemirror/language'
+import type { Language, LanguageDescription } from '@codemirror/language'
 
 /**
  * Represents a resolvable internal link within the editor.
@@ -80,7 +80,8 @@ export interface SpecialCodeBlockMapping {
 
 export type WysiwygPlugin = {
   lezer?: {
-      codeLanguages?: (info: string) => LanguageSupport | Promise<LanguageSupport> | null
+      /** Fenced-code languages, as for `@codemirror/lang-markdown`. Default: `@codemirror/language-data`'s list (lazy-loaded). */
+      codeLanguages?: readonly LanguageDescription[] | ((info: string) => Language | LanguageDescription | null)
       [key: string]: any
   }
 }

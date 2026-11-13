@@ -28,7 +28,10 @@ export const proseCalloutPlugin = createProsePlugin({
     decorate(node, state, active, out) {
         const bq = node.node
         if (bq.parent?.name === 'Blockquote') return false
-        if (active || !bq.getChild('Paragraph')?.getChild('Callout') || hasNestedBlockquote(bq)) return false
+        if (active || hasNestedBlockquote(bq)) return false
+        // The `[!type]` marker must open the blockquote's first line.
+        const callout = bq.getChild('Paragraph')?.getChild('Callout')
+        if (!callout || state.doc.lineAt(callout.from).number !== state.doc.lineAt(bq.from).number) return false
         out.push(Decoration.replace({
             widget: new CalloutWidget(state.doc.sliceString(node.from, node.to)),
             block: true,

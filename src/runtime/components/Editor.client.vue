@@ -2,10 +2,8 @@
 import CodeMirror from 'vue-codemirror6'
 import { keymap, EditorView, drawSelection, rectangularSelection } from '@codemirror/view'
 import { standardKeymap, history, historyKeymap, indentWithTab } from '@codemirror/commands'
-import { defaultHighlightStyle, syntaxHighlighting, indentOnInput, foldGutter } from '@codemirror/language'
+import { indentOnInput, foldGutter } from '@codemirror/language'
 import { Compartment, type Extension, type StateEffect } from '@codemirror/state'
-import type { LanguageSupport } from '@codemirror/language'
-import { languages } from '@codemirror/language-data'
 import wysiwyg from '../editor/wysiwyg'
 import { internalLinkMapFacet } from '../editor/plugins/linkMappingConfig'
 import { specialCodeBlockMapFacet } from '../editor/plugins/specialCodeBlockMappingConfig'
@@ -56,12 +54,6 @@ const vueContext = instance
 // Prop changes that land before vue-codemirror6 emits @ready are queued here and flushed in handleReady.
 let pendingEffects: StateEffect<unknown>[] = []
 
-function loadLanguage(info: string): Promise<LanguageSupport> | null {
-    const lower = info.toLowerCase()
-    const lang = languages.find(l => l.name.toLowerCase() === lower || l.alias.some(a => a.toLowerCase() === lower))
-    return lang ? lang.load() : null
-}
-
 onMounted(() => {
     cmExtensions.value = [
         EditorView.lineWrapping,
@@ -69,7 +61,6 @@ onMounted(() => {
         drawSelection(),
         rectangularSelection(),
         indentOnInput(),
-        syntaxHighlighting(defaultHighlightStyle),
         keymap.of(props.disabled ? [] : [...standardKeymap, ...historyKeymap, indentWithTab]),
         internalLinkCompartment.of(internalLinkMapFacet.of(props.internalLinkMap || [])),
         specialCodeBlockCompartment.of(specialCodeBlockMapFacet.of(props.specialCodeBlockMap || [])),
@@ -78,7 +69,7 @@ onMounted(() => {
         editorKeywordSearchPlugin,
         vueContextFacet.of(vueContext),
         searchCompartment.of(searchOptionsFacet.of(props.searchOptions || { query: '' })),
-        wysiwyg({ lezer: { codeLanguages: loadLanguage } }),
+        wysiwyg(),
         EditorView.editable.of(!props.disabled),
         extensionsCompartment.of(props.extensions ?? []),
     ]

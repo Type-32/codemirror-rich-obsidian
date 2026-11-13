@@ -49,6 +49,32 @@
     --indent-level: 0;
 }
 
+/* Code block palette (Obsidian's variable names and default colours). Override these to theme code highlighting. */
+:root {
+    --code-normal: var(--ui-text);
+    --code-comment: var(--ui-text-dimmed);
+    --code-function: #e0ac00;
+    --code-important: #ec7500;
+    --code-keyword: #d53984;
+    --code-operator: #e93147;
+    --code-property: #00bfbc;
+    --code-punctuation: var(--ui-text-muted);
+    --code-string: #08b94e;
+    --code-tag: #e93147;
+    --code-value: #7852ee;
+}
+
+.dark {
+    --code-function: #e0de71;
+    --code-important: #e9973f;
+    --code-keyword: #fa99cd;
+    --code-operator: #fb464c;
+    --code-property: #53dfdd;
+    --code-string: #44cf6e;
+    --code-tag: #fb464c;
+    --code-value: #a882ff;
+}
+
 .cm-cursor {
 	@apply border-l-primary! border-l-[1.8px]! rounded-lg!;
 }
@@ -123,8 +149,17 @@ div[contenteditable='true']:focus {
         @apply text-dimmed! no-underline!;
     }
 
-    .cm-heading {
-        text-decoration: none !important;
+    .cm-heading,
+    .cm-strong {
+        @apply font-bold;
+    }
+
+    .cm-emphasis {
+        @apply italic;
+    }
+
+    .cm-strikethrough {
+        @apply line-through;
     }
 
     .cm-mono {
@@ -170,6 +205,7 @@ div[contenteditable='true']:focus {
     .cm-line-codeblock-begin,
     .cm-line-codeblock-end {
         @apply font-editor-code py-0 my-0 text-sm! font-semibold border-x border-x-default mx-2 px-3 bg-muted relative;
+        color: var(--code-normal);
 
         .cm-codeblock-flair-container {
             @apply absolute top-2 right-2 overflow-visible z-10;
@@ -177,10 +213,6 @@ div[contenteditable='true']:focus {
                 @apply rounded hover:bg-accented transition duration-200 cursor-pointer py-1.5 px-2 font-sans text-dimmed z-10;
             }
         }
-
-		.cm-mono {
-			@apply border-none bg-none text-default;
-		}
     }
 
     .cm-line-codeblock-content {
@@ -195,6 +227,19 @@ div[contenteditable='true']:focus {
         @apply rounded-b-lg border-b border-x border-b-accented border-x-accented pb-1 px-1;
     }
 
+    /* Code tokens from `codeHighlighter`. */
+    .cm-code-normal { color: var(--code-normal); }
+    .cm-code-comment { color: var(--code-comment); }
+    .cm-code-function { color: var(--code-function); }
+    .cm-code-important { color: var(--code-important); }
+    .cm-code-keyword { color: var(--code-keyword); }
+    .cm-code-operator { color: var(--code-operator); }
+    .cm-code-property { color: var(--code-property); }
+    .cm-code-punctuation { color: var(--code-punctuation); }
+    .cm-code-string { color: var(--code-string); }
+    .cm-code-tag { color: var(--code-tag); }
+    .cm-code-value { color: var(--code-value); }
+
     .cm-task-checkbox-wrapper {
         @apply size-4 mb-0.5 rounded-xl border border-default bg-default inline-flex items-center justify-center align-middle cursor-pointer;
 
@@ -206,13 +251,10 @@ div[contenteditable='true']:focus {
             content: '✔';
             @apply text-xs text-inverted;
         }
-
-        &[data-special] {
-            @apply font-editor-code text-xs text-highlighted;
-        }
     }
 
-    .cm-task-checked {
+    .cm-task-line[data-task='x'],
+    .cm-task-line[data-task='X'] {
         @apply line-through text-dimmed;
     }
 

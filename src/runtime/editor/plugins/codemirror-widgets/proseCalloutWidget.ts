@@ -31,6 +31,10 @@ export class CalloutWidget extends WidgetType {
             return fallback
         }
         el.classList.add('cm-callout-widget')
+        // markdown-it keeps `[!type|metadata]` whole; split it the way Obsidian does.
+        const [type = '', ...metadata] = (el.dataset.callout ?? '').split('|')
+        el.dataset.callout = type
+        el.dataset.calloutMetadata = metadata.join('|')
         el.contentEditable = 'false'
 
         const edit = document.createElement('div')

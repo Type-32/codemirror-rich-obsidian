@@ -103,6 +103,18 @@ Customize the editor fonts:
 }
 ```
 
+Customize code block colours. Fenced code is highlighted with the language from its info string (`@codemirror/language-data`, loaded on demand; pass `wysiwyg({ lezer: { codeLanguages } })` to use your own list). Tokens get `cm-code-*` classes coloured by Obsidian's variable names, so the palette is plain CSS (`:root` for light, `.dark` for dark):
+
+```css
+:root {
+	--code-normal: …; --code-comment: …; --code-function: …; --code-important: …;
+	--code-keyword: …; --code-operator: …; --code-property: …; --code-punctuation: …;
+	--code-string: …; --code-tag: …; --code-value: …;
+}
+```
+
+Task statuses work like Obsidian: any single character between the brackets (`- [/]`, `- [-]`, `- [>]`…) followed by a space makes a task. Every status but a space renders checked; only `x`/`X` are struck through. The status is on both the line (`.cm-task-line[data-task="/"]`) and the checkbox (`.cm-task-checkbox-wrapper[data-task="/"]`) for styling.
+
 ## Extensions
 
 Extensions are plain CodeMirror `Extension`s passed through the `extensions` prop. The prop is reactive: change the array and the editor reconfigures in place. `[]` is an empty extension, so toggling one off is a ternary:
@@ -382,7 +394,7 @@ Ship `.vue` files in an extension? Style them with Nuxt UI props or your own CSS
 
 ## Known Issues
 - Ordered List sequencing is different than that of Obsidian. We think that they probably use a sort of counter to keep track of lists of the same level beneath the hood, but we don't know for sure.
-- Light/Dark themes are not yet supported in code-block syntax highlighting.
+- `[text]` without a link target is styled as a link, unlike in Obsidian.
 - Nested callouts render as a styled blockquote (source visible) instead of a callout widget: `markdown-it-obsidian-callouts` mis-renders nesting, and the old whole-block widget could corrupt the document on edit. Regular callouts render as before.
 - Tables are widget-only: the markdown source is never shown. Click a cell to edit (Enter/blur commits, Esc cancels); right-click for a Nuxt UI context menu with insert/delete row & column, alignment, clear cell; drag the `⋮⋮` handles to reorder rows/columns. Malformed tables (bad delimiter row) fall back to plain text so they can be repaired.
 

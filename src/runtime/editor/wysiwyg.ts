@@ -1,11 +1,14 @@
 import { syntaxHighlighting } from '@codemirror/language'
 import { markdown } from '@codemirror/lang-markdown'
+import { languages } from '@codemirror/language-data'
 import { GFM } from '@lezer/markdown'
+import { styleTags, tags as t } from '@lezer/highlight'
 import { autocompletion, closeBrackets } from '@codemirror/autocomplete'
 import type { Extension } from '@codemirror/state'
 
 import { richTextPlugin } from './plugins/richTextPlugin'
 import proseStylesPlugin from './plugins/lezerStylesHighlightingPlugin'
+import { codeHighlighter } from './plugins/codeHighlighter'
 import { CustomOFM } from './lezer-parsers/customOFMParsers'
 import { mouseSelectingTracker } from './utility/tools'
 import { proseHashtagPlugin } from './plugins/codemirror-plugin-proses/proseHashtagCodemirrorViewPlugin'
@@ -27,13 +30,18 @@ import { customBracketClosingConfig } from './plugins/customBracketClosingConfig
 import { indentationGuides } from './plugins/codemirror-editor-plugins/indentationGuidesPlugin'
 import type { WysiwygPlugin } from './types/editor-types'
 
+/**
+ * Style overrides on top of lezer-markdown's: fenced code text carries the code language's own tokens
+ * (not the inline-code `monospace` pill), and a revealed `[ ]` task marker is formatting like Obsidian's.
+ */
+const obsidianStyleTags = { props: [styleTags({ 'FencedCode/CodeText': t.content, 'Task/TaskMarker': t.meta })] }
+
 /** Lezer config shared with `parseMarkdownToAST` so offline parsing matches the live editor. */
 export function markdownConfig(config?: WysiwygPlugin['lezer']) {
-    const { codeLanguages, extensions, ...rest } = config ?? {}
+    const { extensions, ...rest } = config ?? {}
     return {
         ...rest,
-        codeLanguages,
-        extensions: [GFM, CustomOFM, { remove: ['SetextHeading'] }, ...(extensions ?? [])],
+        extensions: [GFM, CustomOFM, obsidianStyleTags, { remove: ['SetextHeading'] }, ...(extensions ?? [])],
     }
 }
 
@@ -64,7 +72,8 @@ export default function (config?: WysiwygPlugin): Extension {
         customBracketClosingConfig.of(true),
         indentationGuides(),
         syntaxHighlighting(proseStylesPlugin),
+        syntaxHighlighting(codeHighlighter),
         //@ts-ignore lezer extension typing is looser than lang-markdown's
-        markdown(markdownConfig(config?.lezer)),
+        markdown(markdownConfig({ ...config?.lezer, codeLanguages: config?.lezer?.codeLanguages ?? languages })),
     ]
 }
