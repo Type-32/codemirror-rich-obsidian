@@ -27,6 +27,8 @@ export interface InternalLink {
 	/**
 	 * An optional Vue component to render when this link is embedded (e.g., `![[link]]`).
 	 * If not provided, embeds of this link will be rendered as standard links.
+	 * It receives `linkData` (this link), `filePath`, `subpath` (`View` for `![[x.base#View]]`, without `#`),
+	 * `display` (`300` for `![[x.png|300]]`) and `componentProps`.
 	 */
 	embedComponent?: Component;
 	/**

@@ -28,6 +28,7 @@ export const proseInternalLinkPlugin = createProsePlugin({
             const props: Record<string, unknown> = { linkData: linkInfo, ...linkInfo.componentProps }
             if (linkInfo.filePath) props.filePath = linkInfo.filePath
             if (displayNode) props.display = state.doc.sliceString(displayNode.from, displayNode.to)
+            if (subpathNode) props.subpath = state.doc.sliceString(subpathNode.from + 1, subpathNode.to) // without "#"
             out.push(Decoration.widget({
                 widget: new ProseVueComponentEmbedWidget(linkInfo.embedComponent, props, node.from, node.to),
                 block: true,
