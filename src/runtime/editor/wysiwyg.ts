@@ -21,7 +21,8 @@ import { proseHighlightPlugin } from './plugins/codemirror-plugin-proses/proseHi
 import { proseTaskListPlugin } from './plugins/codemirror-plugin-proses/proseTaskListPlugin'
 import { proseCalloutPlugin } from './plugins/codemirror-plugin-proses/proseCalloutPlugin'
 import { proseTablePlugin } from './plugins/codemirror-plugin-proses/proseTablePlugin'
-import { proseListPlugin, proseListEditMarkPlugin, proseListActiveGuidePlugin } from './plugins/codemirror-plugin-proses/proseListPlugin'
+import { proseListPlugin, proseListEditMarkPlugin } from './plugins/codemirror-plugin-proses/proseListPlugin'
+import { proseHangingIndentPlugin } from './plugins/codemirror-plugin-proses/proseHangingIndentPlugin'
 import { editorLinkClickPlugin } from './plugins/codemirror-editor-plugins/editorLinkClickPlugin'
 import { editorInternalLinkAutocompletePlugin } from './plugins/codemirror-editor-plugins/editorInternalLinkAutocompletePlugin'
 import { editorKeymapPlugin } from './plugins/codemirror-editor-plugins/editorKeymapPlugin'
@@ -63,7 +64,7 @@ export default function (config?: WysiwygPlugin): Extension {
         proseTaskListPlugin,
         proseListPlugin,
         proseListEditMarkPlugin,
-        proseListActiveGuidePlugin,
+        proseHangingIndentPlugin,
 
         editorLinkClickPlugin,
         editorInternalLinkAutocompletePlugin,

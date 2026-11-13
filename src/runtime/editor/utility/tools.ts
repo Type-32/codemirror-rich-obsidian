@@ -33,6 +33,15 @@ export function indentLevel(lineText: string): number {
     return level
 }
 
+/**
+ * Live-preview reveal rules shared by the list, task and hanging-indent plugins (Obsidian's): a bullet shows its
+ * source while a cursor is on the mark itself (`|-|`, not after the space); a task while it's anywhere from the
+ * list mark to the closing `]`.
+ */
+export function markRevealed(state: EditorState, mark: { from: number, to: number }, taskMarker?: { to: number } | null): boolean {
+    return selectionWithin(state, mark.from, taskMarker ? taskMarker.to : mark.to)
+}
+
 export const setMouseSelecting = StateEffect.define<boolean>()
 
 /**

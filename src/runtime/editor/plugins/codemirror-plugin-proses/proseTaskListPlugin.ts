@@ -1,7 +1,7 @@
 import { Decoration, EditorView, ViewPlugin, ViewUpdate, WidgetType, type DecorationSet } from '@codemirror/view'
 import type { Range } from '@codemirror/state'
 import { syntaxTree } from '@codemirror/language'
-import { selectionWithin } from '../../utility/tools'
+import { markRevealed } from '../../utility/tools'
 import { TreeCursor } from '@lezer/common'
 
 /**
@@ -77,11 +77,7 @@ export const proseTaskListPlugin = ViewPlugin.fromClass(
                             }).range(state.doc.lineAt(listItem.from).from),
                         )
 
-                        if (
-                            selectionWithin(state, listMark.from, listMark.to) ||
-                            selectionWithin(state, taskMarker.from, taskMarker.to)
-                        )
-                            return
+                        if (markRevealed(state, listMark, taskMarker)) return
 
                         decorations.push(
                             Decoration.replace({

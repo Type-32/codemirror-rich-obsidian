@@ -10,43 +10,6 @@
     --font-editor: 'Inter', 'SF Pro Display', 'Segoe UI Variable Static Display', var(--font-sans, sans-serif);
 
     --font-editor-code: 'Google Sans Code', 'JetBrains Mono', 'Consolas', var(--font-mono, ui-monospace);
-
-    /* ----- List indentation / spacing ---------------------------------------
-       These variables control horizontal layout of unordered (UL) and ordered
-       (OL) list items. Each list kind has its own pair so they can be tuned
-       independently.
-
-         --ul-nesting-step: horizontal distance added per nesting level (UL).
-         --ul-bullet-gap:   width of the `•` bullet slot (also the visual gap
-                            between bullet and content text).
-         --ol-nesting-step: horizontal distance added per nesting level (OL).
-         --ol-bullet-gap:   reserved slot width for the `1.` / `2.` marker
-                            (and visual gap between marker and content).
-                            Should be wide enough to hold the largest marker
-                            you expect (default 1.5rem fits up to 3 digits).
-         --list-base-offset: shared editor-frame baseline so list-line bullets
-                             don't clip against `.cm-content`'s left padding.
-    -------------------------------------------------------------------------- */
-    --ul-nesting-step: 1.5rem;
-    --ul-bullet-gap:   0.25rem;
-
-    --ol-nesting-step: 1rem;
-    --ol-bullet-gap:   0.5rem;
-
-    --list-base-offset: 1rem;
-
-    /* Indent-guide styling for list lines. See `.cm-list-line-ul` / `.cm-list-line-ol` below. */
-    --list-guide-color: var(--ui-primary);
-    --list-guide-width: 1px;
-    --list-guide-opacity: 0.05;
-
-    /* Active indent-guide styling — the guide stripe belonging to the
-       current cursor's ancestor group is highlighted on all sibling lines.
-       See `.cm-list-line-active-guide` below. */
-    --list-active-guide-color: var(--ui-primary);
-    --list-active-guide-opacity: 1;
-
-    --indent-level: 0;
 }
 
 /* Code block palette (Obsidian's variable names and default colours). Override these to theme code highlighting. */
@@ -73,6 +36,32 @@
     --code-string: #44cf6e;
     --code-tag: #fb464c;
     --code-value: #a882ff;
+}
+
+/* Layout (Obsidian's variable names). `em` values resolve against the editor text. */
+:root {
+    /* Width of one indent level (a leading tab or 4 spaces), for lists and indented lines alike. */
+    --list-indent: 2.25em;
+    /* Space before a list mark (`-`, `1.`). */
+    --list-padding-inline-start: 0.75em;
+    --list-marker-color: var(--ui-text-dimmed);
+    --list-bullet-size: 0.3em;
+    --list-bullet-radius: 50%;
+
+    --checkbox-size: 1em;
+    --checkbox-radius: 50%;
+    --checkbox-margin-inline-start: 0.5em;
+    --checkbox-margin-inline-end: 0.25em;
+    --checkbox-color: var(--ui-primary);
+    --checkbox-border-color: var(--ui-border-accented);
+    --checkbox-marker-color: var(--ui-bg);
+
+    --indentation-guide-width: 1px;
+    --indentation-guide-width-active: 1px;
+    --indentation-guide-color: color-mix(in oklab, var(--ui-text) 12%, transparent);
+    --indentation-guide-color-active: color-mix(in oklab, var(--ui-text) 30%, transparent);
+    /* Guide offset inside its indent box: under the parent's bullet. */
+    --indentation-guide-editing-indent: 0.85em;
 }
 
 .cm-cursor {
@@ -241,15 +230,22 @@ div[contenteditable='true']:focus {
     .cm-code-value { color: var(--code-value); }
 
     .cm-task-checkbox-wrapper {
-        @apply size-4 mb-0.5 rounded-xl border border-default bg-default inline-flex items-center justify-center align-middle cursor-pointer;
+        @apply mb-0.5 border inline-flex items-center justify-center align-middle cursor-pointer;
+        width: var(--checkbox-size);
+        height: var(--checkbox-size);
+        border-radius: var(--checkbox-radius);
+        border-color: var(--checkbox-border-color);
+        margin-inline: var(--checkbox-margin-inline-start) var(--checkbox-margin-inline-end);
 
         &[data-checked='true'] {
-            @apply  bg-primary border border-primary;
+            background-color: var(--checkbox-color);
+            border-color: var(--checkbox-color);
         }
 
         &[data-checked='true']::before {
             content: '✔';
-            @apply text-xs text-inverted;
+            @apply text-xs;
+            color: var(--checkbox-marker-color);
         }
     }
 
@@ -314,6 +310,9 @@ div[contenteditable='true']:focus {
     .cm-quoteblock,
     blockquote {
         @apply bg-muted border-accented ps-2 mx-2 before:ml-0.5 before:rounded-lg before:px-0.5 before:bg-accented before:py-1;
+        --line-indent-base: 0.5rem;
+        /* The bar (`::before`) takes inline space on the first row only; hanging indents add it back. */
+        --hang-extra: 0.375rem;
 
         &.cm-quoteblock-single {
             @apply rounded-lg py-2 before:py-0.5;
@@ -336,79 +335,58 @@ div[contenteditable='true']:focus {
         }
     }
 
+    /* Hanging indents (`proseHangingIndentPlugin`): wrapped rows line up with the text after a list mark, quote or
+       indentation. The first row is unaffected (padding and negative indent cancel out). */
+    .cm-line[style*='--hang-indent'] {
+        padding-inline-start: calc(var(--line-indent-base, 6px) + var(--hang-padding) + var(--hang-extra, 0px));
+        text-indent: calc(-1 * (var(--hang-indent) + var(--hang-extra, 0px)));
+    }
+
+    /* Only the line itself is indented; inline boxes (bullets, checkboxes, indents, tags) must not inherit it. */
+    .cm-line * {
+        text-indent: 0;
+    }
+
+    /* The list mark keeps its source characters and width, so revealing it never moves text. */
     .cm-list-formatting {
-        /* We wrap the raw list-marker range (ListMark + trailing space) in
-           this span for BOTH unordered and ordered lists. Kind-specific
-           rules below (`&.cm-list-formatting-ul` / `&.cm-list-formatting-ol`)
-           override width and text-rendering behavior as appropriate.
-
-           Shared strategy (click-safe):
-           - `inline-block` establishes a known geometric box the parent
-             line's `text-indent` can pull back over.
-           - Keep real text nodes in the DOM so CodeMirror's `posAtCoords`
-             scan sees valid text rects. UL hides them visually via
-             `font-size: 0`; OL keeps them visible and right-aligned.
-           - Because the decoration is STATIC with respect to selection
-             (see proseListPlugin.ts), the span's geometry does not change
-             on click, so `posAtCoords` rects stay stable between
-             mousedown→cursor-placement→paint. This eliminates the
-             first-click-jumps-to-line-start bug. */
-        display: inline-block;
-        vertical-align: baseline;
+        color: var(--list-marker-color);
+        padding-inline-start: var(--list-padding-inline-start);
     }
 
-    .cm-list-formatting.cm-list-formatting-ul {
-        /* UL: hide the raw `- ` via font-size: 0 + color: transparent so
-           the span collapses to exactly `--ul-bullet-gap` wide. The visible
-           `•` bullet is rendered by `::before` with restored font-size. */
-        width: var(--ul-bullet-gap, 0.5rem);
-        font-size: 0;
-        color: transparent;
+    /* Bullet: the `-` turns transparent and a dot is drawn over it. */
+    .cm-list-bullet {
+        /* `!important` beats the `.cm-meta` colour on the mark's highlight span. */
+        &, & * {
+            color: transparent !important;
+        }
+        position: relative;
+        display: inline-flex;
+        justify-content: center;
+        align-items: center;
 
-        &::before {
-            content: '•';
-            @apply text-dimmed inline-block text-start align-baseline;
-            font-size: 1rem;
-            line-height: 1;
-            width: var(--ul-bullet-gap, 0.5rem);
+        &::after {
+            content: '';
+            position: absolute;
+            width: var(--list-bullet-size);
+            height: var(--list-bullet-size);
+            border-radius: var(--list-bullet-radius);
+            background-color: var(--list-marker-color);
+            pointer-events: none;
         }
     }
 
-    .cm-list-formatting.cm-list-formatting-ol {
-        /* OL: keep the raw `1.` / `2.` marker text VISIBLE inside a
-           fixed-min-width slot. `text-align: end` right-aligns the marker
-           so short numbers (`1.`) hug the content edge. `overflow: visible
-           + white-space: pre` lets longer markers (e.g. `100.`) extend
-           past the slot without wrapping — preserving layout alignment
-           for the common 1-3 digit cases. */
-        min-width: var(--ol-bullet-gap);
-        width: auto;
-        font-size: inherit;
-        color: inherit;
-        text-align: end;
-        white-space: pre;
-        overflow: visible;
-    }
+    /* Cursor on the mark (`proseListEditMarkPlugin`): show the `-` instead of the dot. */
+    .cm-list-line-editing-mark .cm-list-bullet {
+        &, & * {
+            color: var(--list-marker-color) !important;
+        }
 
-    /* When the cursor is on the ListMark (detected by
-       `proseListEditMarkPlugin`), reveal the raw `- ` text so the user can
-       edit the bullet character. We undo the width-collapse tricks: restore
-       natural font-size + text color, hide the `::before` bullet, and let the
-       span flow as regular inline text. */
-    .cm-list-line-editing-mark .cm-list-formatting {
-        display: inline;
-        width: auto;
-        font-size: inherit;
-        color: inherit;
-
-        &::before {
-            content: none;
+        &::after {
+            display: none;
         }
     }
 
-    /* DOM hook for per-nesting-level content styling. Intentionally has no
-       default visual effect; consumers can target
-       `.cm-list-content-0`, `.cm-list-content-1`, etc. for custom themes. */
+    /* DOM hook for per-nesting-level content styling (`.cm-list-content-0`, `-1`, …); no default effect. */
     .cm-list-content {
         /* no-op */
     }
@@ -627,214 +605,26 @@ div[contenteditable='true']:focus {
         }
     }
 
+    /* One leading tab or 4-space group (`indentationGuides`): a `--list-indent`-wide box drawing one guide. */
     .cm-indent {
-        /* Generic tab / 4-space indent visualization width for NON-list
-           indented content (code blocks, quoteblocks, etc.). On list lines,
-           this is overridden to zero by `.cm-list-line .cm-indent` below
-           because list indentation is handled by `padding-inline-start`
-           using `--ul-nesting-step` / `--ol-nesting-step` instead. */
-        min-width: 1.5rem;
-        @apply relative inline-block;
+        display: inline-block;
+        position: relative;
+        min-width: var(--list-indent);
 
         &::before {
-            /* Create the pseudo-element and stretch it to the line's full height */
-            @apply content-['\200B'] absolute top-0 bottom-0 w-1;
-
-            /* This creates the vertical line */
-            @apply border-r border-r-muted; /* Use border-r for a 1px right border */
-
-            /*
-            * Position the line. We use an arbitrary value here.
-            * This positions the guide line towards the end of the indent area.
-            * You'll need to tweak this value to get the alignment you want.
-            */
-            @apply left-[var(--indentation-guide-source-indent)];
+            content: '\200B';
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            margin-inline-start: var(--indentation-guide-editing-indent);
+            border-inline-end: var(--indentation-guide-width) solid var(--indentation-guide-color);
+            color: transparent;
         }
     }
 
+    /* The guide at the cursor's depth, across the contiguous block of lines at least that deep. */
     .cm-indent-group .cm-active-indent::before {
-        /* Use a more prominent color for the active guide */
-        @apply border-primary;
-    }
-
-    .cm-list-line .cm-indent::before {
-        /* The `indentationGuidesPlugin` wraps leading tabs in `.cm-indent`
-           spans whose `::before` draws a vertical line. On list lines we
-           render guides via `background-image` on `.cm-list-line` (below),
-           which correctly aligns at ancestor bullet columns and scales with
-           nesting depth. Hide the span's `::before` here to avoid double-
-           painting over our background-based guides. */
-        display: none;
-    }
-
-    .cm-list-line .cm-indent {
-        /* On list lines, our `padding-inline-start` already accounts for the
-           nesting depth via `level * --ul-nesting-step` (or `--ol-nesting-step`).
-           The visible width of the raw `\t` / 4-space `.cm-indent` spans would
-           DOUBLE-COUNT the indent, pushing first-line content past where
-           wrapped-line content sits.
-
-           Collapse the span's visible width to zero while keeping its text
-           nodes in the DOM for CodeMirror's `posAtCoords` scanning. Use an
-           absolute `line-height` so zero-font-size text nodes still produce
-           valid non-zero-height rects. */
-        min-width: 0;
-        font-size: 0;
-        line-height: 1rem;
-    }
-
-    /* =========================================================================
-       List-line hanging indent + indent guides
-       -------------------------------------------------------------------------
-       Unordered (UL) and ordered (OL) list lines use SEPARATE variables so
-       their indent step and bullet-to-text gap can be tuned independently:
-
-         UL:  --ul-nesting-step, --ul-bullet-gap
-         OL:  --ol-nesting-step, --ol-bullet-gap
-         Shared: --list-base-offset (editor-frame breathing room)
-
-       Indent guide theming (dim, tweakable in @theme):
-         --list-guide-color:   stripe color (defaults to --ui-primary)
-         --list-guide-width:   stripe thickness (defaults to 1px)
-         --list-guide-opacity: stripe opacity 0-1 (defaults to 0.05)
-
-       The effective stripe color is produced via `color-mix` so opacity works
-       even when `--list-guide-color` is a `var(...)` reference to a themed
-       palette variable rather than a raw rgb/hex value.
-
-       Level-0 lines get `background-size: 0 100%` (zero width) so no stripes
-       are drawn — correct for top-level items.
-
-       `background-origin: border-box` measures `background-position-x` from
-       the line's left edge (unaffected by our `padding-inline-start`), so
-       guide columns stay anchored to ancestor bullet positions.
-       ========================================================================= */
-
-    .cm-list-line-ul {
-        /* Hanging-indent math (UL):
-             First-line bullet position:   padding-inline-start + text-indent
-                                         = (level * ul-nesting-step) + ul-bullet-gap + list-base-offset
-             First-line content position:  (level * ul-nesting-step) + 2*ul-bullet-gap + list-base-offset
-             Wrapped-line content position: same as first-line content
-                                         (= padding-inline-start, since text-indent
-                                            only applies to the first line).
-           First-line and wrapped content align perfectly. */
-        padding-inline-start: calc(
-            var(--indent-level, 0) * var(--ul-nesting-step, 1.5rem)
-            + 2 * var(--ul-bullet-gap, 0.5rem)
-            + var(--list-base-offset, 1rem)
-        );
-        text-indent: calc(-1 * var(--ul-bullet-gap, 0.5rem));
-
-        background-image: repeating-linear-gradient(
-            to right,
-            color-mix(in oklab, var(--list-guide-color) calc(var(--list-guide-opacity, 0.05) * 100%), transparent) 0,
-            color-mix(in oklab, var(--list-guide-color) calc(var(--list-guide-opacity, 0.05) * 100%), transparent) var(--list-guide-width, 1px),
-            transparent var(--list-guide-width, 1px),
-            transparent var(--ul-nesting-step, 1.5rem)
-        );
-        background-repeat: no-repeat;
-        background-size: calc(var(--indent-level, 0) * var(--ul-nesting-step, 1.5rem)) 100%;
-        background-position-x: var(--ul-bullet-gap, 0.5rem);
-        background-origin: border-box;
-    }
-
-    .cm-list-line-ol {
-        /* Hanging-indent math (OL, parallel to UL):
-             First-line marker-slot x:  padding-inline-start + text-indent
-                                     = (level * ol-nesting-step) + ol-bullet-gap + list-base-offset
-             First-line content x:      (level * ol-nesting-step) + 2*ol-bullet-gap + list-base-offset
-             Wrapped-line content x:    same as first-line content (= padding-inline-start,
-                                          since text-indent only applies to the first line).
-
-           OL markers render as raw right-aligned text inside the
-           `.cm-list-formatting-ol` span (min-width: --ol-bullet-gap). Short
-           markers (`1.`, `99.`) fit cleanly in the slot; longer markers
-           (`100.`) overflow visibly without breaking layout for the common
-           1-3 digit cases. */
-        padding-inline-start: calc(
-            var(--indent-level, 0) * var(--ol-nesting-step, 1rem)
-            + 2 * var(--ol-bullet-gap, 1.5rem)
-            + var(--list-base-offset, 1rem)
-        );
-        text-indent: calc(-1 * var(--ol-bullet-gap, 1.5rem));
-
-        background-image: repeating-linear-gradient(
-            to right,
-            color-mix(in oklab, var(--list-guide-color) calc(var(--list-guide-opacity, 0.05) * 100%), transparent) 0,
-            color-mix(in oklab, var(--list-guide-color) calc(var(--list-guide-opacity, 0.05) * 100%), transparent) var(--list-guide-width, 1px),
-            transparent var(--list-guide-width, 1px),
-            transparent var(--ol-nesting-step, 1rem)
-        );
-        background-repeat: no-repeat;
-        background-size: calc(var(--indent-level, 0) * var(--ol-nesting-step, 1rem)) 100%;
-        background-position-x: var(--ol-bullet-gap, 1.5rem);
-        background-origin: border-box;
-    }
-
-    /* Active indent guide: when the cursor is on a list line at level K,
-       `proseListActiveGuidePlugin` adds `cm-list-line-active-guide` (and
-       `--active-guide-index: K-1`) to all sibling list lines in the same
-       ancestor group (contiguous runs of lines with nesting level >= K).
-
-       We layer a SECOND `background-image` as the first background layer
-       (drawn on top), rendering exactly one stripe at the active guide's
-       x-coordinate in `--list-active-guide-color` at full opacity. This
-       overlays the corresponding dim stripe from the base `.cm-list-line`
-       rule, creating Obsidian's "connecting vertical highlight" across the
-       current nesting group.
-
-       Theming (in the @theme block at the top of this file):
-         --list-active-guide-color:   stripe color (defaults to --ui-primary)
-         --list-active-guide-opacity: stripe opacity 0-1 (defaults to 1) */
-    .cm-list-line-active-guide.cm-list-line-ul {
-        background-image:
-            linear-gradient(
-                to right,
-                color-mix(in oklab, var(--list-active-guide-color) calc(var(--list-active-guide-opacity, 1) * 100%), transparent) 0,
-                color-mix(in oklab, var(--list-active-guide-color) calc(var(--list-active-guide-opacity, 1) * 100%), transparent) var(--list-guide-width, 1px),
-                transparent var(--list-guide-width, 1px)
-            ),
-            repeating-linear-gradient(
-                to right,
-                color-mix(in oklab, var(--list-guide-color) calc(var(--list-guide-opacity, 0.05) * 100%), transparent) 0,
-                color-mix(in oklab, var(--list-guide-color) calc(var(--list-guide-opacity, 0.05) * 100%), transparent) var(--list-guide-width, 1px),
-                transparent var(--list-guide-width, 1px),
-                transparent var(--ul-nesting-step, 1.5rem)
-            );
-        background-repeat: no-repeat, no-repeat;
-        background-size:
-            var(--list-guide-width, 1px) 100%,
-            calc(var(--indent-level, 0) * var(--ul-nesting-step, 1.5rem)) 100%;
-        background-position-x:
-            calc(var(--active-guide-index, 0) * var(--ul-nesting-step, 1.5rem) + var(--ul-bullet-gap, 0.5rem)),
-            var(--ul-bullet-gap, 0.5rem);
-        background-origin: border-box, border-box;
-    }
-
-    .cm-list-line-active-guide.cm-list-line-ol {
-        background-image:
-            linear-gradient(
-                to right,
-                color-mix(in oklab, var(--list-active-guide-color) calc(var(--list-active-guide-opacity, 1) * 100%), transparent) 0,
-                color-mix(in oklab, var(--list-active-guide-color) calc(var(--list-active-guide-opacity, 1) * 100%), transparent) var(--list-guide-width, 1px),
-                transparent var(--list-guide-width, 1px)
-            ),
-            repeating-linear-gradient(
-                to right,
-                color-mix(in oklab, var(--list-guide-color) calc(var(--list-guide-opacity, 0.05) * 100%), transparent) 0,
-                color-mix(in oklab, var(--list-guide-color) calc(var(--list-guide-opacity, 0.05) * 100%), transparent) var(--list-guide-width, 1px),
-                transparent var(--list-guide-width, 1px),
-                transparent var(--ol-nesting-step, 1rem)
-            );
-        background-repeat: no-repeat, no-repeat;
-        background-size:
-            var(--list-guide-width, 1px) 100%,
-            calc(var(--indent-level, 0) * var(--ol-nesting-step, 1rem)) 100%;
-        background-position-x:
-            calc(var(--active-guide-index, 0) * var(--ol-nesting-step, 1rem) + var(--ol-bullet-gap, 1.5rem)),
-            var(--ol-bullet-gap, 1.5rem);
-        background-origin: border-box, border-box;
+        border-inline-end: var(--indentation-guide-width-active) solid var(--indentation-guide-color-active);
     }
 
     .cm-obsidian-hidden {

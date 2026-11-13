@@ -65,41 +65,33 @@ Customize the editor fonts:
 
 	--font-editor-code: 'Google Sans Code', 'JetBrains Mono', 'Consolas', var(--font-mono, ui-monospace);
 
-	/* List indentation / spacing.
-	   UL and OL have independent step / gap pairs so ordered lists can be
-	   tuned to a tighter or wider nesting than unordered lists.
-
-	     --ul-nesting-step: horizontal distance added per nesting level (UL).
-	     --ul-bullet-gap:   width of the `•` bullet slot (also the visual gap
-	                        between bullet and content text).
-	     --ol-nesting-step: horizontal distance added per nesting level (OL).
-	     --ol-bullet-gap:   reserved slot width for the `1.` / `2.` marker
-	                        (and visual gap between marker and content).
-	                        Should be wide enough to hold the largest marker
-	                        you expect (default 1.5rem fits up to 3 digits).
-	     --list-base-offset: shared editor-frame left-padding baseline. */
-	--ul-nesting-step: 1.5rem;
-	--ul-bullet-gap:   0.25rem;
-
-	--ol-nesting-step: 1rem;
-	--ol-bullet-gap:   0.5rem;
-
-	--list-base-offset: 1rem;
-
-	/* Indent-guide styling for list lines. See `.cm-list-line-ul` / `.cm-list-line-ol` below. */
-	--list-guide-color: var(--ui-primary);
-	--list-guide-width: 1px;
-	--list-guide-opacity: 0.05;
-
-	/* Active indent-guide styling — the guide stripe belonging to the
-	   current cursor's ancestor group is highlighted on all sibling lines.
-	   See `.cm-list-line-active-guide` below. */
-	--list-active-guide-color: var(--ui-primary);
-	--list-active-guide-opacity: 1;
-
-	--indent-level: 0;
-
 	/* Your Config Here... */
+}
+```
+
+Customize lists, indentation and checkboxes (Obsidian's variable names; defaults shown). List marks, quote markers and indentation keep their source characters, so revealing them never moves text, and wrapped lines line up with the text after them:
+
+```css
+:root {
+	--list-indent: 2.25em;                /* one indent level: a leading tab or 4 spaces, in lists and plain lines */
+	--list-padding-inline-start: 0.75em;  /* space before a list mark */
+	--list-marker-color: var(--ui-text-dimmed);
+	--list-bullet-size: 0.3em;
+	--list-bullet-radius: 50%;
+
+	--checkbox-size: 1em;
+	--checkbox-radius: 50%;
+	--checkbox-margin-inline-start: 0.5em;
+	--checkbox-margin-inline-end: 0.25em;
+	--checkbox-color: var(--ui-primary);
+	--checkbox-border-color: var(--ui-border-accented);
+	--checkbox-marker-color: var(--ui-bg);
+
+	--indentation-guide-width: 1px;
+	--indentation-guide-width-active: 1px;
+	--indentation-guide-color: color-mix(in oklab, var(--ui-text) 12%, transparent);
+	--indentation-guide-color-active: color-mix(in oklab, var(--ui-text) 30%, transparent);
+	--indentation-guide-editing-indent: 0.85em; /* guide offset inside its indent level */
 }
 ```
 

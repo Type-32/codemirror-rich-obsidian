@@ -12,15 +12,18 @@ const activeIndentField = StateField.define<number>({
     update: (value, tr) => tr.selection || tr.docChanged ? indentLevel(tr.state.doc.lineAt(tr.state.selection.main.from).text) : value,
 })
 
-/** Wraps each leading tab / 4-space group in `.cm-indent`; the one at the cursor's depth gets `.cm-active-indent`. */
+/**
+ * Wraps each leading tab / 4-space group (after any `>` quote markers) in `.cm-indent`, a `--list-indent`-wide box
+ * drawing one guide; the one at the cursor's depth gets `.cm-active-indent`.
+ */
 const tabGuides = ViewPlugin.fromClass(class {
     decorations: DecorationSet
     private decorator = new MatchDecorator({
-        regexp: /^(?:\t| {4})+/g,
+        regexp: /^(?: {0,3}> ?)*(?:\t| {4})+/g,
         decorate: (add, from, _to, match, view) => {
             const active = view.state.field(activeIndentField)
             const text = match[0]
-            for (let i = 0, level = 1; i < text.length; level++) {
+            for (let i = /^(?: {0,3}> ?)*/.exec(text)![0].length, level = 1; i < text.length; level++) {
                 const w = text[i] === '\t' ? 1 : 4
                 add(from + i, from + i + w, level === active ? activeTabMark : tabMark)
                 i += w
