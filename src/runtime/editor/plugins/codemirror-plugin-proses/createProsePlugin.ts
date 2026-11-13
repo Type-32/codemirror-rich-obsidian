@@ -61,6 +61,9 @@ export function createProsePlugin(cfg: ProsePluginConfig): Extension {
 	const nodes: Record<string, true> = Object.fromEntries(cfg.nodes.map(n => [n, true]))
 	const facets = cfg.reconfigureOn ?? []
 	const facetChanged = (tr: Transaction) => facets.some(f => tr.startState.facet(f) !== tr.state.facet(f))
+	// The parser works incrementally (viewport first, the rest in the background), so a transaction without a doc change
+	// can bring nodes that weren't in the tree yet; without this, a long note's later embeds never render.
+	const parsed = (tr: Transaction) => syntaxTree(tr.startState) !== syntaxTree(tr.state)
 
 	if (cfg.block) {
 		const full = (state: EditorState) => Decoration.set(build(cfg, nodes, state, 0, state.doc.length), true)
@@ -69,7 +72,7 @@ export function createProsePlugin(cfg: ProsePluginConfig): Extension {
 			update(value, tr) {
 				const dragging = tr.state.field(mouseSelectingField, false)
 				const released = tr.startState.field(mouseSelectingField, false) && !dragging
-				if (tr.docChanged || tr.reconfigured || released || facetChanged(tr)) return full(tr.state)
+				if (tr.docChanged || tr.reconfigured || released || facetChanged(tr) || parsed(tr)) return full(tr.state)
 				if (dragging) return value
 				if (tr.selection && crossedNode(nodes, tr)) return full(tr.state)
 				return value
@@ -98,7 +101,7 @@ export function createProsePlugin(cfg: ProsePluginConfig): Extension {
 		update(u: ViewUpdate) {
 			const dragging = u.state.field(mouseSelectingField, false)
 			const released = u.startState.field(mouseSelectingField, false) && !dragging
-			if (u.viewportChanged || released || u.transactions.some(t => t.reconfigured || facetChanged(t))) {
+			if (u.viewportChanged || released || u.transactions.some(t => t.reconfigured || facetChanged(t) || (!t.docChanged && parsed(t)))) {
 				this.decorations = this.full(u.view)
 				return
 			}
