@@ -1,6 +1,18 @@
 # Changelog
 
 
+## v0.3.9
+
+[compare changes](https://github.com/Type-32/codemirror-rich-obsidian/compare/v0.3.8...v0.3.9)
+
+### 🩹 Fixes
+
+- **ext:** Re-decorate when the parser finishes nodes after load ([13f0a44](https://github.com/Type-32/codemirror-rich-obsidian/commit/13f0a44))
+
+### ❤️ Contributors
+
+- Type-32 ([@Type-32](https://github.com/Type-32))
+
 ## v0.3.8
 
 [compare changes](https://github.com/Type-32/codemirror-rich-obsidian/compare/v0.3.7...v0.3.8)
