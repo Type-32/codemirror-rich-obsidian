@@ -107,6 +107,13 @@ Customize code block colours. Fenced code is highlighted with the language from 
 
 Task statuses work like Obsidian: any single character between the brackets (`- [/]`, `- [-]`, `- [>]`…) followed by a space makes a task. Every status but a space renders checked; only `x`/`X` are struck through. The status is on both the line (`.cm-task-line[data-task="/"]`) and the checkbox (`.cm-task-checkbox-wrapper[data-task="/"]`) for styling.
 
+List and quote editing follows Obsidian:
+- **Enter** continues a list item (next number, a fresh `[ ]` for tasks) or a quote. On an empty item, a nested one moves up a level and a top-level one ends the list; on an empty `> ` line the quote ends.
+- **Shift-Enter** starts a new line inside the item, indented to its text.
+- **Tab / Shift-Tab** move an item, with its children, a level in or out. The first item of a list stays put. In quotes the indentation goes after the `>`.
+- **Backspace** deletes one character; it never removes a list mark on its own.
+- **Ordered lists are renumbered after every edit** that touches them, in sequence from their first number. Lists split only by blank lines or a `.`/`)` change count as one. Undo reverts the edit and the renumbering together. Loading or setting the document programmatically never renumbers. Turn it off with `listRenumbering.of(false)` from `/kit`.
+
 ## Extensions
 
 Extensions are plain CodeMirror `Extension`s passed through the `extensions` prop. The prop is reactive: change the array and the editor reconfigures in place. `[]` is an empty extension, so toggling one off is a ternary:
@@ -385,7 +392,6 @@ The kit also exports what the built-ins are made of:
 Ship `.vue` files in an extension? Style them with Nuxt UI props or your own CSS. Tailwind v4 doesn't scan `node_modules`, so utility classes inside a published package won't be generated in the host app.
 
 ## Known Issues
-- Ordered List sequencing is different than that of Obsidian. We think that they probably use a sort of counter to keep track of lists of the same level beneath the hood, but we don't know for sure.
 - `[text]` without a link target is styled as a link, unlike in Obsidian.
 - Nested callouts render as a styled blockquote (source visible) instead of a callout widget: `markdown-it-obsidian-callouts` mis-renders nesting, and the old whole-block widget could corrupt the document on edit. Regular callouts render as before.
 - Tables are widget-only: the markdown source is never shown. Click a cell to edit (Enter/blur commits, Esc cancels); right-click for a Nuxt UI context menu with insert/delete row & column, alignment, clear cell; drag the `⋮⋮` handles to reorder rows/columns. Malformed tables (bad delimiter row) fall back to plain text so they can be repaired.

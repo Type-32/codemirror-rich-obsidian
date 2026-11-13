@@ -29,6 +29,7 @@ import { editorKeymapPlugin } from './plugins/codemirror-editor-plugins/editorKe
 import { customBracketClosingPlugin } from './plugins/codemirror-editor-plugins/customBracketClosingPlugin'
 import { customBracketClosingConfig } from './plugins/customBracketClosingConfig'
 import { indentationGuides } from './plugins/codemirror-editor-plugins/indentationGuidesPlugin'
+import { listEditing } from './plugins/codemirror-editor-plugins/listEditingPlugin'
 import type { WysiwygPlugin } from './types/editor-types'
 
 /**
@@ -69,12 +70,13 @@ export default function (config?: WysiwygPlugin): Extension {
         editorLinkClickPlugin,
         editorInternalLinkAutocompletePlugin,
         editorKeymapPlugin,
+        listEditing,
         customBracketClosingPlugin,
         customBracketClosingConfig.of(true),
         indentationGuides(),
         syntaxHighlighting(proseStylesPlugin),
         syntaxHighlighting(codeHighlighter),
         //@ts-ignore lezer extension typing is looser than lang-markdown's
-        markdown(markdownConfig({ ...config?.lezer, codeLanguages: config?.lezer?.codeLanguages ?? languages })),
+        markdown({ ...markdownConfig({ ...config?.lezer, codeLanguages: config?.lezer?.codeLanguages ?? languages }), addKeymap: false }),
     ]
 }

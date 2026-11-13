@@ -22,6 +22,11 @@
   - `.cm-list-formatting` now covers just the mark (`-`, `1.`), not the space after it.
   - Bullets also get `.cm-list-bullet`.
   - List lines no longer get padding from CSS. Their hanging indent is set per line through `--hang-padding` and `--hang-indent`.
+- **List keys behave like Obsidian's.** `@codemirror/lang-markdown`'s keymap is no longer installed (see [List editing](#list-editing)).
+  - Backspace at the start of an item's text deletes a character instead of removing the mark.
+  - Enter on an empty item ends the list at once, instead of first making it loose.
+  - Enter in a loose list doesn't add a blank line.
+- **Ordered lists are renumbered as you edit.** Turn it off with `listRenumbering.of(false)`.
 
 ## Code blocks
 
@@ -53,3 +58,23 @@
   - `--checkbox-size`, `--checkbox-radius`, `--checkbox-margin-inline-start`, `--checkbox-margin-inline-end`, `--checkbox-color`, `--checkbox-border-color`, `--checkbox-marker-color`;
   - `--indentation-guide-width`, `--indentation-guide-width-active`, `--indentation-guide-color`, `--indentation-guide-color-active`, `--indentation-guide-editing-indent`.
 - **One `.cm-indent` span per leading tab.** Lines in a paragraph that start with a tab used to get two nested spans.
+
+## List editing
+
+Checked key by key against Obsidian (32 cases), and covered by tests.
+
+- **Enter** continues lists (next number, a fresh `[ ]` for tasks), quotes and callouts.
+  - On an empty item, a nested one moves up a level and a top-level one ends the list.
+  - An empty `> ` line ends the quote.
+  - A line with only whitespace is cleared.
+- **Shift-Enter** adds a line inside the item, indented to its text.
+- **Tab / Shift-Tab** move an item with its children.
+  - An ordered item takes the number of its new place (`1.` when it starts a sublist).
+  - The first item of a list can't be indented.
+  - In quotes the indentation goes after the `>`.
+- **Renumbering:**
+  - Every ordered list an edit touches is numbered in sequence from its first item, at each level.
+  - Lists split only by blank lines, or by `.` vs `)`, count as one.
+  - Undo reverts the edit and the renumbering together.
+  - Undo/redo and programmatic changes (setting the document) never renumber.
+- **For your own keymaps:** `insertListNewline`, `insertListContinuation`, `indentListItem`, `outdentListItem` and `listRenumbering` are exported from `/kit`.

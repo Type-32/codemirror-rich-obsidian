@@ -10,3 +10,4 @@ export { blockAt, canMoveBlock, deleteBlock, dropTarget, moveBlock, moveBlockTo,
 export { headingAt, headings, headingsField, headingsOf, type Heading } from './headings'
 export { default as ActionList } from './components/ActionList.vue'
 export { mouseSelectingField, selectionTouches, selectionWithin } from '../editor/utility/tools'
+export { indentListItem, insertListContinuation, insertListNewline, listRenumbering, outdentListItem } from '../editor/plugins/codemirror-editor-plugins/listEditingPlugin'
