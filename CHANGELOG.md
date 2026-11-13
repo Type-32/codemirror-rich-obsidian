@@ -1,6 +1,18 @@
 # Changelog
 
 
+## v0.3.8
+
+[compare changes](https://github.com/Type-32/codemirror-rich-obsidian/compare/v0.3.7...v0.3.8)
+
+### 🚀 Enhancements
+
+- **ext:** Pass subpath to embed components for internal links ([0fe9685](https://github.com/Type-32/codemirror-rich-obsidian/commit/0fe9685))
+
+### ❤️ Contributors
+
+- Type-32 ([@Type-32](https://github.com/Type-32))
+
 ## v0.3.7
 
 [compare changes](https://github.com/Type-32/codemirror-rich-obsidian/compare/v0.3.6...v0.3.7)
