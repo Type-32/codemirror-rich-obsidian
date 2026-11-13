@@ -1,71 +1,60 @@
 import { WidgetType } from '@codemirror/view';
 import type { EditorView } from '@codemirror/view';
 
-// Widget for the language flair on the first line
+const COPY_ICON = '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>'
+
+/**
+ * Replaces the opening fence of a rendered code block: the language's display name (`js` → JavaScript), the raw
+ * info for unknown languages, or a copy icon without one. Clicking copies the code.
+ */
 export class LanguageFlairWidget extends WidgetType {
     private button: HTMLButtonElement | null = null;
 
-    constructor(private lang: string, private codeContent: string) {
+    constructor(readonly label: string, readonly codeContent: string) {
         super();
     }
 
-    toDOM(view: EditorView): HTMLElement {
+    toDOM(_view: EditorView): HTMLElement {
         const widgetRoot = document.createElement('div');
-        widgetRoot.className = 'cm-codeblock-flair-container'; // For styling the line's new content
+        widgetRoot.className = 'cm-codeblock-flair-container';
         widgetRoot.setAttribute('contenteditable', 'false');
 
-        // You could add a copy button here as another child of widgetRoot
         this.button = document.createElement('button');
         this.button.className = 'cm-codeblock-copy-button';
-        this.button.textContent = this.lang || '';
+        this.button.setAttribute('aria-label', 'Copy');
+        if (this.label) this.button.textContent = this.label;
+        else this.button.innerHTML = COPY_ICON;
         this.button.onclick = (event) => {
             event.stopPropagation();
             navigator.clipboard.writeText(this.codeContent)
                 .then(() => {
-                    if (this.button) {
-                        this.button.disabled = true;
-                        setTimeout(() => {
-                            if (this.button) {
-                                this.button.disabled = false;
-                            }
-                        }, 1500); // Revert after 1.5 seconds
-                    }
+                    if (!this.button) return;
+                    this.button.disabled = true;
+                    setTimeout(() => {
+                        if (this.button) this.button.disabled = false;
+                    }, 1500);
                 })
-                .catch(err => {
-                    console.error('Failed to copy code to clipboard:', err);
-                    // Optional: Notify user of error
-                });
+                .catch(err => console.error('Failed to copy code to clipboard:', err));
         };
         widgetRoot.appendChild(this.button);
-
         return widgetRoot;
     }
 
     override eq(other: LanguageFlairWidget): boolean {
-        return other.lang === this.lang && other.codeContent === this.codeContent;
+        return other.label === this.label && other.codeContent === this.codeContent;
     }
 
     override ignoreEvent(event: Event): boolean {
-        // If mousedown/click is on the button, we handle it (return true, CM ignores).
-        if ((event.type === 'mousedown' || event.type === 'click') && this.button && this.button.contains(event.target as Node)) {
-            return true;
-        }
-        // For other events on the widget, or clicks not on the button, let CodeMirror handle them.
-        // This allows clicking on the flair text (not the button) to potentially give focus
-        // to the line, which then causes our plugin to hide the widget and show source.
-        return false;
+        // The button handles its own clicks; elsewhere on the flair line, CodeMirror places the cursor (revealing the fences).
+        return (event.type === 'mousedown' || event.type === 'click') && !!this.button?.contains(event.target as Node);
     }
 }
 
-// Widget for the closing fence line
+/** Replaces the closing fence of a rendered code block with nothing (the line stays as the block's bottom padding). */
 export class EndFenceWidget extends WidgetType {
-    toDOM(view: EditorView): HTMLElement {
+    toDOM(): HTMLElement {
         const div = document.createElement('div');
-        div.className = 'hidden'; // Style for padding or specific look
-        // div.setAttribute('contenteditable', 'false');
-        // // This widget replaces '```'. It can be an empty styled div.
-        // // Example: ensure it has some height if it's an empty line.
-        // div.innerHTML = '&nbsp;'; // Or style with min-height
+        div.className = 'hidden';
         return div;
     }
 

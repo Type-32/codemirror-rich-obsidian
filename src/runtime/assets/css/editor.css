@@ -12,8 +12,13 @@
     --font-editor-code: 'Google Sans Code', 'JetBrains Mono', 'Consolas', var(--font-mono, ui-monospace);
 }
 
-/* Code block palette (Obsidian's variable names and default colours). Override these to theme code highlighting. */
+/* Code palette and box (Obsidian's variable names). Override these to theme code blocks and inline code. */
 :root {
+    --code-background: var(--ui-bg-muted);
+    --code-border-width: 1px;
+    --code-border-color: var(--ui-border-accented);
+    --code-radius: 0.5rem;
+    --code-size: 0.875em;
     --code-normal: var(--ui-text);
     --code-comment: var(--ui-text-dimmed);
     --code-function: #e0ac00;
@@ -152,7 +157,12 @@ div[contenteditable='true']:focus {
     }
 
     .cm-mono {
-        @apply font-editor-code bg-muted px-1 rounded-lg border border-default text-toned!;
+        @apply font-editor-code px-1;
+        font-size: var(--code-size);
+        background-color: var(--code-background);
+        border: var(--code-border-width) solid var(--code-border-color);
+        border-radius: var(--code-radius);
+        color: var(--code-normal) !important;
     }
 
     .cm-hashtag {
@@ -190,30 +200,34 @@ div[contenteditable='true']:focus {
         }
     }
 
-    .cm-codeblock,
-    .cm-line-codeblock-begin,
-    .cm-line-codeblock-end {
-        @apply font-editor-code py-0 my-0 text-sm! font-semibold border-x border-x-default mx-2 px-3 bg-muted relative;
+    /* Code block lines (`proseCodeBlockPlugin`): one box from the opening fence line to the closing one. */
+    .cm-codeblock {
+        @apply font-editor-code relative mx-2 px-3;
+        font-size: var(--code-size);
         color: var(--code-normal);
+        background-color: var(--code-background);
+        border-inline: var(--code-border-width) solid var(--code-border-color);
 
         .cm-codeblock-flair-container {
-            @apply absolute top-2 right-2 overflow-visible z-10;
+            @apply absolute top-1 right-2 overflow-visible z-10;
             .cm-codeblock-copy-button {
-                @apply rounded hover:bg-accented transition duration-200 cursor-pointer py-1.5 px-2 font-sans text-dimmed z-10;
+                @apply inline-flex items-center rounded hover:bg-accented transition duration-200 cursor-pointer py-1 px-2 font-sans text-xs text-dimmed z-10;
             }
         }
     }
 
-    .cm-line-codeblock-content {
-        @apply border-x border-x-accented;
-    }
-
     .cm-line-codeblock-begin {
-        @apply rounded-t-lg border-t border-x border-t-accented border-x-accented pt-1 px-1;
+        @apply pt-1;
+        border-top: var(--code-border-width) solid var(--code-border-color);
+        border-start-start-radius: var(--code-radius);
+        border-start-end-radius: var(--code-radius);
     }
 
     .cm-line-codeblock-end {
-        @apply rounded-b-lg border-b border-x border-b-accented border-x-accented pb-1 px-1;
+        @apply pb-1;
+        border-bottom: var(--code-border-width) solid var(--code-border-color);
+        border-end-start-radius: var(--code-radius);
+        border-end-end-radius: var(--code-radius);
     }
 
     /* Code tokens from `codeHighlighter`. */

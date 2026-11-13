@@ -6,6 +6,7 @@ import { languages } from '@codemirror/language-data'
 import type { DecorationSet } from '@codemirror/view'
 import { highlightTree } from '@lezer/highlight'
 import { proseCalloutPlugin } from '../src/runtime/editor/plugins/codemirror-plugin-proses/proseCalloutPlugin'
+import { codeBlockLabel, proseCodeBlockPlugin } from '../src/runtime/editor/plugins/codemirror-plugin-proses/proseCodeBlockCodemirrorViewPlugin'
 import { codeHighlighter } from '../src/runtime/editor/plugins/codeHighlighter'
 import proseStyles from '../src/runtime/editor/plugins/lezerStylesHighlightingPlugin'
 import { markdownConfig } from '../src/runtime/editor/wysiwyg'
@@ -68,5 +69,29 @@ describe('code blocks', () => {
         expect(c['"s"']).toContain('cm-code-string')
         expect(c['// c']).toContain('cm-code-comment')
         expect(Object.entries(c).filter(([, v]) => v.includes('cm-mono')).map(([k]) => k)).toEqual(['inline'])
+    })
+
+    // Source lines the rendered block hides (the fences).
+    const hidden = (src: string) => {
+        const field = proseCodeBlockPlugin as StateField<DecorationSet>
+        const s = state(src, field)
+        const lines: string[] = []
+        s.field(field).between(0, s.doc.length, (from, to, deco) => { if (deco.spec.widget) lines.push(s.sliceDoc(from, to)) })
+        return lines
+    }
+
+    it('hides both fences while the cursor is outside; anywhere inside reveals both', () => {
+        expect(hidden('x«»\n\n```js\na\nb\n```')).toEqual(['```js', '```'])
+        expect(hidden('x\n\n```js\n«»a\nb\n```')).toEqual([])
+        expect(hidden('x\n\n```js\na\nb\n``«»`')).toEqual([])
+    })
+
+    it('leaves an unclosed fence as source', () => {
+        expect(hidden('x«»\n\n```js\nunclosed\nlast line')).toEqual([])
+    })
+
+    it('labels the block with the language name, the raw tag if unknown, nothing without one', () => {
+        expect(['js', 'ts', 'python', 'css', 'js title="x.js"', 'unknownlang', ''].map(codeBlockLabel))
+            .toEqual(['JavaScript', 'TypeScript', 'Python', 'CSS', 'JavaScript', 'unknownlang', ''])
     })
 })

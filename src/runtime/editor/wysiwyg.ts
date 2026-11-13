@@ -33,10 +33,10 @@ import { listEditing } from './plugins/codemirror-editor-plugins/listEditingPlug
 import type { WysiwygPlugin } from './types/editor-types'
 
 /**
- * Style overrides on top of lezer-markdown's: fenced code text carries the code language's own tokens
- * (not the inline-code `monospace` pill), and a revealed `[ ]` task marker is formatting like Obsidian's.
+ * Style overrides on top of lezer-markdown's: fenced code text carries the code language's own tokens (not the
+ * inline-code `monospace` pill), and a revealed fence's language and a `[ ]` task marker are formatting like Obsidian's.
  */
-const obsidianStyleTags = { props: [styleTags({ 'FencedCode/CodeText': t.content, 'Task/TaskMarker': t.meta })] }
+const obsidianStyleTags = { props: [styleTags({ 'FencedCode/CodeText': t.content, 'FencedCode/CodeInfo': t.meta, 'Task/TaskMarker': t.meta })] }
 
 /** Lezer config shared with `parseMarkdownToAST` so offline parsing matches the live editor. */
 export function markdownConfig(config?: WysiwygPlugin['lezer']) {

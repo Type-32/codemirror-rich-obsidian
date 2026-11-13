@@ -95,10 +95,11 @@ Customize lists, indentation and checkboxes (Obsidian's variable names; defaults
 }
 ```
 
-Customize code block colours. Fenced code is highlighted with the language from its info string (`@codemirror/language-data`, loaded on demand; pass `wysiwyg({ lezer: { codeLanguages } })` to use your own list). Tokens get `cm-code-*` classes coloured by Obsidian's variable names, so the palette is plain CSS (`:root` for light, `.dark` for dark):
+Customize code blocks. Fenced code is highlighted with the language from its info string (`@codemirror/language-data`, loaded on demand; pass `wysiwyg({ lezer: { codeLanguages } })` to use your own list). As in Obsidian, a rendered block shows the language's name top-right (a copy icon when there's none; click to copy the code), and a cursor anywhere inside reveals both fences. An unclosed fence stays as source. Tokens get `cm-code-*` classes, and blocks and inline code take their box from the same variables, so it's all plain CSS (`:root` for light, `.dark` for dark):
 
 ```css
 :root {
+	--code-background: …; --code-border-width: …; --code-border-color: …; --code-radius: …; --code-size: …;
 	--code-normal: …; --code-comment: …; --code-function: …; --code-important: …;
 	--code-keyword: …; --code-operator: …; --code-property: …; --code-punctuation: …;
 	--code-string: …; --code-tag: …; --code-value: …;

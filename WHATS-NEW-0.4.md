@@ -27,12 +27,17 @@
   - Enter on an empty item ends the list at once, instead of first making it loose.
   - Enter in a loose list doesn't add a blank line.
 - **Ordered lists are renumbered as you edit.** Turn it off with `listRenumbering.of(false)`.
+- **Code block CSS changed.** Block lines use `--code-background`, `--code-border-*`, `--code-radius` and `--code-size` instead of fixed Tailwind utilities, and code text is no longer semibold. Inline code (`.cm-mono`) uses the same variables.
 
 ## Code blocks
 
 - **Fenced code is highlighted now.** The language from the info string (`js`, `python`, `css`…) is loaded on demand. Previously no code block was highlighted at all.
 - **The palette is plain CSS, using Obsidian's variable names:** `--code-normal`, `--code-comment`, `--code-function`, `--code-important`, `--code-keyword`, `--code-operator`, `--code-property`, `--code-punctuation`, `--code-string`, `--code-tag`, `--code-value`. Set light colours on `:root` and dark ones on `.dark`.
 - **Code text no longer gets the inline-code pill style.**
+- **Revealing works like Obsidian's.** A cursor anywhere in the block shows both fences; before, each fence showed only while the cursor was on its own line. The language label hides while you edit, and the revealed language is dimmed.
+- **The label shows the language's name** (`js` → JavaScript, `py` → Python), the raw tag for unknown languages, or a copy icon when there's none. Clicking copies the code.
+- **An unclosed fence stays as source.** Before, its last line was hidden as if it were the closing fence.
+- **New box variables:** `--code-background`, `--code-border-width`, `--code-border-color`, `--code-radius`, `--code-size`.
 
 ## Tasks
 
