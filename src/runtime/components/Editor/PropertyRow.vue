@@ -17,7 +17,7 @@ const row = ref<HTMLElement>()
 const TYPES: PropertyType[] = ['text', 'list', 'number', 'checkbox', 'date', 'datetime', 'tags', 'aliases', 'object']
 const menu = computed<DropdownMenuItem[][]>(() => [
     [
-        { type: 'label', label: api.t('ui.properties.type', 'Property type') },
+        { type: 'label', label: api.t('ui.properties.typeMenu', 'Property type') },
         ...TYPES.map(ty => ({
             label: api.t(`ui.properties.type.${ty}`, TYPE_LABELS[ty]), icon: TYPE_ICONS[ty], type: 'checkbox' as const,
             checked: ty === type.value, onSelect: () => api.setType(props.path, ty, props.value),
@@ -139,7 +139,7 @@ function addField() {
         <UDropdownMenu :items="menu" :size="api.menuSize()" :disabled="!api.editable" :content="{ align: 'start' }" :ui="{ content: MENU_UI }">
             <UButton
                 :icon="TYPE_ICONS[type]" size="sm" color="neutral" variant="ghost" square class="cm-property-icon" tabindex="-1"
-                :aria-label="api.t('ui.properties.type', 'Property type')"
+                :aria-label="api.t('ui.properties.typeMenu', 'Property type')"
             />
         </UDropdownMenu>
         <UInput

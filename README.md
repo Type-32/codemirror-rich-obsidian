@@ -376,8 +376,10 @@ UI strings:
 | `ui.ai.accept`, `ui.ai.discard`, `ui.ai.retry`, `ui.ai.stop` | Accept, Discard, Retry, Stop |
 | `ui.ai.edit`, `ui.ai.done`, `ui.ai.copy`, `ui.ai.insertBelow` | Edit, Done, Copy, Insert below |
 | `ui.properties.add`, `ui.properties.addField`, `ui.properties.name`, `ui.properties.deleteFrontmatter` | Add property, Add field, Property name, Delete frontmatter |
-| `ui.properties.empty`, `ui.properties.remove`, `ui.properties.type` | Empty, Remove, Property type |
-| `ui.properties.type.text` … `.list`, `.number`, `.checkbox`, `.date`, `.datetime`, `.tags`, `.aliases`, `.object` | Text, List, Number, Checkbox, Date, Date & time, Tags, Aliases, Object |
+| `ui.properties.empty`, `ui.properties.remove`, `ui.properties.typeMenu` | Empty, Remove, Property type |
+| `ui.properties.type.text` … `.list`, `.number`, `.checkbox`, `.date`, `.datetime`, `.tags`, `.aliases`, `.object`, `.unknown` | Text, List, Number, Checkbox, Date, Date & time, Tags, Aliases, Object, Unknown |
+
+No key is both a label and a prefix of other keys, so the labels can live in nested i18n files (`ui.properties.typeMenu` is the type menu's title; `ui.properties.type.*` are the type names).
 
 In your own components, `label(state, key, fallback)` reads the same facet.
 
