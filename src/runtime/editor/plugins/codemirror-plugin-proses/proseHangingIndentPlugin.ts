@@ -1,5 +1,5 @@
 import { Decoration, type DecorationSet, EditorView, ViewPlugin, type ViewUpdate } from '@codemirror/view'
-import type { EditorState, Line, Range } from '@codemirror/state'
+import type { EditorState, Extension, Line, Range } from '@codemirror/state'
 import { syntaxTree } from '@codemirror/language'
 import type { SyntaxNode } from '@lezer/common'
 import { markRevealed } from '../../utility/tools'
@@ -117,8 +117,9 @@ function measurer(view: EditorView): Measure {
 /**
  * Per-line hanging indents for list items, tasks, quotes, tab-indented lines and list continuations. The only
  * owner of line `style`, so other plugins' line decorations never fight over it.
+ * Typed as an `Extension`: a declaration file can't describe the anonymous class's private members.
  */
-export const proseHangingIndentPlugin = ViewPlugin.fromClass(class {
+export const proseHangingIndentPlugin: Extension = ViewPlugin.fromClass(class {
     decorations: DecorationSet
     private stale = false
     private readonly onFonts = () => {
