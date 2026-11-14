@@ -3,17 +3,9 @@ import type { EditorState, Range } from '@codemirror/state'
 import type { SyntaxNode, SyntaxNodeRef } from '@lezer/common'
 import { BlockLatexWidget, InlineLatexWidget } from '../codemirror-widgets/proseLatexWidgets'
 import { createProsePlugin } from './createProsePlugin'
-import { renderedCallout } from './proseCalloutPlugin'
+import { inRenderedCallout } from './proseCalloutPlugin'
 
 const hiddenSource = Decoration.mark({ class: 'cm-hidden-latex' })
-
-/** Inside a callout that renders as a widget: its nested editor draws the math, so this editor must not. */
-function inRenderedCallout(state: EditorState, node: SyntaxNode): boolean {
-    for (let n = node.parent; n; n = n.parent) {
-        if (n.name === 'Blockquote' && n.parent?.name !== 'Blockquote') return renderedCallout(state, n) !== null
-    }
-    return false
-}
 
 function quoteDepth(node: SyntaxNode): number {
     let depth = 0

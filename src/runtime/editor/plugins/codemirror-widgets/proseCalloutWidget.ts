@@ -121,6 +121,7 @@ export class CalloutWidget extends WidgetType {
                 return
             }
             if (target.closest('a, .cm-link, .cm-clickable-link')) return // links behave as links
+            if (target.closest('.vue-embed-widget')) return // and embeds (a base's toolbar, a diagram) as themselves
             if (!view.state.facet(EditorView.editable)) return // inside a nested editor: the enclosing callout decides
             e.preventDefault()
             e.stopPropagation()

@@ -18,6 +18,14 @@ export function renderedCallout(state: EditorState, bq: SyntaxNode): { from: num
     return selectionTouches(state, from, bq.to) ? null : { from, to: bq.to }
 }
 
+/** Inside a callout that renders as a widget: its nested editor draws the node, so this editor must not. */
+export function inRenderedCallout(state: EditorState, node: SyntaxNode): boolean {
+    for (let n = node.parent; n; n = n.parent) {
+        if (n.name === 'Blockquote' && n.parent?.name !== 'Blockquote') return renderedCallout(state, n) !== null
+    }
+    return false
+}
+
 /**
  * Replaces a callout blockquote (`> [!type] title`, `[!type]` opening its first line) with a rendered widget while
  * the selection is outside it. Nested quotes and callouts render inside the widget (its body is a nested editor);

@@ -1,11 +1,20 @@
 import { Decoration, EditorView, keymap } from '@codemirror/view'
 import { syntaxTree } from '@codemirror/language'
 import { Prec, type EditorState, type Line } from '@codemirror/state'
+import type { SyntaxNode } from '@lezer/common'
 import { TableWidget, tableEntry } from '../codemirror-widgets/proseTableWidget'
 import { contextMenuSize } from '../hostAppConfig'
 import { parseTable } from '../../../utils/markdownTable'
 import { sameVisualLine } from '../../utility/tools'
 import { createProsePlugin } from './createProsePlugin'
+
+/** Inside a table that renders as a widget: its cells' nested editors draw the node, so this editor must not. */
+export function inRenderedTable(state: EditorState, node: SyntaxNode): boolean {
+    for (let n = node.parent; n; n = n.parent) {
+        if (n.name === 'Table') return parseTable(state.doc.sliceString(n.from, n.to)) !== null
+    }
+    return false
+}
 
 /** The table starting (`starts`) or ending on `line`, if any. */
 function tableOn(state: EditorState, line: Line, starts: boolean): { from: number, to: number } | null {

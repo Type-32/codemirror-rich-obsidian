@@ -2,12 +2,15 @@ import { Decoration } from '@codemirror/view'
 import { internalLinkMapFacet } from '../linkMappingConfig'
 import { ProseVueComponentEmbedWidget } from '../codemirror-widgets/proseVueComponentEmbedWidget'
 import { createProsePlugin } from './createProsePlugin'
+import { inRenderedCallout } from './proseCalloutPlugin'
+import { inRenderedTable } from './proseTablePlugin'
 
 const hidden = Decoration.replace({})
 
 /**
  * `[[path#sub|alias]]` → <a>; `![[path]]` with a registered `embedComponent` → block widget
- * under the line (source hidden unless touched). Unregistered embeds render as links.
+ * under the line (source hidden unless touched). Unregistered embeds render as links. Embeds inside a rendered
+ * callout or table are left to its nested editors, which draw them in place.
  */
 export const proseInternalLinkPlugin = createProsePlugin({
     block: true,
@@ -25,6 +28,7 @@ export const proseInternalLinkPlugin = createProsePlugin({
         const subpathNode = link.getChild('InternalSubpath')
 
         if (isEmbed && linkInfo?.embedComponent) {
+            if (inRenderedCallout(state, main) || inRenderedTable(state, main)) return false
             const props: Record<string, unknown> = { linkData: linkInfo, ...linkInfo.componentProps }
             if (linkInfo.filePath) props.filePath = linkInfo.filePath
             if (displayNode) props.display = state.doc.sliceString(displayNode.from, displayNode.to)
