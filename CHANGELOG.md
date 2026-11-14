@@ -1,6 +1,18 @@
 # Changelog
 
 
+## v0.4.4
+
+[compare changes](https://github.com/Type-32/codemirror-rich-obsidian/compare/v0.4.3...v0.4.4)
+
+### 🩹 Fixes
+
+- **ext:** Leave embeds inside rendered callouts and tables to their nested editors ([24aea3d](https://github.com/Type-32/codemirror-rich-obsidian/commit/24aea3d))
+
+### ❤️ Contributors
+
+- Type-32 ([@Type-32](https://github.com/Type-32))
+
 ## v0.4.3
 
 [compare changes](https://github.com/Type-32/codemirror-rich-obsidian/compare/v0.4.2...v0.4.3)
