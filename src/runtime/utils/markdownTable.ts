@@ -8,15 +8,8 @@ export interface TableModel {
 
 /** Split a `| a | b |` line on unescaped pipes; trims cells; drops the outer empties. */
 function splitRow(line: string): string[] {
-    const cells: string[] = []
-    let cur = ''
-    for (let i = 0; i < line.length; i++) {
-        const ch = line[i]
-        if (ch === '\\' && line[i + 1] === '|') { cur += '\\|'; i++ }
-        else if (ch === '|') { cells.push(cur.trim()); cur = '' }
-        else cur += ch
-    }
-    cells.push(cur.trim())
+    const at = pipes(line)
+    const cells = at.slice(1).map((end, i) => line.slice(at[i]! + 1, end).trim())
     if (cells.length && cells[0] === '') cells.shift()
     if (cells.length && cells[cells.length - 1] === '') cells.pop()
     return cells
@@ -36,6 +29,59 @@ export function parseTable(source: string): TableModel | null {
     })
     return { header, align, rows }
 }
+
+/** Offsets of the cell boundaries in `line`: before the first segment, each unescaped pipe, and the end. */
+function pipes(line: string): number[] {
+    const at = [-1]
+    for (let i = 0; i < line.length; i++) {
+        if (line[i] === '\\' && line[i + 1] === '|') i++
+        else if (line[i] === '|') at.push(i)
+    }
+    at.push(line.length)
+    return at
+}
+
+/**
+ * Where a cell's text sits in the table `source` (`row` -1 is the header): its trimmed text, or for an empty cell
+ * the whitespace inside it less one space on each side, so typing there gives `| x |`. Null when the row is too short
+ * to have that cell (GFM allows it). Rows are counted the way `parseTable` counts them.
+ */
+export function cellRange(source: string, row: number, col: number): { from: number, to: number } | null {
+    const target = row < 0 ? 0 : row + 2 // line 1 is the delimiter row
+    let offset = 0, n = 0
+    for (const line of source.split('\n')) {
+        if (line.trim() && n++ === target) {
+            const at = pipes(line)
+            const cells = at.slice(1).map((end, i) => [at[i]! + 1, end] as const)
+            const blank = ([a, b]: readonly [number, number]) => !line.slice(a, b).trim()
+            if (cells.length && blank(cells[0]!)) cells.shift()
+            if (cells.length && blank(cells[cells.length - 1]!)) cells.pop()
+            const cell = cells[col]
+            if (!cell) return null
+            let [from, to] = cell
+            if (blank(cell)) {
+                from = Math.min(from + 1, to)
+                to = Math.max(from, to - 1)
+            }
+            else {
+                while (/\s/.test(line[from]!)) from++
+                while (/\s/.test(line[to - 1]!)) to--
+            }
+            return { from: offset + from, to: offset + to }
+        }
+        offset += line.length + 1
+    }
+    return null
+}
+
+/** A new empty row to append to the table `source` (`\n` included), indented like its last line. */
+export function newRow(source: string, cols: number): string {
+    const last = source.slice(source.lastIndexOf('\n') + 1)
+    return `\n${/^\s*/.exec(last)![0]}|${'   |'.repeat(cols)}`
+}
+
+/** Cell text as it must appear in the source: one line, and pipes escaped so they can't split the cell. */
+export const escapeCell = (text: string) => text.replace(/\n/g, ' ').replace(/(?<!\\)\|/g, '\\|')
 
 /** Serializes with padded columns so the source stays readable. */
 export function serializeTable(t: TableModel): string {
@@ -111,8 +157,7 @@ export function setAlign(t: TableModel, col: number, align: TableAlign): TableMo
 
 export function setCell(t: TableModel, row: number, col: number, text: string): TableModel {
     const n = clone(t)
-    // Pipes would split the cell; escape so the table shape is stable. No newlines in GFM cells.
-    const safe = text.replace(/\n/g, ' ').replace(/(?<!\\)\|/g, '\\|')
+    const safe = escapeCell(text)
     if (row < 0) n.header[col] = safe
     else n.rows[row]![col] = safe
     return n

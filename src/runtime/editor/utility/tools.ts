@@ -24,6 +24,12 @@ export function selectionWithin(state: EditorState, from: number, to: number): b
     return false
 }
 
+/** True when `a` and `b` are on the same visual (wrapped) line; true when either isn't rendered. */
+export function sameVisualLine(view: EditorView, a: number, b: number): boolean {
+    const ca = view.coordsAtPos(a), cb = view.coordsAtPos(b)
+    return !ca || !cb || Math.abs(ca.top - cb.top) < 1
+}
+
 /** Nesting depth of a line: each leading tab or 4-space group is one level. */
 export function indentLevel(lineText: string): number {
     let level = 0

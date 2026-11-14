@@ -67,6 +67,20 @@
     --indentation-guide-color-active: color-mix(in oklab, var(--ui-text) 30%, transparent);
     /* Guide offset inside its indent box: under the parent's bullet. */
     --indentation-guide-editing-indent: 0.85em;
+
+    --table-border-width: 1px;
+    --table-border-color: var(--ui-border);
+    --table-text-size: 0.875rem;
+    --table-line-height: 1.5;
+    --table-header-background: var(--ui-bg-elevated);
+    --table-header-color: inherit;
+    --table-header-weight: 600;
+    --table-cell-vertical-alignment: top;
+    --table-column-min-width: 6ch;
+    --table-column-max-width: none;
+    --table-selection-border-width: 2px;
+    --table-selection-border-color: var(--ui-primary);
+    --table-selection-border-radius: 4px;
 }
 
 .cm-cursor {
@@ -406,22 +420,43 @@ div[contenteditable='true']:focus {
     }
 
     .cm-table-widget {
-        /* overflow-x:auto also clips on y, which cut off the focus ring and the outer
-           cell borders. Pad inside the scroll box (and pull back with a negative margin so
-           the footprint is unchanged) so edge decorations have room to paint. */
-        @apply my-2 overflow-x-auto p-1 -mx-1;
+        /* overflow-x:auto also clips on y, which cut off the focus ring and the outer cell borders: pad inside the
+           scroll box (pulled back sideways with a negative margin) so edge decorations have room to paint. Vertical
+           space is padding too: CodeMirror's height map doesn't see a block widget's margins, so ↑/↓ and clicks
+           below the table would land in the wrong line. */
+        @apply py-3 px-1 -mx-1 overflow-x-auto;
 
         table {
-            @apply w-full border-collapse text-sm;
+            @apply w-full border-collapse;
+            font-size: var(--table-text-size);
+            line-height: var(--table-line-height);
         }
         .cm-table-cell {
-            @apply border border-default px-3 py-1.5 align-top outline-none;
+            @apply px-3 py-1.5 relative;
+            border: var(--table-border-width) solid var(--table-border-color);
+            vertical-align: var(--table-cell-vertical-alignment);
+            min-width: var(--table-column-min-width);
+            max-width: var(--table-column-max-width);
         }
         th.cm-table-cell {
-            @apply bg-elevated font-semibold;
+            @apply text-start;
+            background-color: var(--table-header-background);
+            color: var(--table-header-color);
+            font-weight: var(--table-header-weight);
         }
-        .cm-table-cell:focus {
-            @apply ring-2 ring-primary/50 bg-elevated/50;
+        /* The cell being edited. */
+        .cm-table-cell:has(.cm-focused)::after {
+            @apply absolute pointer-events-none content-[''];
+            inset: calc(-1 * var(--table-border-width));
+            border: var(--table-selection-border-width) solid var(--table-selection-border-color);
+            border-radius: var(--table-selection-border-radius);
+        }
+        /* Each cell is a nested editor (`nestedEditor`): no frame or padding of its own. */
+        .cm-editor {
+            @apply bg-transparent outline-none;
+        }
+        .cm-content, .cm-line {
+            @apply p-0;
         }
 
         /* Drag handles: invisible until the table is hovered. */

@@ -425,7 +425,7 @@ Ship `.vue` files in an extension? Style them with Nuxt UI props or your own CSS
 
 ## Known Issues
 - `[text]` without a link target is styled as a link, unlike in Obsidian.
-- Tables are widget-only: the markdown source is never shown. Click a cell to edit (Enter/blur commits, Esc cancels); right-click for a Nuxt UI context menu with insert/delete row & column, alignment, clear cell; drag the `⋮⋮` handles to reorder rows/columns. Malformed tables (bad delimiter row) fall back to plain text so they can be repaired.
+- Tables are widget-only: the markdown source is never shown. Each cell renders like the note (links, tags, math). Click a cell to edit it with live preview; every keystroke is written into that cell's text in the source, and the table is not re-padded. Keys follow Obsidian: Tab/Shift-Tab and Enter move between cells (adding a row at the end), ↑/↓/←/→ cross cell edges and leave the table, and Escape returns to the note. Right-click for a Nuxt UI context menu with insert/delete row & column, alignment and clear cell; drag the `⋮⋮` handles to reorder rows/columns. Malformed tables (bad delimiter row) fall back to plain text so they can be repaired.
 
 ### Resolved
 - ~~Rendered block replacement recomputes all regions on every operation.~~ Every prose plugin now goes through `createProsePlugin`: inline decorations are viewport-scoped and patch only changed lines; block decorations rebuild only when the selection actually crosses one of the plugin's nodes.

@@ -11,12 +11,16 @@ import { editorLabels } from '../../kit/labels'
  */
 export const nestedEditorContent = Facet.define<() => Extension, (() => Extension) | null>({ combine: values => values[0] ?? null })
 
+/** What makes a nested editor read-only; the default `nestedEditor` mode. */
+export const readOnly: Extension = [EditorState.readOnly.of(true), EditorView.editable.of(false)]
+
 /**
- * A read-only editor rendering `doc` the way `parent` renders markdown (same live preview, link and code-block
- * mappings, Vue context, labels), mounted in `container`. Used for content rendered inside widgets, such as callout
- * titles and bodies; since it isn't editable, nothing in it ever reveals source. Destroy it with the widget.
+ * An editor rendering `doc` the way `parent` renders markdown (same live preview, link and code-block mappings, Vue
+ * context, labels), mounted in `container`; destroy it with the widget. Read-only by default (callout titles and
+ * bodies), so nothing in it reveals source; `extensions` replaces that, e.g. with a compartment that makes a table
+ * cell editable while it's being edited.
  */
-export function nestedEditor(parent: EditorView, doc: string, container: HTMLElement): EditorView {
+export function nestedEditor(parent: EditorView, doc: string, container: HTMLElement, extensions: Extension = readOnly): EditorView {
     const content = parent.state.facet(nestedEditorContent)
     return new EditorView({
         parent: container,
@@ -29,8 +33,7 @@ export function nestedEditor(parent: EditorView, doc: string, container: HTMLEle
                 vueContextFacet.of(parent.state.facet(vueContextFacet)),
                 editorLabels.of(parent.state.facet(editorLabels)),
                 EditorState.tabSize.of(parent.state.tabSize),
-                EditorState.readOnly.of(true),
-                EditorView.editable.of(false),
+                extensions,
                 EditorView.lineWrapping,
                 // The parent measures widget heights; tell it when this one changes (images loading, folds).
                 EditorView.updateListener.of((u) => {
