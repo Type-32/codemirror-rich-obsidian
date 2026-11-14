@@ -1,6 +1,18 @@
 # Changelog
 
 
+## v0.4.3
+
+[compare changes](https://github.com/Type-32/codemirror-rich-obsidian/compare/v0.4.2...v0.4.3)
+
+### 🚀 Enhancements
+
+- **ext:** Complete `[[` links in property values ([8dcc50b](https://github.com/Type-32/codemirror-rich-obsidian/commit/8dcc50b))
+
+### ❤️ Contributors
+
+- Type-32 ([@Type-32](https://github.com/Type-32))
+
 ## v0.4.2
 
 [compare changes](https://github.com/Type-32/codemirror-rich-obsidian/compare/v0.4.1...v0.4.2)
