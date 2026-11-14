@@ -105,6 +105,14 @@ function toEditor() {
     if (end !== null) view.dispatch({ selection: { anchor: Math.min(end + 1, view.state.doc.length) } })
 }
 
+/** No properties left: remove the empty frontmatter itself (with its line break), back to a plain note. */
+function deleteFrontmatter() {
+    const end = frontmatterEnd(view.state)
+    if (end === null || !api.editable) return
+    view.dispatch({ changes: { from: 0, to: Math.min(end + 1, view.state.doc.length) }, selection: { anchor: 0 } })
+    view.focus()
+}
+
 /** Row-level keyboard model (Obsidian's): ↑/↓/Tab move between rows, Enter edits, Escape returns to the note. */
 function onKeydown(e: KeyboardEvent) {
     const target = e.target as HTMLElement
@@ -162,9 +170,14 @@ onBeforeUnmount(() => observer?.disconnect())
                 <option v-for="k in keySuggestions" :key="k" :value="k" />
             </datalist>
         </div>
-        <button v-if="api.editable" type="button" class="cm-properties-add" @click="startAdd">
-            <UIcon name="i-lucide-plus" />
-            {{ t('ui.properties.add', 'Add property') }}
-        </button>
+        <div v-if="api.editable" class="cm-properties-actions">
+            <UButton size="sm" color="neutral" variant="ghost" icon="i-lucide-plus" class="cm-properties-add" :label="t('ui.properties.add', 'Add property')" @click="startAdd" />
+            <UButton
+                v-if="!adding && !Object.keys(data).length"
+                size="sm" color="neutral" variant="ghost" icon="i-lucide-trash-2" class="cm-properties-delete"
+                :label="t('ui.properties.deleteFrontmatter', 'Delete frontmatter')"
+                @click="deleteFrontmatter"
+            />
+        </div>
     </div>
 </template>

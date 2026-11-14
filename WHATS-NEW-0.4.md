@@ -50,6 +50,7 @@
 Obsidian's Properties view, in the note.
 
 - **Typing `---` as the first line of a note without properties starts them**, as in Obsidian: the note gets empty frontmatter and "Add property" opens. After you name a property, the cursor goes straight to its value, for every type.
+- **Empty properties can be deleted:** with no properties, "Delete frontmatter" (`ui.properties.deleteFrontmatter`) sits right of "Add property" and removes the empty `---` block. Both buttons and "Add field" are Nuxt UI `sm` buttons.
 - **Rows:** type icon (type menu and Remove), name (rename in place), value.
 - **Value editors:**
   - Text, where `[[wikilinks]]` render as links and fire `internal-link-click`;

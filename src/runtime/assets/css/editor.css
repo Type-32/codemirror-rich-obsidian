@@ -801,8 +801,12 @@ div[contenteditable='true']:focus {
         @apply font-editor-code text-xs text-muted;
     }
 
-    .cm-properties-add, .cm-property-add-field {
-        @apply flex items-center gap-1 self-start rounded-md px-2 py-1 text-dimmed hover:text-default hover:bg-elevated outline-none focus-visible:ring-2 focus-visible:ring-accented cursor-pointer;
+    /* "Add property" (and "Delete frontmatter" while there are none) / "Add field": Nuxt UI `sm` ghost buttons, dimmed. */
+    .cm-properties-actions {
+        @apply flex items-center gap-1;
+    }
+    .cm-properties-add, .cm-properties-delete, .cm-property-add-field {
+        @apply self-start text-dimmed hover:text-default;
     }
 
     /* One leading tab or 4-space group (`indentationGuides`): a `--list-indent`-wide box drawing one guide. */

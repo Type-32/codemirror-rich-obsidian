@@ -155,10 +155,11 @@ function addField() {
             </div>
             <div v-else-if="type === 'object'" class="cm-property-children">
                 <PropertyRow v-for="(child, k) in (value as Record<string, unknown>)" :key="k" :path="[...path, String(k)]" :value="child" />
-                <button v-if="api.editable" type="button" class="cm-property-add-field" tabindex="-1" @click="addField">
-                    <UIcon name="i-lucide-plus" />
-                    {{ api.t('ui.properties.addField', 'Add field') }}
-                </button>
+                <UButton
+                    v-if="api.editable" size="sm" color="neutral" variant="ghost" icon="i-lucide-plus" class="cm-property-add-field" tabindex="-1"
+                    :label="api.t('ui.properties.addField', 'Add field')"
+                    @click="addField"
+                />
             </div>
             <span v-else-if="type === 'unknown'" class="cm-property-unknown">{{ JSON.stringify(value) }}</span>
             <input
