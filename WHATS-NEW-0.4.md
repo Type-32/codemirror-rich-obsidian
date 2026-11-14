@@ -33,7 +33,11 @@
   - Folding uses `.is-collapsible` and `.is-collapsed` instead of `<details>` and `[open]`.
   - `markdown-it-obsidian-callouts` is no longer a dependency.
 - **Read-only editors never reveal source.** `selectionTouches` and `selectionWithin` (from `/kit`) now return false in a non-editable view, so a `disabled` editor always shows rendered markdown.
-- **Table cells are nested editors.** A cell is `.cm-table-cell > .cm-table-cell-content > .cm-editor` instead of a `contenteditable` cell holding markdown-it HTML. Header cells are aligned to the start, like Obsidian's. `markdown-it` is no longer a dependency.
+- **Tables look and are built like Obsidian's.**
+  - Cells are nested editors: `.cm-table-cell > .cm-table-cell-content > .cm-editor`, instead of `contenteditable` cells holding markdown-it HTML.
+  - The header sits on the page, bold and aligned to the start. The body is one rounded box with inner lines.
+  - Drag handles (`.cm-table-handle.cm-table-col-handle` / `.cm-table-row-handle`) are bars above the hovered cell's column and left of its row, not an extra row and column with `.cm-table-corner`.
+  - `markdown-it` is no longer a dependency.
 - **Frontmatter shows as a properties panel by default.** Pass `:properties="false"` to `<Editor>` to keep the raw YAML.
   - While the panel is shown, typing can't edit the YAML behind it, and the cursor stays in the body.
   - Programmatic changes (`v-model`, `useEditorFrontmatter`, `view.dispatch` without a user event) still can.
@@ -141,8 +145,11 @@ Checked key by key against Obsidian.
   - Backspace at the start of the line below a table selects the table (press again to delete it).
 - **Read-only editors and callouts:** cells, the context menu and the drag handles don't edit. They used to change a disabled editor's table, and a table inside a callout without saving it to the note.
 - **↑/↓ and clicks below a table land on the right line.** A vertical margin on the table used to throw CodeMirror's line positions off, so ↑ from the line below jumped over the table.
-- **New variables (Obsidian's names):**
-  - `--table-border-width`, `--table-border-color`, `--table-text-size`, `--table-line-height`;
-  - `--table-header-background`, `--table-header-color`, `--table-header-weight`;
+- **Add buttons:** `+` below the table adds a row and puts the cursor in it; `+` to its right adds a column (Obsidian's).
+- **New variables:**
+  - Obsidian's names: `--table-border-width`, `--table-border-color`, `--table-background` (body cells), `--table-text-size`, `--table-line-height`;
+  - `--table-header-background`, `--table-header-border-color`, `--table-header-color`, `--table-header-weight`;
   - `--table-cell-vertical-alignment`, `--table-column-min-width`, `--table-column-max-width`;
-  - `--table-selection-border-width`, `--table-selection-border-color`, `--table-selection-border-radius`.
+  - `--table-drag-handle-size`, `--table-drag-handle-color`;
+  - ours: `--table-radius` (the body's corners).
+- **The table sits inside the text column,** indented by the handle gutter. Obsidian pulls it into the page margin, but the editor has no side padding for the handles to sit in.

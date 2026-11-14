@@ -2,7 +2,7 @@
 import { computed, nextTick, onMounted, ref, type Directive, type ShallowRef } from 'vue'
 import type { ContextMenuItem } from '@nuxt/ui'
 import { Compartment, EditorState, Prec, Transaction, type TransactionSpec } from '@codemirror/state'
-import { EditorView, keymap, type ViewUpdate } from '@codemirror/view'
+import { EditorView, drawSelection, keymap, type ViewUpdate } from '@codemirror/view'
 import { redo, undo } from '@codemirror/commands'
 import { nestedEditor, readOnly } from '../../editor/utility/nestedEditor'
 import { sameVisualLine } from '../../editor/utility/tools'
@@ -95,6 +95,8 @@ function writeThrough(u: ViewUpdate) {
 }
 
 const cellExtensions = [
+    // The note's drawSelection hides the native caret and selection in everything inside it, this cell included.
+    drawSelection(),
     // One line, and pipes escaped, whatever is typed or pasted.
     EditorState.transactionFilter.of((tr) => {
         if (!tr.docChanged) return tr
@@ -123,6 +125,7 @@ const cellExtensions = [
 /** Edit cell (r, c), selecting its text (`all`) or with the cursor at its start or end; `r` past the last row adds one. */
 async function goto(r: number, c: number, at: 'all' | 'start' | 'end') {
     if (r >= rows()) {
+        if (!editable()) return
         const end = tableFrom() + props.table.value.source.length
         props.view.dispatch({ changes: { from: end, insert: newRow(props.table.value.source, cols()) } })
         await nextTick()
@@ -209,11 +212,14 @@ const vCell: Directive<HTMLElement, [number, number]> = {
 function onCellMousedown(e: MouseEvent, r: number, c: number) {
     const cell = cells.get(key(r, c))
     if (!cell || cell === active || e.button !== 0 || !editable()) return
-    if ((e.target as Element).closest('a, .cm-link, .cm-clickable-link')) return // links behave as links
+    if ((e.target as Element).closest('a, .cm-link, .cm-clickable-link, .cm-table-handle')) return // links behave as links; handles drag
     e.preventDefault()
     e.stopPropagation()
     activate(cell, cell.posAtCoords({ x: e.clientX, y: e.clientY }, false))
 }
+
+/** The cell under the pointer: its column's and row's drag handles show (Obsidian). */
+const hover = ref<{ row: number, col: number } | null>(null)
 
 // ── Context menu ──
 
@@ -289,32 +295,31 @@ function dragEnd() {
 <template>
     <UContextMenu :items="items" :ui="{ content: 'w-56' }">
         <div ref="root" class="cm-table-editor" @mousedown.stop>
-            <table @contextmenu.capture="guardContextMenu">
+            <table @contextmenu.capture="guardContextMenu" @mouseleave="hover = null">
                 <thead>
                     <tr>
-                        <th class="cm-table-corner" />
-                        <th
-                            v-for="(h, c) in model.header" :key="`hh-${c}`"
-                            class="cm-table-col-handle"
-                            :class="{ 'cm-table-drop': dropHint?.kind === 'col' && dropHint.index === c }"
-                            draggable="true"
-                            title="Drag to reorder column"
-                            @dragstart="dragStart('col', c, $event)"
-                            @dragover="dragOver('col', c, $event)"
-                            @drop="drop('col', c)"
-                            @dragend="dragEnd"
-                        >⋮⋮</th>
-                    </tr>
-                    <tr>
-                        <th class="cm-table-corner" />
                         <th
                             v-for="(_h, c) in model.header" :key="`h-${c}`"
                             class="cm-table-cell"
+                            :class="{ 'cm-table-drop': dropHint?.kind === 'col' && dropHint.index === c }"
                             :style="{ textAlign: model.align[c] ?? undefined }"
                             @contextmenu="onContextMenu(-1, c)"
                             @mousedown.capture="onCellMousedown($event, -1, c)"
+                            @mouseenter="hover = { row: -1, col: c }"
+                            @dragover="dragOver('col', c, $event)"
+                            @drop="drop('col', c)"
                         >
                             <div v-cell="[-1, c]" class="cm-table-cell-content" />
+                            <div
+                                class="cm-table-handle cm-table-col-handle"
+                                :class="{ 'is-visible': hover?.col === c }"
+                                draggable="true"
+                                title="Drag to reorder column"
+                                @dragstart="dragStart('col', c, $event)"
+                                @dragend="dragEnd"
+                            >
+                                <UIcon name="i-lucide-grip-horizontal" />
+                            </div>
                         </th>
                     </tr>
                 </thead>
@@ -326,25 +331,36 @@ function dragEnd() {
                         @drop="drop('row', r)"
                     >
                         <td
-                            class="cm-table-row-handle"
-                            draggable="true"
-                            title="Drag to reorder row"
-                            @dragstart="dragStart('row', r, $event)"
-                            @dragend="dragEnd"
-                            @contextmenu="onContextMenu(r, 0)"
-                        >⋮⋮</td>
-                        <td
                             v-for="(_cell, c) in row" :key="`c-${r}-${c}`"
                             class="cm-table-cell"
                             :style="{ textAlign: model.align[c] ?? undefined }"
                             @contextmenu="onContextMenu(r, c)"
                             @mousedown.capture="onCellMousedown($event, r, c)"
+                            @mouseenter="hover = { row: r, col: c }"
                         >
                             <div v-cell="[r, c]" class="cm-table-cell-content" />
+                            <div
+                                v-if="c === 0"
+                                class="cm-table-handle cm-table-row-handle"
+                                :class="{ 'is-visible': hover?.row === r }"
+                                draggable="true"
+                                title="Drag to reorder row"
+                                @dragstart="dragStart('row', r, $event)"
+                                @dragend="dragEnd"
+                            >
+                                <UIcon name="i-lucide-grip-vertical" />
+                            </div>
                         </td>
                     </tr>
                 </tbody>
             </table>
+            <!-- Hidden in read-only editors by CSS: the template doesn't re-render when the editor's editable state changes. -->
+            <div class="cm-table-add-row" aria-label="Add row below" @click="goto(rows(), 0, 'start')">
+                <UIcon name="i-lucide-plus" />
+            </div>
+            <div class="cm-table-add-col" aria-label="Add column to the right" @click="commit(insertCol(model, cols()))">
+                <UIcon name="i-lucide-plus" />
+            </div>
         </div>
     </UContextMenu>
 </template>

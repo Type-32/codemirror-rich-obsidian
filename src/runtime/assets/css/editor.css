@@ -69,18 +69,21 @@
     --indentation-guide-editing-indent: 0.85em;
 
     --table-border-width: 1px;
-    --table-border-color: var(--ui-border);
-    --table-text-size: 0.875rem;
-    --table-line-height: 1.5;
-    --table-header-background: var(--ui-bg-elevated);
+    --table-border-color: var(--ui-border-accented);
+    --table-radius: 8px;
+    /* Body cells; the header sits on the page. */
+    --table-background: color-mix(in oklab, var(--ui-bg-elevated) 50%, transparent);
+    --table-text-size: 0.933em;
+    --table-line-height: 1.3;
+    --table-header-background: transparent;
+    --table-header-border-color: transparent;
     --table-header-color: inherit;
     --table-header-weight: 600;
     --table-cell-vertical-alignment: top;
     --table-column-min-width: 6ch;
     --table-column-max-width: none;
-    --table-selection-border-width: 2px;
-    --table-selection-border-color: var(--ui-primary);
-    --table-selection-border-radius: 4px;
+    --table-drag-handle-size: 14px;
+    --table-drag-handle-color: var(--ui-text-dimmed);
 }
 
 .cm-cursor {
@@ -420,37 +423,60 @@ div[contenteditable='true']:focus {
     }
 
     .cm-table-widget {
-        /* overflow-x:auto also clips on y, which cut off the focus ring and the outer cell borders: pad inside the
-           scroll box (pulled back sideways with a negative margin) so edge decorations have room to paint. Vertical
-           space is padding too: CodeMirror's height map doesn't see a block widget's margins, so ↑/↓ and clicks
-           below the table would land in the wrong line. */
-        @apply py-3 px-1 -mx-1 overflow-x-auto;
+        /* The padding holds the drag handles and add buttons around the table (overflow-x:auto clips on y too). Not
+           pulled outside with a negative margin as Obsidian does: the editor's scroller would clip them, as the
+           editor has no side padding of its own. No vertical margin either: CodeMirror's height map doesn't see a
+           block widget's margins, so ↑/↓ and clicks below the table would land in the wrong line. */
+        @apply py-4 overflow-x-auto;
+        padding-inline: calc(var(--table-drag-handle-size) + 2px);
 
+        .cm-table-editor {
+            @apply relative;
+        }
         table {
-            @apply w-full border-collapse;
+            @apply w-full border-separate border-spacing-0;
             font-size: var(--table-text-size);
             line-height: var(--table-line-height);
         }
         .cm-table-cell {
-            @apply px-3 py-1.5 relative;
-            border: var(--table-border-width) solid var(--table-border-color);
+            @apply p-2 relative;
             vertical-align: var(--table-cell-vertical-alignment);
             min-width: var(--table-column-min-width);
             max-width: var(--table-column-max-width);
+            border: 0 solid var(--table-border-color);
+            border-left-width: var(--table-border-width);
+            &:last-child {
+                border-right-width: var(--table-border-width);
+            }
         }
         th.cm-table-cell {
             @apply text-start;
+            border-color: var(--table-header-border-color);
             background-color: var(--table-header-background);
             color: var(--table-header-color);
             font-weight: var(--table-header-weight);
         }
-        /* The cell being edited. */
-        .cm-table-cell:has(.cm-focused)::after {
-            @apply absolute pointer-events-none content-[''];
-            inset: calc(-1 * var(--table-border-width));
-            border: var(--table-selection-border-width) solid var(--table-selection-border-color);
-            border-radius: var(--table-selection-border-radius);
+        /* The body is one rounded box with inner lines. */
+        td.cm-table-cell {
+            border-top-width: var(--table-border-width);
+            background-color: var(--table-background);
         }
+        tbody tr:last-child > td {
+            border-bottom-width: var(--table-border-width);
+        }
+        tbody tr:first-child > td:first-child {
+            border-top-left-radius: var(--table-radius);
+        }
+        tbody tr:first-child > td:last-child {
+            border-top-right-radius: var(--table-radius);
+        }
+        tbody tr:last-child > td:first-child {
+            border-bottom-left-radius: var(--table-radius);
+        }
+        tbody tr:last-child > td:last-child {
+            border-bottom-right-radius: var(--table-radius);
+        }
+
         /* Each cell is a nested editor (`nestedEditor`): no frame or padding of its own. */
         .cm-editor {
             @apply bg-transparent outline-none;
@@ -459,27 +485,62 @@ div[contenteditable='true']:focus {
             @apply p-0;
         }
 
-        /* Drag handles: invisible until the table is hovered. */
-        .cm-table-corner, .cm-table-col-handle, .cm-table-row-handle {
-            @apply border-0 bg-transparent p-0 text-dimmed text-xs leading-none select-none opacity-0 transition-opacity;
+        /* Drag handles: a bar above the hovered cell's column and left of its row. */
+        .cm-table-handle {
+            @apply absolute flex items-center justify-center cursor-grab select-none text-xs opacity-0 transition-opacity;
+            color: var(--table-drag-handle-color);
+            &.is-visible {
+                @apply opacity-100;
+            }
+            &:hover {
+                @apply bg-elevated text-default;
+            }
         }
         .cm-table-col-handle {
-            @apply text-center cursor-grab h-4;
+            @apply inset-x-0;
+            top: calc(-1 * var(--table-drag-handle-size));
+            height: var(--table-drag-handle-size);
+            border-radius: var(--table-radius) var(--table-radius) 0 0;
         }
         .cm-table-row-handle {
-            @apply w-4 pr-1 cursor-grab text-center align-middle;
+            @apply inset-y-0;
+            left: calc(-1 * (var(--table-drag-handle-size) + var(--table-border-width)));
+            width: var(--table-drag-handle-size);
+            border-radius: var(--table-radius) 0 0 var(--table-radius);
         }
-        &:hover .cm-table-col-handle, &:hover .cm-table-row-handle {
+
+        /* Add a row below / a column to the right, shown while the table is hovered. */
+        .cm-table-add-row, .cm-table-add-col {
+            @apply absolute flex items-center justify-center cursor-pointer text-xs rounded opacity-0 transition-opacity;
+            color: var(--table-drag-handle-color);
+            &:hover {
+                @apply bg-elevated text-default;
+            }
+        }
+        .cm-table-add-row {
+            @apply inset-x-0 top-full mt-0.5;
+            height: var(--table-drag-handle-size);
+        }
+        .cm-table-add-col {
+            @apply inset-y-0 left-full ml-0.5;
+            width: var(--table-drag-handle-size);
+        }
+        &:hover :is(.cm-table-add-row, .cm-table-add-col) {
             @apply opacity-100;
         }
 
         /* Drop target hint while dragging a row / column. */
         tr.cm-table-drop > td {
-            @apply border-t-2 border-t-primary;
+            @apply border-t-primary;
         }
         th.cm-table-drop {
             @apply text-primary;
         }
+    }
+
+    /* A read-only editor's tables (disabled, or inside a callout) don't edit. */
+    .cm-content[contenteditable='false'] .cm-table-widget :is(.cm-table-handle, .cm-table-add-row, .cm-table-add-col) {
+        @apply hidden;
     }
 
     .cm-callout-widget,
