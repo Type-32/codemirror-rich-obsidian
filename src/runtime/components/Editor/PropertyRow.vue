@@ -71,7 +71,8 @@ function cancel() {
     api.focusRow(props.path)
 }
 
-// Lists (list, tags, aliases): pills plus an input; Enter or blur adds, Backspace on an empty input removes the last.
+// Lists (list, tags, aliases): pills plus an input; Enter or blur adds, Escape drops what's typed (as Obsidian), and
+// Backspace on an empty input removes the last.
 const list = computed(() => (Array.isArray(props.value) ? props.value.map(String) : empty.value ? [] : [String(props.value)]))
 const pillDraft = ref('')
 
@@ -185,7 +186,7 @@ function addField() {
                     autocapitalize="none"
                     @update:open="menuOpen = $event"
                     @keydown.enter="onSuggestKey($event, addPill)"
-                    @keydown.esc="onSuggestKey($event, () => api.focusRow(path))"
+                    @keydown.esc="onSuggestKey($event, () => { pillDraft = ''; api.focusRow(path) })"
                     @keydown.backspace="onPillBackspace"
                     @focusout="addPill"
                 />
