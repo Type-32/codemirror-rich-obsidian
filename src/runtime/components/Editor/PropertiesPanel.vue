@@ -6,11 +6,12 @@ import type { PropertyType } from '../../editor/types/editor-types'
 import { convertValue, editProperties, frontmatterOf, inferType, removeProperty, renameProperty, setProperty } from '../../editor/utility/properties'
 import { frontmatterEnd, propertiesOptions } from '../../editor/plugins/propertiesConfig'
 import { internalLinkMapFacet } from '../../editor/plugins/linkMappingConfig'
+import type { MenuSize } from '../../editor/plugins/hostAppConfig'
 import { label } from '../../kit/labels'
 import PropertyRow from './PropertyRow.vue'
-import { PROPERTIES, pathId, type PropertiesApi } from './properties'
+import { MENU_UI, PROPERTIES, SUGGESTIONS_CONTENT, TYPE_ICONS, pathId, type PropertiesApi } from './properties'
 
-const props = defineProps<{ view: EditorView, yaml: ShallowRef<string> }>()
+const props = defineProps<{ view: EditorView, yaml: ShallowRef<string>, menuSize: ShallowRef<MenuSize | undefined> }>()
 const { view } = props
 const root = ref<HTMLElement>()
 const options = () => view.state.facet(propertiesOptions)
@@ -58,14 +59,27 @@ const api: PropertiesApi = {
         await nextTick()
         rowEl(path)?.focus()
     },
+    menuSize: () => props.menuSize.value,
 }
 provide(PROPERTIES, api)
 
 // Adding a property: a draft row with a key input; the key is written with an empty value, then its value is edited.
 const adding = ref(false)
 const draftKey = ref('')
-const keyInput = ref<HTMLInputElement>()
-const keySuggestions = computed(() => (options().keySuggestions ?? []).filter(k => !(k in data.value)))
+const keyInput = ref<{ inputRef: HTMLInputElement | null }>()
+const keyMenuOpen = ref(false)
+/**
+ * Names offered while naming a new property (Obsidian offers every property in the vault): the host's
+ * `keySuggestions` and every name it has a type for, minus the ones this note has, each with its type's icon. The
+ * menu shows only while some match what's typed.
+ */
+const keyItems = computed(() => {
+    const typed = draftKey.value.trim().toLowerCase()
+    return [...new Set([...options().keySuggestions ?? [], ...Object.keys(options().types ?? {})])]
+        .filter(k => !(k in data.value) && k.toLowerCase().includes(typed))
+        .map(k => ({ label: k, icon: TYPE_ICONS[api.typeOf([k], null)], onSelect: () => { draftKey.value = k; nextTick(commitAdd) } }))
+})
+
 const focusAdd = () => nextTick(() => root.value?.querySelector<HTMLElement>('.cm-properties-add')?.focus())
 
 async function startAdd() {
@@ -73,14 +87,31 @@ async function startAdd() {
     adding.value = true
     draftKey.value = ''
     await nextTick()
-    keyInput.value?.focus()
+    keyInput.value?.inputRef?.focus()
 }
 
-/** The control editing a row's value: a text/number/date display, a list's pill input, or a checkbox. */
+/**
+ * The control editing a row's value: a text/number/date display, a list's input, or a checkbox (Nuxt UI wraps the
+ * last two, so look past the wrappers but not into nested rows).
+ */
 const valueControl = (row: Element | null | undefined) =>
-    row?.querySelector<HTMLElement>(':scope > .cm-property-value > .cm-property-edit, :scope > .cm-property-value > .cm-property-pills > .cm-property-edit')
+    [...row?.querySelectorAll<HTMLElement>(':scope > .cm-property-value .cm-property-edit') ?? []].find(el => el.closest('.cm-property') === row)
+
+/** Enter: after the menu has applied a highlighted suggestion (its handler may run after this one). */
+function onKeyEnter() {
+    nextTick(commitAdd)
+}
+
+/** Escape closes an open suggestion menu first; then it cancels. */
+function onKeyEscape(e: KeyboardEvent) {
+    if (keyMenuOpen.value && keyItems.value.length) return
+    e.preventDefault()
+    e.stopPropagation()
+    cancelAdd()
+}
 
 function commitAdd() {
+    if (!adding.value) return
     const key = draftKey.value.trim()
     adding.value = false
     if (!key || key in data.value) return focusAdd()
@@ -155,20 +186,24 @@ onBeforeUnmount(() => observer?.disconnect())
         <PropertyRow v-for="(value, key) in data" :key="key" :path="[String(key)]" :value="value" />
         <div v-if="adding" class="cm-property cm-property-draft">
             <span class="cm-property-icon" />
-            <input
+            <UInputMenu
                 ref="keyInput"
                 v-model="draftKey"
-                class="cm-property-key"
-                list="cm-property-key-suggestions"
+                mode="autocomplete"
+                :items="keyItems"
+                value-key="label"
+                :content="SUGGESTIONS_CONTENT"
+                ignore-filter
+                open-on-focus
+                :open="keyMenuOpen && keyItems.length > 0"
+                size="sm" variant="none" class="cm-property-key" :ui="{ base: 'px-0', trailing: 'hidden', content: MENU_UI }"
                 autocapitalize="none"
                 :placeholder="t('ui.properties.name', 'Property name')"
-                @keydown.enter.prevent.stop="commitAdd"
-                @keydown.esc.prevent.stop="cancelAdd"
-                @blur="adding && !draftKey.trim() && cancelAdd()"
-            >
-            <datalist id="cm-property-key-suggestions">
-                <option v-for="k in keySuggestions" :key="k" :value="k" />
-            </datalist>
+                @update:open="keyMenuOpen = $event"
+                @keydown.enter.stop="onKeyEnter"
+                @keydown.esc="onKeyEscape"
+                @focusout="adding && !draftKey.trim() && cancelAdd()"
+            />
         </div>
         <div v-if="api.editable" class="cm-properties-actions">
             <UButton size="sm" color="neutral" variant="ghost" icon="i-lucide-plus" class="cm-properties-add" :label="t('ui.properties.add', 'Add property')" @click="startAdd" />

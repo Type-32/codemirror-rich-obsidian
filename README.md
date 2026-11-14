@@ -128,10 +128,11 @@ Typing can't reach the YAML behind the panel: Backspace at the start of the body
 <Editor v-model="doc" :properties="{
 	types: vaultTypes,                                  // e.g. { rating: 'number', due: 'date' }; other keys are inferred
 	onTypeChange: (key, type) => saveType(key, type),   // persist the user's choice (Obsidian's types.json)
-	keySuggestions: allPropertyNames,                   // offered when adding a property
-	valueSuggestions: key => key === 'tags' ? allTags : [],
+	keySuggestions: allPropertyNames,                   // names offered while adding a property, with `types`' keys
+	valueSuggestions: key => key === 'tags' ? allTags : [], // offered while editing a text value or adding to a list
 }" />
 <Editor v-model="doc" :properties="false" />  <!-- raw YAML -->
+<Editor v-model="doc" context-menu-size="sm" />  <!-- Nuxt UI size of the property type menu and the table context menu (default md) -->
 ```
 
 Callouts render the way Obsidian renders them: the title and body are drawn by read-only copies of the editor itself, so everything a note can contain works inside, with each source line on its own line. That includes links, tags, highlights, math, lists, tasks, highlighted code, tables and nested callouts. Links inside work as links. Clicking anywhere else selects the whole callout source to edit it, and the `</>` button puts the cursor at its start. `[!type]-` starts folded and `+` open; the chevron folds and unfolds without touching the source. The widget carries `data-callout` (the lower-cased type), `data-callout-metadata` (after `|`) and `data-callout-fold`, and has `.is-collapsible`/`.is-collapsed`. Icons follow Obsidian's defaults and aliases (`tip`/`hint`/`important`, `warning`/`caution`/`attention`, …).

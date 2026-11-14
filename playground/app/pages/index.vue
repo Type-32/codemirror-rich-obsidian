@@ -150,6 +150,11 @@ function test3() {
 						:disabled="editorDisabled"
 						:extensions="extensions"
 						:fold-gutter="false"
+						context-menu-size="sm"
+						:properties="{
+							types: { aliases: 'aliases', cssclasses: 'list', tags: 'tags', cover: 'text', description: 'text', status: 'text', rating: 'number', done: 'checkbox', created: 'date', updated: 'datetime' },
+							valueSuggestions: key => key === 'tags' ? ['kthalatir', 'lab/parity', 'draft'] : key === 'status' ? ['draft', 'review', 'done'] : [],
+						}"
 						debug
 					/>
 					<ChatPanel :view="editor?.view" class="sticky top-4" />

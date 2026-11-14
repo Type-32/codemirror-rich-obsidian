@@ -1,5 +1,6 @@
 import type { InjectionKey } from 'vue'
 import type { PropertyType } from '../../editor/types/editor-types'
+import type { MenuSize } from '../../editor/plugins/hostAppConfig'
 
 /** What `PropertiesPanel` gives its rows: edits go back to the editor as one YAML rewrite each. */
 export interface PropertiesApi {
@@ -15,9 +16,26 @@ export interface PropertiesApi {
     openLink: (target: string, display?: string) => void
     /** Focus a row after the YAML it renders from has been rewritten. */
     focusRow: (path: string[]) => void
+    /** The editor's `contextMenuSize`, for the type menu. */
+    menuSize: () => MenuSize | undefined
 }
 
 export const PROPERTIES: InjectionKey<PropertiesApi> = Symbol('properties')
+
+/**
+ * The panel's menus (type menu, suggestions): translucent, with the page blurred behind, as in Obsidian. A class
+ * styled in `editor.css`, which the host's Tailwind compiles (utility classes in a package's `.vue` files aren't).
+ */
+export const MENU_UI = 'cm-properties-menu'
+
+/**
+ * Content of the suggestion menus: Nuxt UI's defaults, plus keeping focus in the input while an item is clicked, so
+ * the click picks it instead of blurring the input.
+ */
+export const SUGGESTIONS_CONTENT = {
+    side: 'bottom', sideOffset: 8, collisionPadding: 8, position: 'popper',
+    onMousedown: (e: MouseEvent) => e.preventDefault(),
+} as const
 
 /** Row identity in the DOM (`data-property-path`). */
 export const pathId = (path: string[]) => JSON.stringify(path)

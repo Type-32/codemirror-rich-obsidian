@@ -50,7 +50,14 @@
 Obsidian's Properties view, in the note.
 
 - **Typing `---` as the first line of a note without properties starts them**, as in Obsidian: the note gets empty frontmatter and "Add property" opens. After you name a property, the cursor goes straight to its value, for every type.
-- **Empty properties can be deleted:** with no properties, "Delete frontmatter" (`ui.properties.deleteFrontmatter`) sits right of "Add property" and removes the empty `---` block. Both buttons and "Add field" are Nuxt UI `sm` buttons.
+- **Empty properties can be deleted:** with no properties, "Delete frontmatter" (`ui.properties.deleteFrontmatter`) sits right of "Add property" and removes the empty `---` block.
+- **Built from Nuxt UI components:** `sm` buttons (type icon, Add property, Delete frontmatter, Add field), `sm` inputs (name, values), `UCheckbox`, `UBadge` list items with an `xs` remove button, and `ULink` wikilinks.
+- **Suggestion menus, as in Obsidian** (`UInputMenu`, replacing the native `<datalist>`s):
+  - Naming a new property offers `keySuggestions` and every name in `types` (Obsidian offers every property in the vault), each with its type's icon.
+  - Editing a text value or adding to a list offers `valueSuggestions(key)`.
+  - The menu narrows as you type and hides when nothing matches. ↑/↓ highlight an item; Enter or a click picks it; Escape closes the menu, then cancels.
+- **The type menu and the suggestion menus are translucent with the page blurred behind** (`.cm-properties-menu`: `backdrop-blur-lg`, `bg-default/75`).
+- **`<Editor :context-menu-size>`** (`xs`–`xl`, Nuxt UI's `md` by default) sizes the property type menu and the table context menu.
 - **Rows:** type icon (type menu and Remove), name (rename in place), value.
 - **Value editors:**
   - Text, where `[[wikilinks]]` render as links and fire `internal-link-click`;

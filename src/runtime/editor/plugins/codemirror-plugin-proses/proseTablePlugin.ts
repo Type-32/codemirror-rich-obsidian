@@ -2,6 +2,7 @@ import { Decoration, EditorView, keymap } from '@codemirror/view'
 import { syntaxTree } from '@codemirror/language'
 import { Prec, type EditorState, type Line } from '@codemirror/state'
 import { TableWidget, tableEntry } from '../codemirror-widgets/proseTableWidget'
+import { contextMenuSize } from '../hostAppConfig'
 import { parseTable } from '../../../utils/markdownTable'
 import { sameVisualLine } from '../../utility/tools'
 import { createProsePlugin } from './createProsePlugin'
@@ -63,7 +64,7 @@ export const proseTablePlugin = [
             const source = state.doc.sliceString(node.from, node.to)
             const model = parseTable(source)
             if (!model) return false
-            out.push(Decoration.replace({ widget: new TableWidget(model, source), block: true }).range(node.from, node.to))
+            out.push(Decoration.replace({ widget: new TableWidget(model, source, state.facet(contextMenuSize)), block: true }).range(node.from, node.to))
             return false
         },
     }),

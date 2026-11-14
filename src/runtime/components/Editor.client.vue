@@ -8,7 +8,7 @@ import wysiwyg from '../editor/wysiwyg'
 import { internalLinkMapFacet } from '../editor/plugins/linkMappingConfig'
 import { specialCodeBlockMapFacet } from '../editor/plugins/specialCodeBlockMappingConfig'
 import { customBracketClosingConfig } from '../editor/plugins/customBracketClosingConfig'
-import { vueContextFacet } from '../editor/plugins/hostAppConfig'
+import { contextMenuSize, vueContextFacet, type MenuSize } from '../editor/plugins/hostAppConfig'
 import { editorKeywordSearchPlugin, searchOptionsFacet } from '../editor/plugins/codemirror-editor-plugins/editorKeywordSearchPlugin'
 import { propertiesPanel } from '../editor/plugins/codemirror-plugin-proses/propertiesPlugin'
 import type {
@@ -35,6 +35,8 @@ const props = withDefaults(defineProps<{
     extensions?: Extension[]
     /** Frontmatter as Obsidian's Properties panel (default), with its options; `false` shows the raw YAML. */
     properties?: PropertiesOptions | false
+    /** Nuxt UI size of the menus the editor opens: a property's type menu, a table's context menu. Default `md`. */
+    contextMenuSize?: MenuSize
 }>(), { properties: () => ({}) })
 const emit = defineEmits<{
     'internal-link-click': [detail: InternalLinkClickDetail]
@@ -49,6 +51,7 @@ const foldGutterCompartment = new Compartment()
 const searchCompartment = new Compartment()
 const extensionsCompartment = new Compartment()
 const propertiesCompartment = new Compartment()
+const contextMenuSizeCompartment = new Compartment()
 const propertiesExtension = (p: PropertiesOptions | false | undefined) => (p === false ? [] : propertiesPanel(p))
 const editorElement = ref<HTMLElement>()
 const instance = getCurrentInstance()
@@ -80,6 +83,7 @@ onMounted(() => {
         EditorView.editable.of(!props.disabled),
         extensionsCompartment.of(props.extensions ?? []),
         propertiesCompartment.of(propertiesExtension(props.properties)),
+        contextMenuSizeCompartment.of(contextMenuSize.of(props.contextMenuSize)),
     ]
     editorElement.value?.addEventListener('internal-link-click', handleInternalLinkClick as EventListener)
     editorElement.value?.addEventListener('external-link-click', handleExternalLinkClick as EventListener)
@@ -110,6 +114,7 @@ watch(() => props.foldGutter, v => reconfigure(foldGutterCompartment.reconfigure
 watch(() => props.searchOptions, o => reconfigure(searchCompartment.reconfigure(searchOptionsFacet.of(o || { query: '' }))), { deep: true })
 watch(() => props.extensions, e => reconfigure(extensionsCompartment.reconfigure(e ?? [])))
 watch(() => props.properties, p => reconfigure(propertiesCompartment.reconfigure(propertiesExtension(p))))
+watch(() => props.contextMenuSize, s => reconfigure(contextMenuSizeCompartment.reconfigure(contextMenuSize.of(s))))
 
 function handleReady(payload: { view: EditorView }) {
     view.value = payload.view

@@ -496,8 +496,9 @@ div[contenteditable='true']:focus {
             border-bottom-right-radius: var(--table-radius);
         }
 
-        /* Each cell is a nested editor (`nestedEditor`): no frame or padding of its own. */
-        .cm-editor {
+        /* Each cell is a nested editor (`nestedEditor`): no frame or padding of its own, and no focus ring on its
+           scroller, which a right-click on an idle cell focuses. */
+        .cm-editor, .cm-scroller {
             @apply bg-transparent outline-none;
         }
         .cm-content, .cm-line {
@@ -746,12 +747,15 @@ div[contenteditable='true']:focus {
         }
     }
 
+    /* The controls are Nuxt UI components (`sm` buttons and inputs, badges for list items); these rules only lay
+       them out in Obsidian's columns. Every column's first line is 2rem tall (`h-8`/`min-h-8`), so the type icon,
+       the name and the value share a vertical middle; a value that wraps or nests grows downwards. */
     .cm-property-icon {
-        @apply flex items-center justify-center size-8 shrink-0 text-dimmed cursor-pointer rounded hover:bg-elevated;
+        @apply shrink-0 size-8 justify-center text-dimmed;
     }
 
     .cm-property-key {
-        @apply h-8 shrink-0 bg-transparent text-muted outline-none truncate;
+        @apply shrink-0 h-8;
         width: var(--metadata-label-width, 9em);
     }
 
@@ -759,8 +763,12 @@ div[contenteditable='true']:focus {
         @apply flex-1 min-w-0 flex items-center flex-wrap gap-1 min-h-8;
     }
 
-    .cm-property-display, .cm-property-input {
-        @apply w-full min-h-8 flex items-center bg-transparent outline-none cursor-text text-default;
+    .cm-property-input {
+        @apply w-full;
+    }
+
+    .cm-property-display {
+        @apply w-full min-h-8 flex items-center cursor-text text-default;
     }
 
     .cm-property-empty {
@@ -771,25 +779,12 @@ div[contenteditable='true']:focus {
         @apply text-primary underline cursor-pointer;
     }
 
-    .cm-property-checkbox {
-        @apply size-4 cursor-pointer;
-        accent-color: var(--checkbox-color);
-    }
-
     .cm-property-pills {
-        @apply flex flex-wrap items-center gap-1 w-full py-1;
-    }
-
-    .cm-property-pill {
-        @apply inline-flex items-center gap-1 rounded-full border border-default bg-elevated/50 px-2 py-0.5 text-xs;
-    }
-
-    .cm-property-pill-remove {
-        @apply inline-flex text-dimmed hover:text-default cursor-pointer;
+        @apply flex flex-wrap items-center gap-1 w-full min-h-8;
     }
 
     .cm-property-pill-input {
-        @apply flex-1 min-w-16 bg-transparent outline-none text-xs;
+        @apply flex-1 min-w-16;
     }
 
     .cm-property-children {
@@ -852,6 +847,12 @@ div[contenteditable='true']:focus {
         content: '';
         @apply block w-full h-px bg-accented;
     }
+}
+
+/* The properties panel's menus (type menu, name and value suggestions), portaled out of the editor: translucent with
+   the page blurred behind, as in Obsidian. */
+.cm-properties-menu {
+    @apply backdrop-blur-lg bg-default/75;
 }
 
 /* Selection toolbar (`/ext`). Popover content is portalled to <body>, so these sit outside `.cm-rich-editor`. */

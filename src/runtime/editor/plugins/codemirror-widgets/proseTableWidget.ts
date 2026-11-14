@@ -3,11 +3,14 @@ import { markRaw, shallowRef, type ShallowRef } from 'vue'
 import TableEditor from '../../../components/Editor/TableEditor.vue'
 import { mountVueComponent } from '../../../kit/vue'
 import type { TableModel } from '../../../utils/markdownTable'
+import type { MenuSize } from '../hostAppConfig'
 
 export interface RenderedTable {
     model: TableModel
     /** The table's markdown, exactly as in the document. */
     source: string
+    /** The editor's `contextMenuSize`. */
+    menuSize: MenuSize | undefined
 }
 
 /** The mounted editor of each table widget DOM: its table ref (updated in place) and unmount. */
@@ -23,19 +26,19 @@ export const tableEntry = new WeakMap<HTMLElement, (fromBelow: boolean) => void>
  * edited keeps focus while each keystroke rewrites the source.
  */
 export class TableWidget extends WidgetType {
-    constructor(readonly model: TableModel, readonly source: string) {
+    constructor(readonly model: TableModel, readonly source: string, readonly menuSize: MenuSize | undefined) {
         super()
     }
 
     override eq(other: TableWidget) {
-        return other.source === this.source
+        return other.source === this.source && other.menuSize === this.menuSize
     }
 
     toDOM(view: EditorView) {
         const el = document.createElement('div')
         el.className = 'cm-table-widget'
         el.contentEditable = 'false'
-        const table = shallowRef<RenderedTable>({ model: this.model, source: this.source })
+        const table = shallowRef<RenderedTable>({ model: this.model, source: this.source, menuSize: this.menuSize })
         const register = (enter: (fromBelow: boolean) => void) => tableEntry.set(el, enter)
         tables.set(el, { table, unmount: mountVueComponent(view, el, TableEditor, { view: markRaw(view), table, register }) })
         return el
@@ -44,7 +47,7 @@ export class TableWidget extends WidgetType {
     override updateDOM(dom: HTMLElement) {
         const mounted = tables.get(dom)
         if (!mounted) return false
-        mounted.table.value = { model: this.model, source: this.source }
+        mounted.table.value = { model: this.model, source: this.source, menuSize: this.menuSize }
         return true
     }
 

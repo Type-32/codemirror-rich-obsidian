@@ -293,7 +293,7 @@ function dragEnd() {
 </script>
 
 <template>
-    <UContextMenu :items="items" :ui="{ content: 'w-56' }">
+    <UContextMenu :items="items" :size="table.value.menuSize" :ui="{ content: 'w-56' }">
         <div ref="root" class="cm-table-editor" @mousedown.stop>
             <table @contextmenu.capture="guardContextMenu" @mouseleave="hover = null">
                 <thead>
@@ -355,12 +355,14 @@ function dragEnd() {
                 </tbody>
             </table>
             <!-- Hidden in read-only editors by CSS: the template doesn't re-render when the editor's editable state changes. -->
-            <div class="cm-table-add-row" aria-label="Add row below" @click="goto(rows(), 0, 'start')">
-                <UIcon name="i-lucide-plus" />
-            </div>
-            <div class="cm-table-add-col" aria-label="Add column to the right" @click="commit(insertCol(model, cols()))">
-                <UIcon name="i-lucide-plus" />
-            </div>
+            <UButton
+                icon="i-lucide-plus" size="xs" color="neutral" variant="ghost" class="cm-table-add-row" tabindex="-1"
+                aria-label="Add row below" @click="goto(rows(), 0, 'start')"
+            />
+            <UButton
+                icon="i-lucide-plus" size="xs" color="neutral" variant="ghost" class="cm-table-add-col" tabindex="-1"
+                aria-label="Add column to the right" @click="commit(insertCol(model, cols()))"
+            />
         </div>
     </UContextMenu>
 </template>

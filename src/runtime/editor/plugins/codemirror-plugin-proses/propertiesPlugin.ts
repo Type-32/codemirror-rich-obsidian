@@ -1,6 +1,7 @@
 import { Annotation, EditorSelection, EditorState, Prec, Transaction, type Extension, type StateField } from '@codemirror/state'
 import { Decoration, EditorView, ViewPlugin, keymap, type DecorationSet } from '@codemirror/view'
 import { PropertiesWidget } from '../codemirror-widgets/propertiesWidget'
+import { contextMenuSize } from '../hostAppConfig'
 import { propertiesOptions } from '../propertiesConfig'
 import { propertiesYaml } from '../../utility/properties'
 import type { PropertiesOptions } from '../../types/editor-types'
@@ -13,7 +14,7 @@ const panelField = createProsePlugin({
     decorate(node, state, _active, out) {
         if (node.from !== 0) return false
         const yaml = propertiesYaml(state.doc.sliceString(node.from, node.to))
-        if (yaml !== null) out.push(Decoration.replace({ widget: new PropertiesWidget(yaml), block: true }).range(0, node.to))
+        if (yaml !== null) out.push(Decoration.replace({ widget: new PropertiesWidget(yaml, state.facet(contextMenuSize)), block: true }).range(0, node.to))
         return false
     },
 }) as StateField<DecorationSet>
