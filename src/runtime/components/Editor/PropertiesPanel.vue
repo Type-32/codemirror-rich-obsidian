@@ -76,12 +76,21 @@ async function startAdd() {
     keyInput.value?.focus()
 }
 
+/** The control editing a row's value: a text/number/date display, a list's pill input, or a checkbox. */
+const valueControl = (row: Element | null | undefined) =>
+    row?.querySelector<HTMLElement>(':scope > .cm-property-value > .cm-property-edit, :scope > .cm-property-value > .cm-property-pills > .cm-property-edit')
+
 function commitAdd() {
     const key = draftKey.value.trim()
     adding.value = false
     if (!key || key in data.value) return focusAdd()
     write(d => setProperty(d, [key], null))
-    nextTick(() => rowEl([key])?.querySelector<HTMLElement>('.cm-property-display')?.click())
+    // Straight on to its value, as in Obsidian: a display opens its input on click; a list's input takes focus.
+    nextTick(() => {
+        const control = valueControl(rowEl([key]))
+        control?.focus()
+        if (control?.classList.contains('cm-property-display')) control.click()
+    })
 }
 
 function cancelAdd() {
@@ -117,7 +126,7 @@ function onKeydown(e: KeyboardEvent) {
         e.preventDefault()
         if (target.classList.contains('cm-properties-add')) startAdd()
         else {
-            const control = target.querySelector<HTMLElement>(':scope > .cm-property-value > .cm-property-edit, :scope > .cm-property-value > .cm-property-pills > .cm-property-edit')
+            const control = valueControl(target)
             control?.focus()
             control?.click()
         }

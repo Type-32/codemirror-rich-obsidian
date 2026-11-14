@@ -1,4 +1,4 @@
-import { EditorSelection, EditorState, Prec, Transaction, type Extension, type StateField } from '@codemirror/state'
+import { Annotation, EditorSelection, EditorState, Prec, Transaction, type Extension, type StateField } from '@codemirror/state'
 import { Decoration, EditorView, ViewPlugin, keymap, type DecorationSet } from '@codemirror/view'
 import { PropertiesWidget } from '../codemirror-widgets/propertiesWidget'
 import { propertiesOptions } from '../propertiesConfig'
@@ -43,6 +43,24 @@ const protectFrontmatter = EditorState.changeFilter.of((tr) => {
     return atStart ? false : [0, Math.min(end + 1, tr.startState.doc.length)]
 })
 
+const startedProperties = Annotation.define<true>()
+
+/**
+ * Typing the third `-` of a first line `---` in a note without properties gives it empty ones and opens "Add
+ * property", as in Obsidian (`---` → `---\n\n---`, so the panel shows).
+ */
+const startProperties = [
+    EditorState.transactionFilter.of((tr) => {
+        if (!tr.isUserEvent('input.type') || panelEnd(tr.startState) !== null) return tr
+        if (tr.startState.doc.line(1).text !== '--' || tr.newDoc.line(1).text !== '---') return tr
+        const end = tr.newDoc.line(1).to
+        return [tr, { changes: { from: end, insert: end === tr.newDoc.length ? '\n\n---\n' : '\n\n---' }, annotations: startedProperties.of(true), sequential: true }]
+    }),
+    EditorView.updateListener.of((u) => {
+        if (u.transactions.some(t => t.annotation(startedProperties))) u.view.dom.querySelector<HTMLElement>('.cm-properties-add')?.click()
+    }),
+]
+
 /** The cursor never sits inside or before the panel: such selections move to the start of the body. */
 const keepSelectionInBody = EditorState.transactionFilter.of((tr) => {
     const end = panelEnd(tr.state)
@@ -77,5 +95,5 @@ const enterPanel = Prec.high(keymap.of([{
  * The YAML keeps its comments, order and formatting (see `utility/properties`).
  */
 export function propertiesPanel(options: PropertiesOptions = {}): Extension {
-    return [propertiesOptions.of(options), panelField, protectFrontmatter, keepSelectionInBody, initialSelection, enterPanel]
+    return [propertiesOptions.of(options), panelField, protectFrontmatter, startProperties, keepSelectionInBody, initialSelection, enterPanel]
 }

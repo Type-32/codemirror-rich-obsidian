@@ -31,9 +31,12 @@ describe('hanging indent', () => {
         expect(hang('para\n\tcontinued', 'continued')).toBe('--hang-padding: calc(1 * var(--list-indent)); --hang-indent: calc(1 * var(--list-indent));')
     })
 
-    it('list continuations wrap at the item text, or their own if further right', () => {
-        expect(hang('- item\n  lazy', 'lazy')).toBe('--hang-padding: max(calc(1 * var(--list-padding-inline-start) + 20px), calc(20px)); --hang-indent: calc(20px);')
+    it('indented list continuations wrap at the item text, or their own if further right; lazy ones not at all', () => {
+        expect(hang('- item\n  cont', 'cont')).toBe('--hang-padding: max(calc(1 * var(--list-padding-inline-start) + 20px), calc(20px)); --hang-indent: calc(20px);')
         expect(hang('- item\n\n\tpara', 'para')).toBe('--hang-padding: max(calc(1 * var(--list-padding-inline-start) + 20px), calc(1 * var(--list-indent))); --hang-indent: calc(1 * var(--list-indent));')
+        expect(hang('- a\n- item\nlazy', 'lazy')).toBeNull()
+        expect(hang('1. item\nlazy', 'lazy')).toBeNull()
+        expect(hang('> - item\n> lazy', 'lazy')).toBe('--hang-padding: calc(20px); --hang-indent: calc(20px);') // just the quote
     })
 
     it('none for plain lines, code, and blank lines', () => {

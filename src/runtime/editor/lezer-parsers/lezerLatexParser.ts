@@ -33,7 +33,8 @@ export const lezerLatexParser: MarkdownConfig = {
                 const markers = [cx.elt("TexMarker", start, start + 2)]; // Opening "$$"
                 const regex = /(^|[^\\])\$\$/; // Match non-escaped "$$"
                 let remaining = line.text.slice(line.pos + 2);
-                let startOffset = 2;
+                // Offset of `remaining` in the line: after `> `/list indentation (line.pos) and the opening `$$`.
+                let startOffset = line.pos + 2;
                 let match;
 
                 // Search for closing "$$"

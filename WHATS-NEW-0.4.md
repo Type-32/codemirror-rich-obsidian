@@ -49,6 +49,7 @@
 
 Obsidian's Properties view, in the note.
 
+- **Typing `---` as the first line of a note without properties starts them**, as in Obsidian: the note gets empty frontmatter and "Add property" opens. After you name a property, the cursor goes straight to its value, for every type.
 - **Rows:** type icon (type menu and Remove), name (rename in place), value.
 - **Value editors:**
   - Text, where `[[wikilinks]]` render as links and fire `internal-link-click`;
@@ -91,6 +92,16 @@ Obsidian's Properties view, in the note.
 - **`[!type|metadata]`:** `data-callout` holds the type and `data-callout-metadata` the rest, so `[!note|wide]` gets the note styling.
 - **Callouts inside list items render as callouts.** Obsidian shows them as code blocks; we deliberately don't copy that.
 - **Icons follow Obsidian's defaults and aliases:** `summary`/`tldr`, `hint`/`important`, `check`/`done`, `help`/`faq`, `caution`/`attention`, `fail`/`missing`, `error`, `cite`.
+- **Math in callouts:**
+  - It renders once, inside the callout. It used to render a second time below it, with the `>` markers in the formula.
+  - It renders inside plain quotes too, without their `>` markers.
+  - Its lines keep the quote's indent while you edit them.
+
+## Math
+
+- **One-line `$$…$$` after `>` or list indentation now ends at its own closing `$$`.** It used to end two characters early (one per marker character), so typing math in a quote or callout showed a broken formula, in red, while the cursor was still in it.
+- **Math source is highlighted** while the cursor is in it: commands, `^` `_` `&`, brackets, numbers and `%` comments, coloured by the code palette (`--code-*`).
+- **Math source is plain monospace text** (`.cm-math`), like Obsidian's, instead of an inline-code pill.
 
 ## Lists and indentation
 
@@ -98,7 +109,9 @@ Obsidian's Properties view, in the note.
   - A bullet keeps its `-` in the line, made transparent, with the dot drawn over it.
   - It reveals only while the cursor is on the `-` itself, not after the space, as in Obsidian.
   - Numbers stay as typed.
-- **Wrapped lines line up with the text** after a bullet, number, checkbox, quote marker or leading tab, including `10.` and deeper levels. Lines continuing a list item (lazy or indented) wrap at the item's text.
+- **Wrapped lines line up with the text** after a bullet, number, checkbox, quote marker or leading tab, including `10.` and deeper levels. Indented lines continuing a list item wrap at the item's text.
+- **Lazy continuation lines sit at the margin**, as in Obsidian. These are lines after a list item that aren't indented (`- item` then `more text`); they used to be indented under the item.
+- **Nested quotes draw one bar per level** (`> > text`), as in Obsidian. A nested level's `>` is `.cm-quote-border`.
 - **One indent level is one fixed width** (`--list-indent`, default `2.25em`), for list nesting and tab-indented lines alike. Each level draws one guide, placed under the parent's bullet.
 - **Tabs after quote markers** (`> \t- item`) get indent levels and guides too.
 - **New variables (Obsidian's names):**

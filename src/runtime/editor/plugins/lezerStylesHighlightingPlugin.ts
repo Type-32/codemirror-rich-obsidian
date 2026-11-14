@@ -46,7 +46,8 @@ export default HighlightStyle.define([
     { tag: lezerHighlightYamlMarker, class: 'cm-yaml-marker cm-meta' },
     { tag: lezerHighlightYamlContent, class: 'cm-yaml-content cm-meta' },
 
-    { tag: lezerHighlightLatexBlock, class: 'cm-tex-block cm-mono' }, // Style block math
-    { tag: lezerHighlightLatexInline, class: 'cm-tex-inline cm-mono' },// Style inline math
+    // Math source is plain monospace text (Obsidian's), not an inline-code pill, so its token colours show.
+    { tag: lezerHighlightLatexBlock, class: 'cm-tex-block cm-math' },
+    { tag: lezerHighlightLatexInline, class: 'cm-tex-inline cm-math' },
     { tag: lezerHighlightLatexMarker, class: 'cm-tex-marker cm-meta' }, // Style "$" or "$$"
 ]);

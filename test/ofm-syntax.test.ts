@@ -12,6 +12,7 @@ import { codeHighlighter } from '../src/runtime/editor/plugins/codeHighlighter'
 import proseStyles from '../src/runtime/editor/plugins/lezerStylesHighlightingPlugin'
 import { markdownConfig } from '../src/runtime/editor/wysiwyg'
 import { state } from './helpers'
+import { texBlockSource, texTokens } from '../src/runtime/editor/plugins/codemirror-plugin-proses/proseLatexCodemirrorViewPlugin'
 
 // Expectations below are what Obsidian 1.12 does with the same source.
 
@@ -101,5 +102,31 @@ describe('code blocks', () => {
     it('labels the block with the language name, the raw tag if unknown, nothing without one', () => {
         expect(['js', 'ts', 'python', 'css', 'js title="x.js"', 'unknownlang', ''].map(codeBlockLabel))
             .toEqual(['JavaScript', 'TypeScript', 'Python', 'CSS', 'JavaScript', 'unknownlang', ''])
+    })
+})
+
+describe('math', () => {
+    const tex = (src: string) => {
+        const s = state(src)
+        let out = ''
+        syntaxTree(s).iterate({ enter: n => { if (n.name === 'TexBlock') out = texBlockSource(s, n.node) } })
+        return out
+    }
+
+    it('block math in quotes renders without the quote markers; lazy lines have none', () => {
+        expect(tex('> $$\n> a^2\n> $$')).toBe('\na^2\n')
+        expect(tex('> > $$\n> > \\frac{a}{b}\n> > $$')).toBe('\n\\frac{a}{b}\n')
+        expect(tex('> $$\n\\in\n$$')).toBe('\n\\in\n')
+        expect(tex('$$\n> b\n$$')).toBe('\n> b\n') // not in a quote: `>` is TeX
+    })
+
+    it('one-line block math after `>` or list indentation ends at its own closing `$$`', () => {
+        expect(tex('> [!note]\n> a\n> $$\\hat{x} \\cup \\mathfrak{g}$$')).toBe('\\hat{x} \\cup \\mathfrak{g}')
+        expect(tex('- item\n\n  $$x^2$$')).toBe('x^2')
+    })
+
+    it('highlights commands, scripts, brackets, numbers and comments', () => {
+        const s = '\\frac{a}^2_1 \\{ % c'
+        expect(texTokens(s, 0).map(r => s.slice(r.from, r.to))).toEqual(['\\frac', '{', '}', '^', '2', '_', '1', '\\{', '% c'])
     })
 })

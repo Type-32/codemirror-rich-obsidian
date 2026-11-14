@@ -54,8 +54,9 @@ function prefix(state: EditorState, line: Line, measure: Measure): { width: Widt
 
 /**
  * Hanging indent for `line`, Obsidian's way: `padding-inline-start: P; text-indent: -T` where T is the line's own
- * prefix, so the first row is unaffected and wrapped rows line up with the text. A continuation line inside a list
- * item (lazy or indented paragraph) wraps at the item's text, or at its own text if that is further right.
+ * prefix, so the first row is unaffected and wrapped rows line up with the text. An indented continuation line
+ * inside a list item wraps at the item's text, or at its own text if that is further right; a lazy one (no
+ * indentation) sits at the margin like any paragraph line, as in Obsidian.
  * Null when the line has no prefix, no text, or is code/frontmatter/math/table.
  */
 export function hangingIndent(state: EditorState, line: Line, measure: Measure): { padding: Width[], indent: Width } | null {
@@ -63,12 +64,18 @@ export function hangingIndent(state: EditorState, line: Line, measure: Measure):
     // Both ends: an indented fence inside a list item starts in the item but ends in the code.
     for (const [pos, side] of [[line.from, 1], [line.to, -1]] as const) {
         for (let n: SyntaxNode | null = syntaxTree(state).resolveInner(pos, side); n; n = n.parent) {
-            if (NO_LAYOUT[n.name]) return null
+            if (!NO_LAYOUT[n.name]) continue
+            // Code, math and the like keep their own layout; inside a quote they still wrap past its markers.
+            const quote = /^(?: {0,3}> ?)*/.exec(line.text)![0]
+            if (!quote) return null
+            const w: Width = { indents: 0, pads: 0, boxes: 0, px: measure(quote) }
+            return { padding: [w], indent: w }
         }
     }
     const own = prefix(state, line, measure)
     if (own.item) return { padding: [own.width], indent: own.width }
-    for (let n: SyntaxNode | null = syntaxTree(state).resolveInner(line.to, -1); n; n = n.parent) {
+    const lazy = !/^[ \t]/.test(line.text.replace(/^(?: {0,3}> ?)*/, ''))
+    for (let n: SyntaxNode | null = lazy ? null : syntaxTree(state).resolveInner(line.to, -1); n; n = n.parent) {
         if (n.name !== 'ListItem') continue
         const first = state.doc.lineAt(n.from)
         if (first.number !== line.number) return { padding: [prefix(state, first, measure).width, own.width], indent: own.width }

@@ -182,6 +182,11 @@ div[contenteditable='true']:focus {
         color: var(--code-normal) !important;
     }
 
+    .cm-math {
+        @apply font-editor-code;
+        font-size: var(--code-size);
+    }
+
     .cm-hashtag {
         @apply bg-gradient-to-t from-primary/20! to-primary/10! ring ring-primary/50! px-1.5 text-sm rounded-4xl text-primary! inline-flex;
 
@@ -363,6 +368,20 @@ div[contenteditable='true']:focus {
 
         .cm-formatting-quote-active.cm-meta {
             @apply visible!;
+        }
+
+        /* A nested level's `>`: its bar, drawn over the transparent marker (the line's `::before` is the first's).
+           It spans the whole line box (`1lh`), so it meets the same level's bar on the next line. */
+        .cm-quote-border {
+            @apply visible! relative;
+            &, & * {
+                @apply text-transparent!;
+            }
+            &::before {
+                @apply absolute content-[''] left-0.5 w-1 bg-accented;
+                top: calc((100% - 1lh) / 2);
+                bottom: calc((100% - 1lh) / 2);
+            }
         }
     }
 
