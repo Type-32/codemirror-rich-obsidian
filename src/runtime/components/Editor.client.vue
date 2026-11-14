@@ -10,17 +10,20 @@ import { specialCodeBlockMapFacet } from '../editor/plugins/specialCodeBlockMapp
 import { customBracketClosingConfig } from '../editor/plugins/customBracketClosingConfig'
 import { vueContextFacet } from '../editor/plugins/hostAppConfig'
 import { editorKeywordSearchPlugin, searchOptionsFacet } from '../editor/plugins/codemirror-editor-plugins/editorKeywordSearchPlugin'
+import { propertiesPanel } from '../editor/plugins/codemirror-plugin-proses/propertiesPlugin'
 import type {
     InternalLink,
     SpecialCodeBlockMapping,
     InternalLinkClickDetail,
     ExternalLinkClickDetail,
+    PropertiesOptions,
     SearchOptions
 } from '../editor/types/editor-types'
 import { ref, shallowRef, onMounted, onBeforeUnmount, watch, getCurrentInstance, type AppContext } from 'vue';
 
 const doc = defineModel<string>()
-const props = defineProps<{
+// `properties` needs an explicit default: Vue casts an absent prop whose type includes `false` to `false`.
+const props = withDefaults(defineProps<{
     class?: string
     internalLinkMap?: InternalLink[]
     specialCodeBlockMap?: SpecialCodeBlockMapping[]
@@ -30,7 +33,9 @@ const props = defineProps<{
     searchOptions?: SearchOptions
     /** Extra CodeMirror extensions (e.g. from `/ext` or your own). Reactive: changing the array reconfigures live. */
     extensions?: Extension[]
-}>()
+    /** Frontmatter as Obsidian's Properties panel (default), with its options; `false` shows the raw YAML. */
+    properties?: PropertiesOptions | false
+}>(), { properties: () => ({}) })
 const emit = defineEmits<{
     'internal-link-click': [detail: InternalLinkClickDetail]
     'external-link-click': [detail: ExternalLinkClickDetail]
@@ -43,6 +48,8 @@ const bracketClosingCompartment = new Compartment()
 const foldGutterCompartment = new Compartment()
 const searchCompartment = new Compartment()
 const extensionsCompartment = new Compartment()
+const propertiesCompartment = new Compartment()
+const propertiesExtension = (p: PropertiesOptions | false | undefined) => (p === false ? [] : propertiesPanel(p))
 const editorElement = ref<HTMLElement>()
 const instance = getCurrentInstance()
 // Components CodeMirror mounts render as if they were children of this one: a root vnode's provides
@@ -72,6 +79,7 @@ onMounted(() => {
         wysiwyg(),
         EditorView.editable.of(!props.disabled),
         extensionsCompartment.of(props.extensions ?? []),
+        propertiesCompartment.of(propertiesExtension(props.properties)),
     ]
     editorElement.value?.addEventListener('internal-link-click', handleInternalLinkClick as EventListener)
     editorElement.value?.addEventListener('external-link-click', handleExternalLinkClick as EventListener)
@@ -101,6 +109,7 @@ watch(() => props.bracketClosing, v => reconfigure(bracketClosingCompartment.rec
 watch(() => props.foldGutter, v => reconfigure(foldGutterCompartment.reconfigure(v ?? true ? foldGutter() : [])))
 watch(() => props.searchOptions, o => reconfigure(searchCompartment.reconfigure(searchOptionsFacet.of(o || { query: '' }))), { deep: true })
 watch(() => props.extensions, e => reconfigure(extensionsCompartment.reconfigure(e ?? [])))
+watch(() => props.properties, p => reconfigure(propertiesCompartment.reconfigure(propertiesExtension(p))))
 
 function handleReady(payload: { view: EditorView }) {
     view.value = payload.view

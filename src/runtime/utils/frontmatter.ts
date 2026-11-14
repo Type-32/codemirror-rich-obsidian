@@ -1,4 +1,4 @@
-import { load, dump } from 'js-yaml'
+import { parse, stringify } from 'yaml'
 import type { Frontmatter } from '../editor/types/editor-types';
 
 /**
@@ -35,13 +35,11 @@ import type { Frontmatter } from '../editor/types/editor-types';
  * ```
  */
 export function stringifyYaml(
-    data: any,
+    data: unknown,
     options?: {
         /** Number of spaces for indentation (default: 2) */
         indent?: number
-        /** Skip invalid types instead of throwing (default: true) */
-        skipInvalid?: boolean
-        /** Maximum line width (default: 80) */
+        /** Maximum line width; 0 never folds (default: 80) */
         lineWidth?: number
         /** Sort object keys (default: false) */
         sortKeys?: boolean
@@ -52,16 +50,15 @@ export function stringifyYaml(
     }
 
     try {
-        const yaml = dump(data, {
+        const yaml = stringify(data, {
             indent: options?.indent ?? 2,
-            skipInvalid: options?.skipInvalid ?? true,
             lineWidth: options?.lineWidth ?? 80,
-            sortKeys: options?.sortKeys ?? false,
+            sortMapEntries: options?.sortKeys ?? false,
         })
 
         return { yaml: yaml.trim() }
-    } catch (e: any) {
-        return { error: e }
+    } catch (e) {
+        return { error: e instanceof Error ? e : new Error(String(e)) }
     }
 }
 
@@ -85,26 +82,16 @@ export function stringifyYaml(
  * }
  * ```
  */
-export function parseYaml<T = any>(yamlString: string): { data?: T; error?: Error } {
+export function parseYaml<T = unknown>(yamlString: string): { data?: T; error?: Error } {
     if (!yamlString || yamlString.trim().length === 0) {
         return { data: {} as T }
     }
 
     try {
-        const data = load(yamlString)
-
-        if (data === null || data === undefined) {
-            return { data: {} as T }
-        }
-
-        if (typeof data === 'object') {
-            return { data: data as T }
-        }
-
-        // If parsed data is a primitive, wrap it
-        return { data: data as T }
-    } catch (e: any) {
-        return { error: e }
+        const data = parse(yamlString)
+        return { data: (data ?? {}) as T }
+    } catch (e) {
+        return { error: e instanceof Error ? e : new Error(String(e)) }
     }
 }
 

@@ -108,6 +108,34 @@ Customize code blocks. Fenced code is highlighted with the language from its inf
 
 Task statuses work like Obsidian: any single character between the brackets (`- [/]`, `- [-]`, `- [>]`…) followed by a space makes a task. Every status but a space renders checked; only `x`/`X` are struck through. The status is on both the line (`.cm-task-line[data-task="/"]`) and the checkbox (`.cm-task-checkbox-wrapper[data-task="/"]`) for styling.
 
+### Properties (frontmatter)
+
+Frontmatter shows as Obsidian's Properties panel above the note. Each row has a type icon (click for the type menu and Remove), the name (click to rename; position and comments are kept), and an editor for the value:
+- **Text** (wikilinks render as links), **Number**, **Checkbox**, **Date**, **Date & time**.
+- **List**, **Tags** and **Aliases** as pills.
+- **Nested objects** as indented rows.
+
+Edits rewrite only the YAML they change, so comments, key order, quoting and flow style survive. Every edit is one undo step. Invalid YAML, or YAML that isn't a mapping, stays as source.
+
+Keyboard, as in Obsidian:
+- **↑** from the first line of the note goes to **Add property**.
+- **↑/↓/Tab** move between rows, and **Enter** edits the value with its text selected. Enter saves; Escape cancels.
+- **Escape** on a row returns to the note.
+
+Typing can't reach the YAML behind the panel: Backspace at the start of the body and select-all + delete leave it intact.
+
+```vue
+<Editor v-model="doc" :properties="{
+	types: vaultTypes,                                  // e.g. { rating: 'number', due: 'date' }; other keys are inferred
+	onTypeChange: (key, type) => saveType(key, type),   // persist the user's choice (Obsidian's types.json)
+	keySuggestions: allPropertyNames,                   // offered when adding a property
+	valueSuggestions: key => key === 'tags' ? allTags : [],
+}" />
+<Editor v-model="doc" :properties="false" />  <!-- raw YAML -->
+```
+
+Callouts render the way Obsidian renders them: the title and body are drawn by read-only copies of the editor itself, so everything a note can contain works inside, with each source line on its own line. That includes links, tags, highlights, math, lists, tasks, highlighted code, tables and nested callouts. Links inside work as links. Clicking anywhere else selects the whole callout source to edit it, and the `</>` button puts the cursor at its start. `[!type]-` starts folded and `+` open; the chevron folds and unfolds without touching the source. The widget carries `data-callout` (the lower-cased type), `data-callout-metadata` (after `|`) and `data-callout-fold`, and has `.is-collapsible`/`.is-collapsed`. Icons follow Obsidian's defaults and aliases (`tip`/`hint`/`important`, `warning`/`caution`/`attention`, …).
+
 List and quote editing follows Obsidian:
 - **Enter** continues a list item (next number, a fresh `[ ]` for tasks) or a quote. On an empty item, a nested one moves up a level and a top-level one ends the list; on an empty `> ` line the quote ends.
 - **Shift-Enter** starts a new line inside the item, indented to its text.
@@ -346,6 +374,9 @@ UI strings:
 | `ui.ai.refinePlaceholder` | Refine, e.g. “more formal” |
 | `ui.ai.accept`, `ui.ai.discard`, `ui.ai.retry`, `ui.ai.stop` | Accept, Discard, Retry, Stop |
 | `ui.ai.edit`, `ui.ai.done`, `ui.ai.copy`, `ui.ai.insertBelow` | Edit, Done, Copy, Insert below |
+| `ui.properties.add`, `ui.properties.addField`, `ui.properties.name` | Add property, Add field, Property name |
+| `ui.properties.empty`, `ui.properties.remove`, `ui.properties.type` | Empty, Remove, Property type |
+| `ui.properties.type.text` … `.list`, `.number`, `.checkbox`, `.date`, `.datetime`, `.tags`, `.aliases`, `.object` | Text, List, Number, Checkbox, Date, Date & time, Tags, Aliases, Object |
 
 In your own components, `label(state, key, fallback)` reads the same facet.
 
@@ -394,19 +425,18 @@ Ship `.vue` files in an extension? Style them with Nuxt UI props or your own CSS
 
 ## Known Issues
 - `[text]` without a link target is styled as a link, unlike in Obsidian.
-- Nested callouts render as a styled blockquote (source visible) instead of a callout widget: `markdown-it-obsidian-callouts` mis-renders nesting, and the old whole-block widget could corrupt the document on edit. Regular callouts render as before.
 - Tables are widget-only: the markdown source is never shown. Click a cell to edit (Enter/blur commits, Esc cancels); right-click for a Nuxt UI context menu with insert/delete row & column, alignment, clear cell; drag the `⋮⋮` handles to reorder rows/columns. Malformed tables (bad delimiter row) fall back to plain text so they can be repaired.
 
 ### Resolved
 - ~~Rendered block replacement recomputes all regions on every operation.~~ Every prose plugin now goes through `createProsePlugin`: inline decorations are viewport-scoped and patch only changed lines; block decorations rebuild only when the selection actually crosses one of the plugin's nodes.
 - ~~Marks reveal on `mousedown`; Obsidian reveals on `mouseup`.~~ Decoration rebuilds are suspended while drag-selecting and run once on release.
-- ~~Nested callouts can lose data.~~ See above.
+- ~~Nested callouts can lose data / render as a plain quote.~~ Callout bodies render with the editor itself, so nested callouts render as callouts, and clicking reveals the whole source.
 - ~~Tables don't render.~~ See above.
 - ~~Indents are tabs / list indents are a pain.~~ Indent guides and active-guide highlighting work; the guide-level off-by-one is fixed.
 - ~~Task lists don't work.~~ Working.
 - ~~Embedded videos/notes/canvases unsupported~~ — `internalLinkMap` lets hosts map links to their own embed components.
 - ~~Mermaid/bases code blocks unsupported~~ — `specialCodeBlockMap` lets hosts map a code-fence language to their own component.
-- ~~YAML Frontmatter parsed as raw text~~ — deliberately left raw; `useEditorFrontmatter` offers get/set/clear helpers for hosts that want them.
+- ~~YAML Frontmatter parsed as raw text~~ — shown as Obsidian's Properties panel (`properties` prop; `false` for raw YAML). `useEditorFrontmatter` still offers get/set/clear helpers.
 
 ## Contributions
 - To anyone who wants to fork this, **make sure you preserve the original credits and references to the libraries that are used in this project. It means a lot to them and to us.**

@@ -30,6 +30,7 @@ import { customBracketClosingPlugin } from './plugins/codemirror-editor-plugins/
 import { customBracketClosingConfig } from './plugins/customBracketClosingConfig'
 import { indentationGuides } from './plugins/codemirror-editor-plugins/indentationGuidesPlugin'
 import { listEditing } from './plugins/codemirror-editor-plugins/listEditingPlugin'
+import { nestedEditorContent } from './utility/nestedEditor'
 import type { WysiwygPlugin } from './types/editor-types'
 
 /**
@@ -47,8 +48,9 @@ export function markdownConfig(config?: WysiwygPlugin['lezer']) {
     }
 }
 
-export default function (config?: WysiwygPlugin): Extension {
+export default function wysiwyg(config?: WysiwygPlugin): Extension {
     return [
+        nestedEditorContent.of(() => wysiwyg(config)),
         autocompletion(),
         closeBrackets(),
         mouseSelectingTracker,

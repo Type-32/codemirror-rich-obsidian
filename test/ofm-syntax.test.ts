@@ -6,6 +6,7 @@ import { languages } from '@codemirror/language-data'
 import type { DecorationSet } from '@codemirror/view'
 import { highlightTree } from '@lezer/highlight'
 import { proseCalloutPlugin } from '../src/runtime/editor/plugins/codemirror-plugin-proses/proseCalloutPlugin'
+import { parseCallout } from '../src/runtime/editor/plugins/codemirror-widgets/proseCalloutWidget'
 import { codeBlockLabel, proseCodeBlockPlugin } from '../src/runtime/editor/plugins/codemirror-plugin-proses/proseCodeBlockCodemirrorViewPlugin'
 import { codeHighlighter } from '../src/runtime/editor/plugins/codeHighlighter'
 import proseStyles from '../src/runtime/editor/plugins/lezerStylesHighlightingPlugin'
@@ -38,12 +39,19 @@ describe('callouts', () => {
 
     it('renders Obsidian callouts', () => {
         for (const src of ['> [!note]\n> body', '> [!NOTE] Title', '>[!note] No space', '> [!faq]- Folded', '> [!todo]+ Open',
-            '> [!custom-thing] Unknown', '> [!note|wide] Metadata', '> [!note] T\nlazy line', '> [!note] T\n>\n> body'])
+            '> [!custom-thing] Unknown', '> [!note|wide] Metadata', '> [!note] T\nlazy line', '> [!note] T\n>\n> body',
+            '> [!note] Outer\n> > [!warning] Inner\n> > inner body', '> [!note] Outer\n> > plain nested quote', '- item\n\t> [!note] In a list\n\t> body'])
             expect(rendered(src), src).toBe(true)
     })
     it('requires the marker at the start of the first line, followed by a space or line end', () => {
         for (const src of ['> [!note]Title glued', '> [ !note] spaced', '> hello [!note] mid line', '> intro\n> [!note] second line', 'plain [!note] paragraph'])
             expect(rendered(src), src).toBe(false)
+    })
+    it('splits type, metadata, fold, title, and the body with one quote level removed', () => {
+        expect(parseCallout('> [!NOTE|wide]- My **title**\n> line one\n> > [!tip] inner\n> > inner body\nlazy')).toEqual({
+            type: 'note', metadata: 'wide', fold: '-', title: 'My **title**', body: 'line one\n> [!tip] inner\n> inner body\nlazy',
+        })
+        expect(parseCallout('\t> [!info]\n\t> body')).toEqual({ type: 'info', metadata: '', fold: '', title: '', body: 'body' })
     })
 })
 

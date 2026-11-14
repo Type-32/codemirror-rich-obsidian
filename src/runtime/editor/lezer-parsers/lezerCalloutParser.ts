@@ -16,7 +16,7 @@ export const lezerHighlightCalloutTitle = Tag.define(lezerHighlightCallout);
  * `[!type|metadata]` + optional fold `+`/`-`, then a space, tab or line end (Obsidian rejects `[!note]Title`).
  * Groups: type, metadata (with its `|`), fold, title (rest of the line).
  */
-const calloutRegex = /^\[!([^\]|\n]+)(\|[^\]\n]*)?\]([+-])?(?=[ \t\n]|$)(.*)/;
+export const calloutRegex = /^\[!([^\]|\n]+)(\|[^\]\n]*)?\]([+-])?(?=[ \t\n]|$)(.*)/;
 
 export const lezerCalloutParser: MarkdownConfig = {
     defineNodes: [

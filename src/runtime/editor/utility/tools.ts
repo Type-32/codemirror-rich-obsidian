@@ -4,17 +4,20 @@ import { StateEffect, StateField, type EditorState } from '@codemirror/state'
 /**
  * True when any selection range touches [from, to] (inclusive, so a cursor sitting
  * right at a node edge counts as "in" it). The single live-preview predicate: show
- * source when it touches, render otherwise.
+ * source when it touches, render otherwise. A non-editable view (read-only editor,
+ * nested rendering such as a callout body) never reveals source.
  */
 export function selectionTouches(state: EditorState, from: number, to: number): boolean {
+    if (!state.facet(EditorView.editable)) return false
     for (const r of state.selection.ranges) {
         if (r.from <= to && r.to >= from) return true
     }
     return false
 }
 
-/** True when any selection range lies entirely inside [from, to]. */
+/** True when any selection range lies entirely inside [from, to]. Never in a non-editable view (see `selectionTouches`). */
 export function selectionWithin(state: EditorState, from: number, to: number): boolean {
+    if (!state.facet(EditorView.editable)) return false
     for (const r of state.selection.ranges) {
         if (r.from >= from && r.to <= to) return true
     }

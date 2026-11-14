@@ -451,10 +451,6 @@ div[contenteditable='true']:focus {
     .callout {
         @apply p-3 relative flex flex-col h-fit rounded-xl border border-primary/20 from-primary/10 to-primary/20 bg-gradient-to-b; /* Removed transition-all from parent to be more specific */
 
-        summary {
-            @apply inline-flex;
-        }
-
         .callout-title {
             @apply flex gap-1.5 items-center;
             .callout-title-icon {
@@ -462,7 +458,7 @@ div[contenteditable='true']:focus {
             }
 
             .callout-title-inner {
-                @apply text-primary text-lg font-bold flex-grow;
+                @apply text-primary text-lg font-bold flex-grow min-w-0;
             }
 
             .edit-block-button {
@@ -471,10 +467,22 @@ div[contenteditable='true']:focus {
         }
 
         .callout-content {
-            @apply flex flex-col gap-1;
+            @apply flex flex-col gap-1 mt-1;
         }
 
-        &[data-callout='info'] {
+        /* Title and body are nested read-only editors (`nestedEditor`): no frame or padding of their own. */
+        .cm-editor {
+            @apply bg-transparent outline-none;
+        }
+        .cm-content {
+            @apply p-0;
+        }
+        .callout-title-inner .cm-line {
+            @apply p-0;
+        }
+
+        &[data-callout='info'],
+        &[data-callout='todo'] {
             @apply from-info/10 to-info/20 bg-gradient-to-b border-info/20;
 
             .callout-fold {
@@ -507,6 +515,8 @@ div[contenteditable='true']:focus {
         }
 
         &[data-callout='warning'],
+        &[data-callout='caution'],
+        &[data-callout='attention'],
         &[data-callout='help'],
         &[data-callout='faq'],
         &[data-callout='question'] {
@@ -525,7 +535,10 @@ div[contenteditable='true']:focus {
         }
 
         &[data-callout='error'],
+        &[data-callout='danger'],
         &[data-callout='failure'],
+        &[data-callout='fail'],
+        &[data-callout='missing'],
         &[data-callout='bug'] {
             @apply from-error/10 to-error/20 bg-gradient-to-b border-error/20;
 
@@ -543,7 +556,9 @@ div[contenteditable='true']:focus {
 
         &[data-callout='highlight'],
         &[data-callout='example'],
-        &[data-callout='tip'] {
+        &[data-callout='tip'],
+        &[data-callout='hint'],
+        &[data-callout='important'] {
             @apply from-secondary/10 to-secondary/20 bg-gradient-to-b border-secondary/20;
 
             .callout-fold {
@@ -559,6 +574,7 @@ div[contenteditable='true']:focus {
         }
 
         &[data-callout='quote'],
+        &[data-callout='cite'],
         &[data-callout='neutral'] {
             @apply from-accented/20 to-accented/30 bg-gradient-to-b border-accented/30;
 
@@ -582,41 +598,96 @@ div[contenteditable='true']:focus {
             }
         }
 
-        &[open] {
-            .callout-fold {
-                svg {
-                    @apply transition-transform duration-300 ease-in-out rotate-90 w-full h-full;
-                }
-            }
+        /* Folding (`[!type]-` starts folded, `+` open): the chevron points down while open. */
+        &.is-collapsible:not(.is-collapsed) > .callout-title .callout-fold svg {
+            @apply rotate-90;
         }
 
-        &[data-fold-state='closed'] {
-            .callout-content {
-                @apply max-h-0 opacity-0 p-0;
-            }
-        }
-
-        &[data-fold-state='open'] {
-            .callout-content {
-                @apply max-h-none opacity-100 py-1 mt-1;
-            }
+        &.is-collapsed > .callout-content {
+            @apply hidden;
         }
 
         .edit-block-button {
-            /* Tailwind's `transition` utility adds transition-property: all; by default if not specified. */
-            /* duration-200 is already good for hover */
             @apply rounded hover:bg-elevated transition duration-200 cursor-pointer p-1 font-sans text-dimmed;
-        }
-
-        .editing-utils-container {
-            @apply top-2 right-2 font-sans text-dimmed absolute flex items-center justify-center gap-1 p-1;
         }
     }
 
-    details {
-        .callout-content {
-            @apply -mt-11;
+    /* Properties panel (`propertiesPanel`), Obsidian's layout: icon, name column, value. */
+    .cm-properties {
+        @apply flex flex-col py-2 font-sans text-sm;
+        gap: var(--metadata-gap, 3px);
+    }
+
+    .cm-property {
+        @apply flex items-start gap-1 rounded-md px-1 outline-none;
+        min-height: 2rem;
+
+        &:hover {
+            @apply ring ring-default;
         }
+
+        &:focus-visible, &:focus-within {
+            @apply ring-2 ring-accented;
+        }
+    }
+
+    .cm-property-icon {
+        @apply flex items-center justify-center size-8 shrink-0 text-dimmed cursor-pointer rounded hover:bg-elevated;
+    }
+
+    .cm-property-key {
+        @apply h-8 shrink-0 bg-transparent text-muted outline-none truncate;
+        width: var(--metadata-label-width, 9em);
+    }
+
+    .cm-property-value {
+        @apply flex-1 min-w-0 flex items-center flex-wrap gap-1 min-h-8;
+    }
+
+    .cm-property-display, .cm-property-input {
+        @apply w-full min-h-8 flex items-center bg-transparent outline-none cursor-text text-default;
+    }
+
+    .cm-property-empty {
+        @apply text-dimmed;
+    }
+
+    .cm-property-link {
+        @apply text-primary underline cursor-pointer;
+    }
+
+    .cm-property-checkbox {
+        @apply size-4 cursor-pointer;
+        accent-color: var(--checkbox-color);
+    }
+
+    .cm-property-pills {
+        @apply flex flex-wrap items-center gap-1 w-full py-1;
+    }
+
+    .cm-property-pill {
+        @apply inline-flex items-center gap-1 rounded-full border border-default bg-elevated/50 px-2 py-0.5 text-xs;
+    }
+
+    .cm-property-pill-remove {
+        @apply inline-flex text-dimmed hover:text-default cursor-pointer;
+    }
+
+    .cm-property-pill-input {
+        @apply flex-1 min-w-16 bg-transparent outline-none text-xs;
+    }
+
+    .cm-property-children {
+        @apply flex flex-col w-full border-s border-default ps-2;
+        gap: var(--metadata-gap, 3px);
+    }
+
+    .cm-property-unknown {
+        @apply font-editor-code text-xs text-muted;
+    }
+
+    .cm-properties-add, .cm-property-add-field {
+        @apply flex items-center gap-1 self-start rounded-md px-2 py-1 text-dimmed hover:text-default hover:bg-elevated outline-none focus-visible:ring-2 focus-visible:ring-accented cursor-pointer;
     }
 
     /* One leading tab or 4-space group (`indentationGuides`): a `--list-indent`-wide box drawing one guide. */

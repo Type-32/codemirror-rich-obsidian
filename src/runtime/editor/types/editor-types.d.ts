@@ -86,6 +86,27 @@ export type WysiwygPlugin = {
   }
 }
 
+/**
+ * How a frontmatter property is shown and edited (Obsidian's property types, plus `object` for nested mappings and
+ * `unknown` for values no editor fits, shown read-only).
+ */
+export type PropertyType = 'text' | 'list' | 'number' | 'checkbox' | 'date' | 'datetime' | 'tags' | 'aliases' | 'object' | 'unknown'
+
+/** Options of the properties panel (`<Editor :properties>`). */
+export interface PropertiesOptions {
+    /**
+     * Type per property name, like Obsidian's vault-wide `types.json`. Unlisted keys are inferred from their value
+     * (`tags`/`aliases` by name).
+     */
+    types?: Record<string, PropertyType>
+    /** Called when the user picks a type for a key, to persist it. Until `types` includes it, the choice lasts for this editor. */
+    onTypeChange?: (key: string, type: PropertyType) => void
+    /** Property names offered when adding a property (e.g. every key used in the vault). */
+    keySuggestions?: string[]
+    /** Values offered in a list property's input (e.g. existing tags for `tags`). */
+    valueSuggestions?: (key: string) => string[]
+}
+
 export type Frontmatter<T extends object = {}> = {
     title?: string;
     description?: string;

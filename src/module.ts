@@ -39,9 +39,7 @@ export default defineNuxtModule<ModuleOptions>({
 
 		_nuxt.options.build.transpile.push(
 			'alfaaz',
-			'js-yaml',
 			'lezer-markdown-obsidian',
-			'markdown-it-obsidian-callouts',
 			// /kit and /ext ship `.vue` files that rely on Nuxt auto-imports (UButton, …).
 			resolver.resolve('./runtime'),
 		)

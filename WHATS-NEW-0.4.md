@@ -28,6 +28,36 @@
   - Enter in a loose list doesn't add a blank line.
 - **Ordered lists are renumbered as you edit.** Turn it off with `listRenumbering.of(false)`.
 - **Code block CSS changed.** Block lines use `--code-background`, `--code-border-*`, `--code-radius` and `--code-size` instead of fixed Tailwind utilities, and code text is no longer semibold. Inline code (`.cm-mono`) uses the same variables.
+- **Callout markup changed.** A callout is now `div.cm-callout-widget.callout`, built from `.callout-title` (`.callout-title-icon`, `.callout-title-inner`, `.callout-fold`, `.edit-block-button`) and `.callout-content`.
+  - The title and body hold read-only CodeMirror editors.
+  - Folding uses `.is-collapsible` and `.is-collapsed` instead of `<details>` and `[open]`.
+  - `markdown-it-obsidian-callouts` is no longer a dependency.
+- **Read-only editors never reveal source.** `selectionTouches` and `selectionWithin` (from `/kit`) now return false in a non-editable view, so a `disabled` editor always shows rendered markdown.
+- **Frontmatter shows as a properties panel by default.** Pass `:properties="false"` to `<Editor>` to keep the raw YAML.
+  - While the panel is shown, typing can't edit the YAML behind it, and the cursor stays in the body.
+  - Programmatic changes (`v-model`, `useEditorFrontmatter`, `view.dispatch` without a user event) still can.
+- **`js-yaml` is replaced by `yaml`.**
+  - `stringifyYaml` and `parseYaml` keep their signatures, but `stringifyYaml` no longer takes `skipInvalid`.
+  - Unquoted dates such as `2026-11-13` now parse as strings, as in Obsidian.
+
+## Properties (frontmatter)
+
+Obsidian's Properties view, in the note.
+
+- **Rows:** type icon (type menu and Remove), name (rename in place), value.
+- **Value editors:**
+  - Text, where `[[wikilinks]]` render as links and fire `internal-link-click`;
+  - Number, Checkbox, Date, Date & time;
+  - List, Tags and Aliases as pills;
+  - nested objects as indented rows with "Add field". Obsidian doesn't support nested objects; we do.
+- **The YAML keeps how it was written.** Edits rewrite only what changed: comments, key order, quoting and flow lists survive, and a renamed key stays where it was. Each edit is one undo step. Invalid YAML, or YAML that isn't a mapping, stays as source.
+- **Keyboard, as in Obsidian:**
+  - ↑ from the first line of the note goes to Add property;
+  - ↑/↓/Tab move between rows; Enter edits a value with its text selected, then saves (Escape cancels);
+  - Escape returns to the note.
+- **Types are per property name, like Obsidian's `types.json`.** `properties.types` sets them and `onTypeChange` persists the user's choice. Unlisted keys are inferred (`tags`/`aliases` by name, lists, numbers, checkboxes, dates, objects).
+- **Suggestions:** `keySuggestions` (names offered when adding) and `valueSuggestions(key)` (offered in list inputs).
+- **Labels:** `ui.properties.*` keys in `editorLabels`.
 
 ## Code blocks
 
@@ -47,7 +77,15 @@
 
 ## Callouts
 
+- **Rendered by the editor itself.** The title and body are read-only copies of the editor (`nestedEditor`), so they render exactly like the note:
+  - links, tags, `==highlights==`, math, tasks, lists, tables, highlighted code;
+  - each source line on its own line (markdown-it used to join them);
+  - nested callouts and quotes, which used to show as source.
+- **Clicking a callout selects its whole source**, as in Obsidian. Links inside work as links, and the `</>` button puts the cursor at its start.
+- **Folding:** `[!type]-` starts folded and `+` open. The chevron folds and unfolds without changing the note.
 - **`[!type|metadata]`:** `data-callout` holds the type and `data-callout-metadata` the rest, so `[!note|wide]` gets the note styling.
+- **Callouts inside list items render as callouts.** Obsidian shows them as code blocks; we deliberately don't copy that.
+- **Icons follow Obsidian's defaults and aliases:** `summary`/`tldr`, `hint`/`important`, `check`/`done`, `help`/`faq`, `caution`/`attention`, `fail`/`missing`, `error`, `cite`.
 
 ## Lists and indentation
 
