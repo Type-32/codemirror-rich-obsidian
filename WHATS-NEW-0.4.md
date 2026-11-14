@@ -54,13 +54,13 @@ Obsidian's Properties view, in the note.
 - **Built from Nuxt UI components:** `sm` buttons (type icon, Add property, Delete frontmatter, Add field), `sm` inputs (name, values), `UCheckbox`, `UBadge` list items with an `xs` remove button, and `ULink` wikilinks.
 - **Suggestion menus, as in Obsidian** (`UInputMenu`, replacing the native `<datalist>`s):
   - Naming a new property offers `keySuggestions` and every name in `types` (Obsidian offers every property in the vault), each with its type's icon.
-  - Editing a text value or adding to a list offers `valueSuggestions(key)`.
+  - Editing a text value or adding to a list offers `valueSuggestions(key)`; after `[[` or `![[` it offers the editor's links (`internalLinkMap`), as the note's own `[[` completion does, and picking one completes the link.
   - The menu narrows as you type and hides when nothing matches. ↑/↓ highlight an item; Enter or a click picks it; Escape closes the menu, then cancels.
 - **The type menu and the suggestion menus are translucent with the page blurred behind** (`.cm-properties-menu`: `backdrop-blur-lg`, `bg-default/75`).
 - **`<Editor :context-menu-size>`** (`xs`–`xl`, Nuxt UI's `md` by default) sizes the property type menu and the table context menu.
 - **Rows:** type icon (type menu and Remove), name (rename in place), value.
 - **Value editors:**
-  - Text, where `[[wikilinks]]` render as links and fire `internal-link-click`;
+  - Text, where `[[wikilinks]]` and `![[embeds]]` render as links (also in lists) and fire `internal-link-click`;
   - Number, Checkbox, Date, Date & time;
   - List, Tags and Aliases as pills;
   - nested objects as indented rows with "Add field". Obsidian doesn't support nested objects; we do.

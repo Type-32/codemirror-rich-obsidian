@@ -3,7 +3,7 @@ import { computed, inject, nextTick, ref } from 'vue'
 import type { DropdownMenuItem } from '@nuxt/ui'
 import type { PropertyType } from '../../editor/types/editor-types'
 import { isListType } from '../../editor/utility/properties'
-import { MENU_UI, PROPERTIES, SUGGESTIONS_CONTENT, TYPE_ICONS, TYPE_LABELS, pathId, wikilink } from './properties'
+import { MENU_UI, PROPERTIES, SUGGESTIONS_CONTENT, TYPE_ICONS, TYPE_LABELS, linkCompletions, pathId, wikilink } from './properties'
 
 defineOptions({ name: 'PropertyRow' })
 
@@ -90,16 +90,21 @@ function onPillBackspace() {
     if (!pillDraft.value && list.value.length) removePill(list.value.length - 1)
 }
 
-// Value suggestions (the host's `valueSuggestions`) for text and list values, matching what's typed; the menu
-// shows only while some match. Picking one (Enter or click) adds it to a list, or sets and saves a text value.
+// Suggestions for text and list values, matching what's typed; the menu shows only while some match. After an open
+// `[[` they're the editor's links (as in the note); otherwise the host's `valueSuggestions`. Picking one (Enter or
+// click) adds it to a list, or sets and saves a text value. Each item's `value` is the value it picks.
 const menuOpen = ref(false)
 const valueItems = computed(() => {
     const listy = isListType(type.value)
-    const typed = (listy ? pillDraft.value : draft.value).trim().toLowerCase()
+    const text = listy ? pillDraft.value : draft.value
+    // The menu writes the picked value into the input after `onSelect`: a list's input is cleared again once it has.
+    const pick = (picked: string) => listy ? (pillDraft.value = picked, addPill(), nextTick(() => (pillDraft.value = ''))) : (draft.value = picked, commit(true))
+    const links = linkCompletions(text, api.links())
+    if (links) return links.map(({ link, value }) => ({ label: link.name, description: link.filePath, icon: 'i-lucide-file-text', value, onSelect: () => pick(value) }))
+    const typed = text.trim().toLowerCase()
     return api.valueSuggestions(key.value)
         .filter(s => !list.value.includes(s) && s.toLowerCase().includes(typed))
-        // The menu writes the picked text into the input after `onSelect`: clear it again once it has.
-        .map(s => ({ label: s, onSelect: () => listy ? (pillDraft.value = s, addPill(), nextTick(() => (pillDraft.value = ''))) : (draft.value = s, commit(true)) }))
+        .map(s => ({ label: s, value: s, onSelect: () => pick(s) }))
 })
 const menuShown = computed(() => menuOpen.value && valueItems.value.length > 0)
 
@@ -177,7 +182,7 @@ function addField() {
                     v-model="pillDraft"
                     mode="autocomplete"
                     :items="valueItems"
-                    value-key="label"
+                    value-key="value"
                     :content="SUGGESTIONS_CONTENT"
                     ignore-filter
                     open-on-focus
@@ -206,7 +211,7 @@ function addField() {
                 v-model="draft"
                 mode="autocomplete"
                 :items="valueItems"
-                value-key="label"
+                value-key="value"
                 :content="SUGGESTIONS_CONTENT"
                 ignore-filter
                 open-on-focus

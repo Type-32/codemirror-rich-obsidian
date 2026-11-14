@@ -3,6 +3,7 @@ import { EditorSelection } from '@codemirror/state'
 import { convertValue, editProperties, inferType, propertiesYaml, removeProperty, renameProperty, setProperty } from '../src/runtime/editor/utility/properties'
 import { panelEnd, propertiesPanel } from '../src/runtime/editor/plugins/codemirror-plugin-proses/propertiesPlugin'
 import { state } from './helpers'
+import { linkCompletions, wikilink } from '../src/runtime/components/Editor/properties'
 
 const YAML = 'tags:\n  - kthalatir\n  - lab/parity\n# where the image is\ncover: "[[Kthalatir.png]]"\nstatus: draft\nempty:\nflow: [a, b]\nnested:\n  a: 1\n  b: two\n'
 
@@ -87,5 +88,22 @@ describe('the panel', () => {
         const s = panel(DOC, 13)
         expect(s.update({ selection: { anchor: 0 } }).state.selection.main.head).toBe(13)
         expect(s.update({ selection: EditorSelection.range(0, DOC.length) }).state.selection.main.from).toBe(13)
+    })
+})
+
+describe('links in values', () => {
+    it('shows links and embeds as links', () => {
+        expect(wikilink('[[Lab#x|Shown]]')).toEqual({ target: 'Lab', text: 'Shown' })
+        expect(wikilink('![[Kthalatir.png]]')).toEqual({ target: 'Kthalatir.png', text: 'Kthalatir.png' })
+        expect(wikilink('text [[Lab]]')).toBeNull()
+    })
+
+    it('completes an open `[[` like the editor: matches name or path; shared names complete to the path', () => {
+        const links = [{ name: 'Lab', referenceId: '1' }, { name: 'Note', filePath: 'a/Note.md', referenceId: '2' }, { name: 'Note', filePath: 'b/Note.md', referenceId: '3' }]
+        expect(linkCompletions('plain', links)).toBeNull()
+        expect(linkCompletions('see [[la', links)!.map(c => c.value)).toEqual(['see [[Lab]]'])
+        expect(linkCompletions('![[b/', links)!.map(c => c.value)).toEqual(['![[b/Note.md]]'])
+        expect(linkCompletions('[[', links)).toHaveLength(3)
+        expect(linkCompletions('[[Lab]] x', links)).toBeNull()
     })
 })

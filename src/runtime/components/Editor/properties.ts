@@ -1,5 +1,5 @@
 import type { InjectionKey } from 'vue'
-import type { PropertyType } from '../../editor/types/editor-types'
+import type { InternalLink, PropertyType } from '../../editor/types/editor-types'
 import type { MenuSize } from '../../editor/plugins/hostAppConfig'
 
 /** What `PropertiesPanel` gives its rows: edits go back to the editor as one YAML rewrite each. */
@@ -18,6 +18,8 @@ export interface PropertiesApi {
     focusRow: (path: string[]) => void
     /** The editor's `contextMenuSize`, for the type menu. */
     menuSize: () => MenuSize | undefined
+    /** The editor's `internalLinkMap`, offered after `[[` in values. */
+    links: () => InternalLink[]
 }
 
 export const PROPERTIES: InjectionKey<PropertiesApi> = Symbol('properties')
@@ -58,8 +60,23 @@ export const TYPE_LABELS: Record<PropertyType, string> = {
     tags: 'Tags', aliases: 'Aliases', object: 'Object', unknown: 'Unknown',
 }
 
-/** `[[path#sub|alias]]` as a link: target and shown text. */
+/** `[[path#sub|alias]]` (or the embed `![[…]]`) as a link: target and shown text. */
 export function wikilink(value: unknown): { target: string, text: string } | null {
-    const m = typeof value === 'string' ? /^\[\[([^\]|#]+)(?:#[^\]|]*)?(?:\|([^\]]+))?\]\]$/.exec(value.trim()) : null
+    const m = typeof value === 'string' ? /^!?\[\[([^\]|#]+)(?:#[^\]|]*)?(?:\|([^\]]+))?\]\]$/.exec(value.trim()) : null
     return m ? { target: m[1]!, text: m[2] ?? m[1]! } : null
+}
+
+/**
+ * Links to offer while a value ends in an open `[[` or `![[` (as the editor's own `[[` completion does): each with
+ * the whole value it completes `text` to. Names shared by several links complete to their file path.
+ */
+export function linkCompletions(text: string, links: InternalLink[]): { link: InternalLink, value: string }[] | null {
+    const open = /!?\[\[([^\]|]*)$/.exec(text)
+    if (!open) return null
+    const query = open[1]!.toLowerCase()
+    const head = text.slice(0, open.index + open[0].length - open[1]!.length)
+    const names = links.map(l => l.name)
+    return links
+        .filter(l => l.name && (l.name.toLowerCase().includes(query) || l.filePath?.toLowerCase().includes(query)))
+        .map(link => ({ link, value: `${head}${link.filePath && names.indexOf(link.name) !== names.lastIndexOf(link.name) ? link.filePath : link.name}]]` }))
 }

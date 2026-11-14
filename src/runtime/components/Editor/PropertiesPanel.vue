@@ -60,6 +60,7 @@ const api: PropertiesApi = {
         rowEl(path)?.focus()
     },
     menuSize: () => props.menuSize.value,
+    links: () => view.state.facet(internalLinkMapFacet),
 }
 provide(PROPERTIES, api)
 
