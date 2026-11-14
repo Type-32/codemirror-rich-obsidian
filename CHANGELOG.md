@@ -1,6 +1,22 @@
 # Changelog
 
 
+## v0.4.1
+
+[compare changes](https://github.com/Type-32/codemirror-rich-obsidian/compare/v0.4.1-0...v0.4.1)
+
+### 🩹 Fixes
+
+- **ext:** Rename the properties type key to `ui.properties.typeMenu` ([56752d6](https://github.com/Type-32/codemirror-rich-obsidian/commit/56752d6))
+
+### 🏡 Chore
+
+- **release:** V0.4.0 ([da2c250](https://github.com/Type-32/codemirror-rich-obsidian/commit/da2c250))
+
+### ❤️ Contributors
+
+- Type-32 ([@Type-32](https://github.com/Type-32))
+
 ## v0.4.0
 
 [compare changes](https://github.com/Type-32/codemirror-rich-obsidian/compare/v0.4.1-0...v0.4.0)
