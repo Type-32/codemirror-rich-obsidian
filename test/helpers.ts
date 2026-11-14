@@ -1,13 +1,12 @@
 import { EditorSelection, EditorState, type Extension } from '@codemirror/state'
 import { ensureSyntaxTree } from '@codemirror/language'
 import { markdown } from '@codemirror/lang-markdown'
-import { GFM } from '@lezer/markdown'
 import type { Command, EditorView } from '@codemirror/view'
-import { CustomOFM } from '../src/runtime/editor/lezer-parsers/customOFMParsers'
+import { markdownConfig } from '../src/runtime/editor/wysiwyg'
 
-// Mirrors `markdownConfig()` (wysiwyg.ts imports Vue widgets, which vitest can't load without a plugin).
+// The editor's own parser config (fenced-code languages aside).
 // @ts-ignore lezer extension typing is looser than lang-markdown's
-export const lang = markdown({ extensions: [GFM, CustomOFM, { remove: ['SetextHeading'] }] })
+export const lang = markdown(markdownConfig())
 
 export function parsed(s: EditorState) {
     ensureSyntaxTree(s, s.doc.length, 5000)

@@ -2,27 +2,28 @@
 import CodeMirror from 'vue-codemirror6'
 import { keymap, EditorView, drawSelection, rectangularSelection } from '@codemirror/view'
 import { standardKeymap, history, historyKeymap, indentWithTab } from '@codemirror/commands'
-import { defaultHighlightStyle, syntaxHighlighting, indentOnInput, foldGutter } from '@codemirror/language'
+import { indentOnInput, foldGutter } from '@codemirror/language'
 import { Compartment, type Extension, type StateEffect } from '@codemirror/state'
-import type { LanguageSupport } from '@codemirror/language'
-import { languages } from '@codemirror/language-data'
 import wysiwyg from '../editor/wysiwyg'
 import { internalLinkMapFacet } from '../editor/plugins/linkMappingConfig'
 import { specialCodeBlockMapFacet } from '../editor/plugins/specialCodeBlockMappingConfig'
 import { customBracketClosingConfig } from '../editor/plugins/customBracketClosingConfig'
-import { vueContextFacet } from '../editor/plugins/hostAppConfig'
+import { contextMenuSize, vueContextFacet, type MenuSize } from '../editor/plugins/hostAppConfig'
 import { editorKeywordSearchPlugin, searchOptionsFacet } from '../editor/plugins/codemirror-editor-plugins/editorKeywordSearchPlugin'
+import { propertiesPanel } from '../editor/plugins/codemirror-plugin-proses/propertiesPlugin'
 import type {
     InternalLink,
     SpecialCodeBlockMapping,
     InternalLinkClickDetail,
     ExternalLinkClickDetail,
+    PropertiesOptions,
     SearchOptions
 } from '../editor/types/editor-types'
 import { ref, shallowRef, onMounted, onBeforeUnmount, watch, getCurrentInstance, type AppContext } from 'vue';
 
 const doc = defineModel<string>()
-const props = defineProps<{
+// `properties` needs an explicit default: Vue casts an absent prop whose type includes `false` to `false`.
+const props = withDefaults(defineProps<{
     class?: string
     internalLinkMap?: InternalLink[]
     specialCodeBlockMap?: SpecialCodeBlockMapping[]
@@ -32,7 +33,11 @@ const props = defineProps<{
     searchOptions?: SearchOptions
     /** Extra CodeMirror extensions (e.g. from `/ext` or your own). Reactive: changing the array reconfigures live. */
     extensions?: Extension[]
-}>()
+    /** Frontmatter as Obsidian's Properties panel (default), with its options; `false` shows the raw YAML. */
+    properties?: PropertiesOptions | false
+    /** Nuxt UI size of the menus the editor opens: a property's type menu, a table's context menu. Default `md`. */
+    contextMenuSize?: MenuSize
+}>(), { properties: () => ({}) })
 const emit = defineEmits<{
     'internal-link-click': [detail: InternalLinkClickDetail]
     'external-link-click': [detail: ExternalLinkClickDetail]
@@ -45,6 +50,9 @@ const bracketClosingCompartment = new Compartment()
 const foldGutterCompartment = new Compartment()
 const searchCompartment = new Compartment()
 const extensionsCompartment = new Compartment()
+const propertiesCompartment = new Compartment()
+const contextMenuSizeCompartment = new Compartment()
+const propertiesExtension = (p: PropertiesOptions | false | undefined) => (p === false ? [] : propertiesPanel(p))
 const editorElement = ref<HTMLElement>()
 const instance = getCurrentInstance()
 // Components CodeMirror mounts render as if they were children of this one: a root vnode's provides
@@ -56,12 +64,6 @@ const vueContext = instance
 // Prop changes that land before vue-codemirror6 emits @ready are queued here and flushed in handleReady.
 let pendingEffects: StateEffect<unknown>[] = []
 
-function loadLanguage(info: string): Promise<LanguageSupport> | null {
-    const lower = info.toLowerCase()
-    const lang = languages.find(l => l.name.toLowerCase() === lower || l.alias.some(a => a.toLowerCase() === lower))
-    return lang ? lang.load() : null
-}
-
 onMounted(() => {
     cmExtensions.value = [
         EditorView.lineWrapping,
@@ -69,7 +71,6 @@ onMounted(() => {
         drawSelection(),
         rectangularSelection(),
         indentOnInput(),
-        syntaxHighlighting(defaultHighlightStyle),
         keymap.of(props.disabled ? [] : [...standardKeymap, ...historyKeymap, indentWithTab]),
         internalLinkCompartment.of(internalLinkMapFacet.of(props.internalLinkMap || [])),
         specialCodeBlockCompartment.of(specialCodeBlockMapFacet.of(props.specialCodeBlockMap || [])),
@@ -78,9 +79,11 @@ onMounted(() => {
         editorKeywordSearchPlugin,
         vueContextFacet.of(vueContext),
         searchCompartment.of(searchOptionsFacet.of(props.searchOptions || { query: '' })),
-        wysiwyg({ lezer: { codeLanguages: loadLanguage } }),
+        wysiwyg(),
         EditorView.editable.of(!props.disabled),
         extensionsCompartment.of(props.extensions ?? []),
+        propertiesCompartment.of(propertiesExtension(props.properties)),
+        contextMenuSizeCompartment.of(contextMenuSize.of(props.contextMenuSize)),
     ]
     editorElement.value?.addEventListener('internal-link-click', handleInternalLinkClick as EventListener)
     editorElement.value?.addEventListener('external-link-click', handleExternalLinkClick as EventListener)
@@ -110,6 +113,8 @@ watch(() => props.bracketClosing, v => reconfigure(bracketClosingCompartment.rec
 watch(() => props.foldGutter, v => reconfigure(foldGutterCompartment.reconfigure(v ?? true ? foldGutter() : [])))
 watch(() => props.searchOptions, o => reconfigure(searchCompartment.reconfigure(searchOptionsFacet.of(o || { query: '' }))), { deep: true })
 watch(() => props.extensions, e => reconfigure(extensionsCompartment.reconfigure(e ?? [])))
+watch(() => props.properties, p => reconfigure(propertiesCompartment.reconfigure(propertiesExtension(p))))
+watch(() => props.contextMenuSize, s => reconfigure(contextMenuSizeCompartment.reconfigure(contextMenuSize.of(s))))
 
 function handleReady(payload: { view: EditorView }) {
     view.value = payload.view

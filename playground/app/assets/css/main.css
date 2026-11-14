@@ -7,9 +7,4 @@
 	--font-editor: 'Inter', 'Segoe UI Variable Static Display', var(--font-sans, sans-serif);
 
 	--font-editor-code: 'JetBrains Mono', 'Consolas', var(--font-mono, ui-monospace);
-
-	--ul-nesting-step: 1.5rem;
-	--ol-nesting-step: 1rem;
-
-	--indent-level: 0;
 }

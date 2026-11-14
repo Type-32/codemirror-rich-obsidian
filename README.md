@@ -65,43 +65,84 @@ Customize the editor fonts:
 
 	--font-editor-code: 'Google Sans Code', 'JetBrains Mono', 'Consolas', var(--font-mono, ui-monospace);
 
-	/* List indentation / spacing.
-	   UL and OL have independent step / gap pairs so ordered lists can be
-	   tuned to a tighter or wider nesting than unordered lists.
-
-	     --ul-nesting-step: horizontal distance added per nesting level (UL).
-	     --ul-bullet-gap:   width of the `•` bullet slot (also the visual gap
-	                        between bullet and content text).
-	     --ol-nesting-step: horizontal distance added per nesting level (OL).
-	     --ol-bullet-gap:   reserved slot width for the `1.` / `2.` marker
-	                        (and visual gap between marker and content).
-	                        Should be wide enough to hold the largest marker
-	                        you expect (default 1.5rem fits up to 3 digits).
-	     --list-base-offset: shared editor-frame left-padding baseline. */
-	--ul-nesting-step: 1.5rem;
-	--ul-bullet-gap:   0.25rem;
-
-	--ol-nesting-step: 1rem;
-	--ol-bullet-gap:   0.5rem;
-
-	--list-base-offset: 1rem;
-
-	/* Indent-guide styling for list lines. See `.cm-list-line-ul` / `.cm-list-line-ol` below. */
-	--list-guide-color: var(--ui-primary);
-	--list-guide-width: 1px;
-	--list-guide-opacity: 0.05;
-
-	/* Active indent-guide styling — the guide stripe belonging to the
-	   current cursor's ancestor group is highlighted on all sibling lines.
-	   See `.cm-list-line-active-guide` below. */
-	--list-active-guide-color: var(--ui-primary);
-	--list-active-guide-opacity: 1;
-
-	--indent-level: 0;
-
 	/* Your Config Here... */
 }
 ```
+
+Customize lists, indentation and checkboxes (Obsidian's variable names; defaults shown). List marks, quote markers and indentation keep their source characters, so revealing them never moves text, and wrapped lines line up with the text after them:
+
+```css
+:root {
+	--list-indent: 2.25em;                /* one indent level: a leading tab or 4 spaces, in lists and plain lines */
+	--list-padding-inline-start: 0.75em;  /* space before a list mark */
+	--list-marker-color: var(--ui-text-dimmed);
+	--list-bullet-size: 0.3em;
+	--list-bullet-radius: 50%;
+
+	--checkbox-size: 1em;
+	--checkbox-radius: 50%;
+	--checkbox-margin-inline-start: 0.5em;
+	--checkbox-margin-inline-end: 0.25em;
+	--checkbox-color: var(--ui-primary);
+	--checkbox-border-color: var(--ui-border-accented);
+	--checkbox-marker-color: var(--ui-bg);
+
+	--indentation-guide-width: 1px;
+	--indentation-guide-width-active: 1px;
+	--indentation-guide-color: color-mix(in oklab, var(--ui-text) 12%, transparent);
+	--indentation-guide-color-active: color-mix(in oklab, var(--ui-text) 30%, transparent);
+	--indentation-guide-editing-indent: 0.85em; /* guide offset inside its indent level */
+}
+```
+
+Customize code blocks. Fenced code is highlighted with the language from its info string (`@codemirror/language-data`, loaded on demand; pass `wysiwyg({ lezer: { codeLanguages } })` to use your own list). As in Obsidian, a rendered block shows the language's name top-right (a copy icon when there's none; click to copy the code), and a cursor anywhere inside reveals both fences. An unclosed fence stays as source. Tokens get `cm-code-*` classes, and blocks and inline code take their box from the same variables, so it's all plain CSS (`:root` for light, `.dark` for dark):
+
+```css
+:root {
+	--code-background: …; --code-border-width: …; --code-border-color: …; --code-radius: …; --code-size: …;
+	--code-normal: …; --code-comment: …; --code-function: …; --code-important: …;
+	--code-keyword: …; --code-operator: …; --code-property: …; --code-punctuation: …;
+	--code-string: …; --code-tag: …; --code-value: …;
+}
+```
+
+Task statuses work like Obsidian: any single character between the brackets (`- [/]`, `- [-]`, `- [>]`…) followed by a space makes a task. Every status but a space renders checked; only `x`/`X` are struck through. The status is on both the line (`.cm-task-line[data-task="/"]`) and the checkbox (`.cm-task-checkbox-wrapper[data-task="/"]`) for styling.
+
+### Properties (frontmatter)
+
+Frontmatter shows as Obsidian's Properties panel above the note. Each row has a type icon (click for the type menu and Remove), the name (click to rename; position and comments are kept), and an editor for the value:
+- **Text** (wikilinks render as links), **Number**, **Checkbox**, **Date**, **Date & time**.
+- **List**, **Tags** and **Aliases** as pills.
+- **Nested objects** as indented rows.
+
+Edits rewrite only the YAML they change, so comments, key order, quoting and flow style survive. Every edit is one undo step. Invalid YAML, or YAML that isn't a mapping, stays as source.
+
+Keyboard, as in Obsidian:
+- **↑** from the first line of the note goes to **Add property**.
+- **↑/↓/Tab** move between rows, and **Enter** edits the value with its text selected. Enter saves; Escape cancels.
+- **Escape** on a row returns to the note.
+
+Typing can't reach the YAML behind the panel: Backspace at the start of the body and select-all + delete leave it intact.
+
+```vue
+<Editor v-model="doc" :properties="{
+	types: vaultTypes,                                  // e.g. { rating: 'number', due: 'date' }; other keys are inferred
+	onTypeChange: (key, type) => saveType(key, type),   // persist the user's choice (Obsidian's types.json)
+	keySuggestions: allPropertyNames,                   // names offered while adding a property, with `types`' keys
+	valueSuggestions: key => key === 'tags' ? allTags : [], // offered while editing a text value or adding to a list
+}" />
+<Editor v-model="doc" :properties="false" />  <!-- raw YAML -->
+<Editor v-model="doc" context-menu-size="sm" />  <!-- Nuxt UI size of the property type menu and the table context menu (default md) -->
+```
+
+Callouts render the way Obsidian renders them: the title and body are drawn by read-only copies of the editor itself, so everything a note can contain works inside, with each source line on its own line. That includes links, tags, highlights, math, lists, tasks, highlighted code, tables and nested callouts. Links inside work as links. Clicking anywhere else selects the whole callout source to edit it, and the `</>` button puts the cursor at its start. `[!type]-` starts folded and `+` open; the chevron folds and unfolds without touching the source. The widget carries `data-callout` (the lower-cased type), `data-callout-metadata` (after `|`) and `data-callout-fold`, and has `.is-collapsible`/`.is-collapsed`. Icons follow Obsidian's defaults and aliases (`tip`/`hint`/`important`, `warning`/`caution`/`attention`, …).
+
+List and quote editing follows Obsidian:
+- **Enter** continues a list item (next number, a fresh `[ ]` for tasks) or a quote. On an empty item, a nested one moves up a level and a top-level one ends the list; on an empty `> ` line the quote ends.
+- **Shift-Enter** starts a new line inside the item, indented to its text.
+- **Tab / Shift-Tab** move an item, with its children, a level in or out. The first item of a list stays put. In quotes the indentation goes after the `>`.
+- **Backspace** deletes one character; it never removes a list mark on its own.
+- **Ordered lists are renumbered after every edit** that touches them, in sequence from their first number. Lists split only by blank lines or a `.`/`)` change count as one. Undo reverts the edit and the renumbering together. Loading or setting the document programmatically never renumbers. Turn it off with `listRenumbering.of(false)` from `/kit`.
 
 ## Extensions
 
@@ -334,6 +375,9 @@ UI strings:
 | `ui.ai.refinePlaceholder` | Refine, e.g. “more formal” |
 | `ui.ai.accept`, `ui.ai.discard`, `ui.ai.retry`, `ui.ai.stop` | Accept, Discard, Retry, Stop |
 | `ui.ai.edit`, `ui.ai.done`, `ui.ai.copy`, `ui.ai.insertBelow` | Edit, Done, Copy, Insert below |
+| `ui.properties.add`, `ui.properties.addField`, `ui.properties.name`, `ui.properties.deleteFrontmatter` | Add property, Add field, Property name, Delete frontmatter |
+| `ui.properties.empty`, `ui.properties.remove`, `ui.properties.type` | Empty, Remove, Property type |
+| `ui.properties.type.text` … `.list`, `.number`, `.checkbox`, `.date`, `.datetime`, `.tags`, `.aliases`, `.object` | Text, List, Number, Checkbox, Date, Date & time, Tags, Aliases, Object |
 
 In your own components, `label(state, key, fallback)` reads the same facet.
 
@@ -381,21 +425,19 @@ The kit also exports what the built-ins are made of:
 Ship `.vue` files in an extension? Style them with Nuxt UI props or your own CSS. Tailwind v4 doesn't scan `node_modules`, so utility classes inside a published package won't be generated in the host app.
 
 ## Known Issues
-- Ordered List sequencing is different than that of Obsidian. We think that they probably use a sort of counter to keep track of lists of the same level beneath the hood, but we don't know for sure.
-- Light/Dark themes are not yet supported in code-block syntax highlighting.
-- Nested callouts render as a styled blockquote (source visible) instead of a callout widget: `markdown-it-obsidian-callouts` mis-renders nesting, and the old whole-block widget could corrupt the document on edit. Regular callouts render as before.
-- Tables are widget-only: the markdown source is never shown. Click a cell to edit (Enter/blur commits, Esc cancels); right-click for a Nuxt UI context menu with insert/delete row & column, alignment, clear cell; drag the `⋮⋮` handles to reorder rows/columns. Malformed tables (bad delimiter row) fall back to plain text so they can be repaired.
+- `[text]` without a link target is styled as a link, unlike in Obsidian.
+- Tables are widget-only: the markdown source is never shown. Each cell renders like the note (links, tags, math). Click a cell to edit it with live preview; every keystroke is written into that cell's text in the source, and the table is not re-padded. Keys follow Obsidian: Tab/Shift-Tab and Enter move between cells (adding a row at the end), ↑/↓/←/→ cross cell edges and leave the table, and Escape returns to the note. Right-click for a Nuxt UI context menu with insert/delete row & column, alignment and clear cell; drag the `⋮⋮` handles to reorder rows/columns. Malformed tables (bad delimiter row) fall back to plain text so they can be repaired.
 
 ### Resolved
 - ~~Rendered block replacement recomputes all regions on every operation.~~ Every prose plugin now goes through `createProsePlugin`: inline decorations are viewport-scoped and patch only changed lines; block decorations rebuild only when the selection actually crosses one of the plugin's nodes.
 - ~~Marks reveal on `mousedown`; Obsidian reveals on `mouseup`.~~ Decoration rebuilds are suspended while drag-selecting and run once on release.
-- ~~Nested callouts can lose data.~~ See above.
+- ~~Nested callouts can lose data / render as a plain quote.~~ Callout bodies render with the editor itself, so nested callouts render as callouts, and clicking reveals the whole source.
 - ~~Tables don't render.~~ See above.
 - ~~Indents are tabs / list indents are a pain.~~ Indent guides and active-guide highlighting work; the guide-level off-by-one is fixed.
 - ~~Task lists don't work.~~ Working.
 - ~~Embedded videos/notes/canvases unsupported~~ — `internalLinkMap` lets hosts map links to their own embed components.
 - ~~Mermaid/bases code blocks unsupported~~ — `specialCodeBlockMap` lets hosts map a code-fence language to their own component.
-- ~~YAML Frontmatter parsed as raw text~~ — deliberately left raw; `useEditorFrontmatter` offers get/set/clear helpers for hosts that want them.
+- ~~YAML Frontmatter parsed as raw text~~ — shown as Obsidian's Properties panel (`properties` prop; `false` for raw YAML). `useEditorFrontmatter` still offers get/set/clear helpers.
 
 ## Contributions
 - To anyone who wants to fork this, **make sure you preserve the original credits and references to the libraries that are used in this project. It means a lot to them and to us.**

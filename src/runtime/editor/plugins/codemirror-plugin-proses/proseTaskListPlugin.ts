@@ -1,12 +1,16 @@
 import { Decoration, EditorView, ViewPlugin, ViewUpdate, WidgetType, type DecorationSet } from '@codemirror/view'
 import type { Range } from '@codemirror/state'
 import { syntaxTree } from '@codemirror/language'
-import { selectionWithin } from '../../utility/tools'
+import { markRevealed } from '../../utility/tools'
 import { TreeCursor } from '@lezer/common'
 
+/**
+ * Like Obsidian: every status but a space is checked; the status character goes in `data-task` (on the
+ * checkbox and the line) so themes can style `[/]`, `[-]`, `[>]`… Clicking clears a checked status, or checks with `x`.
+ */
 class CheckboxWidget extends WidgetType {
     constructor(
-        private readonly checked: string | undefined,
+        private readonly status: string,
         private readonly from: number,
         private readonly to: number
     ) {
@@ -14,33 +18,17 @@ class CheckboxWidget extends WidgetType {
     }
 
     public override eq(other: CheckboxWidget): boolean {
-        return other.checked === this.checked && other.from === this.from && other.to === this.to
+        return other.status === this.status && other.from === this.from && other.to === this.to
     }
 
     public override toDOM(view: EditorView): HTMLElement {
         const checkbox = document.createElement('div')
         checkbox.classList.add('cm-task-checkbox-wrapper')
-
-        if (this.checked && this.checked.toLowerCase() === 'x') {
-            checkbox.dataset.checked = 'true'
-        } else if (this.checked && this.checked !== ' ') {
-            checkbox.dataset.special = this.checked
-            checkbox.innerText = this.checked
-        } else {
-            checkbox.dataset.checked = 'false'
-        }
-
+        checkbox.dataset.task = this.status
+        checkbox.dataset.checked = String(this.status !== ' ')
         checkbox.onclick = (event) => {
             event.preventDefault()
-            const isChecked = checkbox.dataset.checked === 'true'
-            const char = checkbox.dataset.special ? ' ' : !isChecked ? 'x' : ' '
-            view.dispatch({
-                changes: {
-                    from: this.from + 1,
-                    to: this.to - 1,
-                    insert: char,
-                },
-            })
+            view.dispatch({ changes: { from: this.from + 1, to: this.to - 1, insert: this.status === ' ' ? 'x' : ' ' } })
         }
         return checkbox
     }
@@ -82,35 +70,18 @@ export const proseTaskListPlugin = ViewPlugin.fromClass(
                         const taskMarker = node.node.getChild('TaskMarker')
                         if (!taskMarker) return
 
-                        const checkedChar = state.doc.sliceString(
-                            taskMarker.from + 1,
-                            taskMarker.to - 1,
+                        const status = state.doc.sliceString(taskMarker.from + 1, taskMarker.to - 1)
+                        decorations.push(
+                            Decoration.line({
+                                attributes: { class: 'cm-task-line', 'data-task': status },
+                            }).range(state.doc.lineAt(listItem.from).from),
                         )
-                        const isChecked =
-                            checkedChar && checkedChar.toLowerCase() === 'x'
 
-                        if (isChecked) {
-                            const line = state.doc.lineAt(listItem.from)
-                            decorations.push(
-                                Decoration.line({
-                                    attributes: { class: 'cm-task-checked' },
-                                }).range(line.from),
-                            )
-                        }
-
-                        if (
-                            selectionWithin(state, listMark.from, listMark.to) ||
-                            selectionWithin(state, taskMarker.from, taskMarker.to)
-                        )
-                            return
+                        if (markRevealed(state, listMark, taskMarker)) return
 
                         decorations.push(
                             Decoration.replace({
-                                widget: new CheckboxWidget(
-                                    state.doc.sliceString(taskMarker.from + 1, taskMarker.to - 1),
-                                    taskMarker.from,
-                                    taskMarker.to
-                                ),
+                                widget: new CheckboxWidget(status, taskMarker.from, taskMarker.to),
                             }).range(listMark.from, taskMarker.to)
                         )
                     },
