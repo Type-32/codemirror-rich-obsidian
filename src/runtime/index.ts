@@ -8,7 +8,7 @@ export { specialCodeBlockMapFacet } from './editor/plugins/specialCodeBlockMappi
 export { customBracketClosingConfig } from './editor/plugins/customBracketClosingConfig'
 export { contextMenuSize, type MenuSize } from './editor/plugins/hostAppConfig'
 export { editorKeywordSearchPlugin, searchOptionsFacet } from './editor/plugins/codemirror-editor-plugins/editorKeywordSearchPlugin'
-export { propertiesPanel, panelEnd } from './editor/plugins/codemirror-plugin-proses/propertiesPlugin'
+export { bodyLineAfter, propertiesPanel, panelEnd } from './editor/plugins/codemirror-plugin-proses/propertiesPlugin'
 export { editorLabels, label } from './kit/labels'
 
 // What draws tables, the properties panel and host components; nested editors (callouts, table cells).
@@ -36,6 +36,7 @@ export { indentListItem, insertListContinuation, insertListNewline, listRenumber
 
 // Markdown, frontmatter and table text, without an editor.
 export { parseMarkdownToAST } from './utils/markdownParser'
+export { textChanges, type TextChange } from './editor/utility/textChanges'
 export { frontmatterRange, parseFrontmatter, parseYaml, stringifyYaml } from './utils/frontmatter'
 export { convertValue, editProperties, inferType, propertiesYaml, removeProperty, renameProperty, setProperty } from './editor/utility/properties'
 export {

@@ -12,6 +12,7 @@ import { contextMenuSize, type MenuSize } from '../editor/plugins/hostAppConfig'
 import { vueRenderers } from '../vue/renderers'
 import { editorKeywordSearchPlugin, searchOptionsFacet } from '../editor/plugins/codemirror-editor-plugins/editorKeywordSearchPlugin'
 import { propertiesPanel } from '../editor/plugins/codemirror-plugin-proses/propertiesPlugin'
+import { textChanges } from '../editor/utility/textChanges'
 import type {
     InternalLink,
     SpecialCodeBlockMapping,
@@ -38,7 +39,12 @@ const props = withDefaults(defineProps<{
     properties?: PropertiesOptions | false
     /** Nuxt UI size of the menus the editor opens: a property's type menu, a table's context menu. Default `md`. */
     contextMenuSize?: MenuSize
-}>(), { properties: () => ({}), bracketClosing: true, foldGutter: true })
+    /**
+     * CodeMirror's undo history and its keys (default `true`). `false` when something else owns undo, such as a
+     * collaboration binding's undo manager, so each peer undoes only its own edits. Read when the editor mounts.
+     */
+    history?: boolean
+}>(), { properties: () => ({}), bracketClosing: true, foldGutter: true, history: true })
 const emit = defineEmits<{
     'internal-link-click': [detail: InternalLinkClickDetail]
     'external-link-click': [detail: ExternalLinkClickDetail]
@@ -64,15 +70,19 @@ const vueContext = instance
     : null
 // Prop changes that land before vue-codemirror6 emits @ready are queued here and flushed in handleReady.
 let pendingEffects: StateEffect<unknown>[] = []
+// vue-codemirror6 replaces the whole document whenever its value differs from the view's, which moves the cursor
+// and, with a collaboration binding, a peer's concurrent edit. It gets only the first value; later ones go in as the
+// changes between the two texts (`syncFromModel`).
+const initialDoc = doc.value ?? ''
 
 onMounted(() => {
     cmExtensions.value = [
         EditorView.lineWrapping,
-        history(),
+        props.history ? history() : [],
         drawSelection(),
         rectangularSelection(),
         indentOnInput(),
-        keymap.of(props.disabled ? [] : [...standardKeymap, ...historyKeymap, indentWithTab]),
+        keymap.of(props.disabled ? [] : [...standardKeymap, ...(props.history ? historyKeymap : []), indentWithTab]),
         internalLinkCompartment.of(internalLinkMapFacet.of(props.internalLinkMap || [])),
         specialCodeBlockCompartment.of(specialCodeBlockMapFacet.of(props.specialCodeBlockMap || [])),
         bracketClosingCompartment.of(customBracketClosingConfig.of(props.bracketClosing)),
@@ -117,12 +127,22 @@ watch(() => props.extensions, e => reconfigure(extensionsCompartment.reconfigure
 watch(() => props.properties, p => reconfigure(propertiesCompartment.reconfigure(propertiesExtension(p))))
 watch(() => props.contextMenuSize, s => reconfigure(contextMenuSizeCompartment.reconfigure(contextMenuSize.of(s))))
 
+/** The host set `v-model` to something the editor doesn't show: write what changed. Not while composing (IME). */
+function syncFromModel() {
+    const v = view.value, next = doc.value ?? ''
+    if (!v || v.composing) return
+    const current = v.state.doc.toString()
+    if (next !== current) v.dispatch({ changes: textChanges(current, next) })
+}
+watch(doc, syncFromModel)
+
 function handleReady(payload: { view: EditorView }) {
     view.value = payload.view
     if (pendingEffects.length) {
         payload.view.dispatch({ effects: pendingEffects })
         pendingEffects = []
     }
+    syncFromModel()
 }
 
 defineExpose({ view })
@@ -132,7 +152,8 @@ defineExpose({ view })
     <div :class="props.class ? props.class : 'w-full h-full overflow-visible'" ref="editorElement">
         <div class="w-full cm-rich-editor overflow-visible">
             <CodeMirror
-                v-model="doc"
+                :model-value="initialDoc"
+                @update:model-value="value => doc = String(value)"
                 placeholder="Start typing your markdown content here..."
                 :basic="false"
                 :autofocus="true"

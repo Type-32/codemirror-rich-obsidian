@@ -6,6 +6,7 @@ import { EditorView } from '@codemirror/view'
 import { parseDocument, type Document } from 'yaml'
 import type { PropertyType } from '../../editor/types/editor-types'
 import { convertValue, editProperties, frontmatterOf, inferType, removeProperty, renameProperty, setProperty } from '../../editor/utility/properties'
+import { textChanges } from '../../editor/utility/textChanges'
 import { frontmatterEnd } from '../../editor/plugins/propertiesConfig'
 import { internalLinkMapFacet } from '../../editor/plugins/linkMappingConfig'
 import { noteTargets } from '../../editor/plugins/codemirror-editor-plugins/linkSuggestPlugin'
@@ -25,11 +26,14 @@ const picked = ref<Record<string, PropertyType>>({})
 const t = (key: string, fallback: string) => label(view.state, key, fallback)
 const rowEl = (path: string[]) => [...root.value?.querySelectorAll<HTMLElement>('.cm-property') ?? []].find(el => el.dataset.propertyPath === pathId(path))
 
-/** Rewrite the frontmatter with an edited YAML document: one transaction, one undo step. */
+/**
+ * Rewrite the frontmatter with an edited YAML document: one transaction, one undo step. Only what changed is written,
+ * so a collaborator's concurrent edit to another property survives the merge.
+ */
 function write(edit: (doc: Document) => void) {
     const end = frontmatterEnd(view.state)
     if (end === null) return
-    view.dispatch({ changes: { from: 0, to: end, insert: frontmatterOf(editProperties(props.panel.value.yaml, edit)) } })
+    view.dispatch({ changes: textChanges(view.state.sliceDoc(0, end), frontmatterOf(editProperties(props.panel.value.yaml, edit))) })
 }
 
 const api: PropertiesApi = {

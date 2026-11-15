@@ -50,3 +50,18 @@
 
 - **`nestedExtensions.of(extension)`** installs an extension in every nested editor too (callout titles and bodies, table cells), and they pass it on to theirs, so a table inside a callout gets it. Opt-in: the editor's own extensions don't reach nested editors, so menus and overlays aren't mounted once per cell.
 - `<Editor>`'s Vue UI (tables, properties, the `[[` popover, component embeds) reaches nested editors this way.
+
+## Collaboration
+
+Checked with y-codemirror.next on two peers, offline edits included (the playground's `/collab` page, and `test/collab.test.ts` with two `Y.Doc`s). The README has the setup.
+
+- **`<Editor :history="false">`** leaves out CodeMirror's history and its keys, so a collaboration undo manager owns undo. CodeMirror's history undid other people's edits.
+- **Undo and redo in a table cell run whatever the note binds to them** (its history, or the undo manager). They used to call CodeMirror's history directly.
+- **`listRenumbering` takes a function** deciding per transaction, including changes made elsewhere. With two peers renumbering, both fixes survived the merge (`4.4. three`); now exactly one peer renumbers: true on it, `false` on the others. After another peer's change, its fixes are a transaction of their own, so the binding sends them back. `true`/`false` behave as before.
+- **`bodyLineAfter`** decides which changes add the empty line after a frontmatter that ends the note (default: all, as before). Accepting only this peer's edits keeps two peers from both adding it.
+- **Edits write only what changed.**
+  - The properties panel: two peers editing different properties merged into a doubled frontmatter (`---…------…---`); now into one.
+  - Table structural edits (rows, columns, alignment, drag): a column added while someone typed in a cell put their text before the header row, and the table stopped rendering. Now the table and the text survive (the new column's padding can land in the cell being typed in: `d  B`).
+  - `v-model`: a value set by the host replaced the whole document, moving the cursor and a collaborator's concurrent edit. Now only the difference is written, and the cursor stays.
+  - `textChanges(a, b)` (root) is the helper they use.
+- **Not yet:** remote cursors in the frontmatter are drawn at the first body line; inside tables and callouts they aren't drawn.

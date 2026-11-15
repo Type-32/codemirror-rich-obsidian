@@ -1,6 +1,6 @@
 # 0.5 refactor plan — `@type32/codemirror-rich-obsidian-editor`
 
-Status: Phases 1 (collab spike) and 2 (boundaries) done. Next: Phase 3. User-facing changes are tracked in `WHATS-NEW-0.5.md`.
+Status: Phases 1 (collab spike), 2 (boundaries) and 3 (collab-ready editor) done. Next: Phase 4. User-facing changes are tracked in `WHATS-NEW-0.5.md`.
 
 Already done in 0.4 for Vertex: `alfaaz` removed from `build.transpile` in `module.ts` (CommonJS, was kept out of pre-bundling). Vertex can delete its `nuxt.config.ts` hook when it upgrades.
 
@@ -114,6 +114,16 @@ Driven by the spike (findings F1–F8 below):
 - **Docs**: README "Collaboration" recipe using y-codemirror.next: build `yCollab` once per document, never per render [F5]; put `yUndoManagerKeymap` above the editor's keymap or turn off `history`; write the host's changes into the `Y.Text`, not `v-model`. No runtime dependency added.
 - **Spike page**: `playground/app/pages/collab.vue` stays as this phase's browser check (`?yundo=1` for `Y.UndoManager`); `yjs`, `y-codemirror.next`, `y-protocols` are playground devDependencies.
 
+**Phase 3 done (2026-11-15).** As planned, with these specifics:
+- **F6 without replacing `vue-codemirror6`:** it gets only the first `v-model` value; `Editor` writes later ones itself as `textChanges` (`syncFromModel`, skipped while composing). No ownership prop needed.
+- **`textChanges(a, b, at)`** (`utility/textChanges.ts`, exported from the root): common prefix/suffix trimmed, then `diffChars` from `diff` (already a dependency) on the middle, capped (20k chars, 1k edits) to one replacement. Used by the panel, table `commit`, the cell escape filter and cell sync, and `Editor`.
+- **F3:** `listRenumbering` takes `boolean | (tr) => boolean`. User edits it accepts renumber in the same transaction (as before); other accepted changes (no user event) get a separate transaction from `renumberAfterOthers`, since y-codemirror.next skips updates whose first transaction is remote. Only one peer may renumber at all, not just "repair": two peers fixing their own edits is what made `4.4.`.
+- **F8:** `bodyLineAfter` facet (`(tr) => boolean`, default all). Focus still always adds the line, so two peers opening a frontmatter-only note offline at once still get two lines (accepted: an extra blank line).
+- **F4:** `history` prop, read at mount. Table cells forward Mod-z/Mod-y to the note's keymap (`runScopeHandlers`), so they reach a collaboration undo manager.
+- **F2 residue:** structural table edits re-pad every cell; padding inserted where a peer is typing in a cell merges as `d  B`. Table and text survive; avoiding it means not re-padding on structural edits (a formatting change, not made).
+- **Found:** an inline array literal for `internal-link-map` reconfigures the editor on each parent render, which rebuilds tables and drops a cell's focus while typing (pre-existing, also without collaboration). Documented in the README; not guarded (deep comparison of link maps per render).
+- **Checks:** `test/collab.test.ts` (two `Y.Doc`s: F1, F2, F3, F6), and the `/collab` page by real typing and clicks: lists offline and connected, a property edited through the panel on each peer, a column added from the table menu while the other types in a cell, undo/redo including from inside a cell, a host `v-model` write during an offline edit.
+
 ## Phase 4 — Host Markdown syntax and nested extensions
 
 - `<Editor>` passes a `markdown` option (`{ extensions, codeLanguages }`) into `wysiwyg(config)` inside a Compartment; changing it reparses. Nested editors inherit through `nestedEditorContent`. `parseMarkdownToAST` takes the same config.
@@ -166,4 +176,4 @@ Run 2026-11-15 in `playground/app/pages/collab.vue`: two `<Editor>`s, each with 
 - **F7 Remote cursors.** Drawn in body text, including rendered headings and lists. A cursor in the frontmatter draws at the start of the first body line; a cursor in table or callout source, or in a table cell being edited, is not drawn.
 - **F8 Frontmatter-only note.** Both peers focusing offline each add the body line: `---\na: 1\n---\n\n`. Harmless extra blank line.
 
-**Not covered:** latency while connected (the relay is synchronous, so connected edits never conflicted); IME; nested editors' own undo inside a cell under `Y.UndoManager`; more than two peers.
+**Not covered:** latency while connected (the relay is synchronous, so connected edits never conflicted); IME; more than two peers. (Undo inside a cell under `Y.UndoManager`: covered in Phase 3.)

@@ -205,7 +205,7 @@ List and quote editing follows Obsidian:
 - **Shift-Enter** starts a new line inside the item, indented to its text.
 - **Tab / Shift-Tab** move an item, with its children, a level in or out. The first item of a list stays put. In quotes the indentation goes after the `>`.
 - **Backspace** deletes one character; it never removes a list mark on its own.
-- **Ordered lists are renumbered after every edit** that touches them, in sequence from their first number. Lists split only by blank lines or a `.`/`)` change count as one. Undo reverts the edit and the renumbering together. Loading or setting the document programmatically never renumbers. Turn it off with `listRenumbering.of(false)` from `/kit`.
+- **Ordered lists are renumbered after every edit** that touches them, in sequence from their first number. Lists split only by blank lines or a `.`/`)` change count as one. Undo reverts the edit and the renumbering together. Loading or setting the document programmatically never renumbers. Turn it off with `listRenumbering.of(false)`, or pass a function to decide per transaction (see [Collaboration](#collaboration)).
 
 Typing `[[` (or `![[`) opens Obsidian's link completion: the notes of `internalLinkMap`, ranked as you type (exact name, prefix, word start, inside a name, file path, then fuzzy), and their aliases, which complete to `[[name|alias]]`. `[[name#` offers that note's headings and `[[name#^` its blocks; `[[#` and `[[#^` offer the current note's. Only the rows in view are rendered, so a vault of any size scrolls smoothly. Give the extra targets on each link:
 
@@ -237,6 +237,45 @@ const blocks: SpecialCodeBlockMapping[] = [{ codeInfo: 'mermaid', mount: (el, { 
 ```
 
 An embed re-renders when one of its props changes or its function or component is a different one. A link list rebuilt with new but equal objects keeps the rendered embeds. Keep one function per kind of embed, not a new closure per rebuild. Components need the Vue layer (`<Editor>`, or `vueRenderers()`); in a CodeMirror-only editor, use `mount`.
+
+### Collaboration
+
+The editor works with a CRDT binding such as [y-codemirror.next](https://github.com/yjs/y-codemirror.next). It doesn't ship one: the binding, the provider and who is connected are yours.
+
+```vue
+<script setup lang="ts">
+import * as Y from 'yjs'
+import { yCollab, yUndoManagerKeymap } from 'y-codemirror.next'
+import { keymap } from '@codemirror/view'
+import { Prec, Transaction } from '@codemirror/state'
+import { bodyLineAfter, listRenumbering } from '@type32/codemirror-rich-obsidian-editor'
+
+const ytext = ydoc.getText('note')
+const undoManager = new Y.UndoManager(ytext)
+// One peer renumbers lists: here the one with the lowest client id among those connected.
+const isLeader = () => Math.min(...provider.awareness.getStates().keys()) === ydoc.clientID
+
+// Built once per document, never inside a `computed`: a new `yCollab` per render breaks undo.
+const extensions = [
+	yCollab(ytext, provider.awareness, { undoManager }),
+	Prec.highest(keymap.of(yUndoManagerKeymap)),
+	listRenumbering.of(() => isLeader()),
+	bodyLineAfter.of(tr => !!tr.annotation(Transaction.userEvent)),
+]
+const doc = ref(ytext.toString())
+</script>
+
+<template>
+	<Editor v-model="doc" :extensions="extensions" :history="false" />
+</template>
+```
+
+- **`:history="false"`** leaves undo to the binding's undo manager, so each peer undoes only its own edits. CodeMirror's history would undo other people's text. Undo in a table cell goes to whatever the note binds, so it reaches the undo manager too.
+- **One peer renumbers lists.** Two peers renumbering the same list both write their fix, and both survive the merge (`4.4. three`). `listRenumbering` takes a function: true on one peer, for its own edits and after the others' changes (its fixes are sent like any edit), and `false` on the rest.
+- **`bodyLineAfter`**: a note that is only frontmatter gets an empty line to type on. Accept only this peer's own edits, so two peers don't both add one when a change makes the note end at its frontmatter.
+- **Properties, tables and `v-model` write only what changed.** A property edited on one peer and another property on the other merge into one frontmatter. A column added while someone types in a cell keeps the table and the text. (The new column re-pads the table, and that padding can land in the cell being typed in: `d  B`.) Prefer writing the `Y.Text` over `v-model`, but writing `v-model` doesn't move what others typed.
+- **Pass stable arrays** for `internal-link-map`, `special-code-block-map` and `extensions`, not literals in the template. A new array reconfigures the editor, and the reconfigure redraws tables, so a cell being typed in loses focus. This applies without collaboration too.
+- **Not yet:** a remote cursor in the frontmatter is drawn at the start of the first body line, and cursors inside tables and callouts aren't drawn.
 
 ## Extensions
 

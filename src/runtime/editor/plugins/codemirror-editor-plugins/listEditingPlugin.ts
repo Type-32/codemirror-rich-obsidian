@@ -1,5 +1,5 @@
 import { EditorState, Facet, Prec, Transaction, type ChangeSpec, type Line, type Text, type TransactionSpec } from '@codemirror/state'
-import { keymap, type Command, type EditorView } from '@codemirror/view'
+import { EditorView, keymap, type Command } from '@codemirror/view'
 import { ensureSyntaxTree, indentUnit, syntaxTree } from '@codemirror/language'
 import type { SyntaxNode, Tree } from '@lezer/common'
 
@@ -157,8 +157,25 @@ function indentItem(dir: 1 | -1): Command {
 export const indentListItem = indentItem(1)
 export const outdentListItem = indentItem(-1)
 
-/** Renumber ordered lists after user edits (default on). `listRenumbering.of(false)` turns it off. */
-export const listRenumbering = Facet.define<boolean, boolean>({ combine: values => values[0] ?? true })
+/** The user's own edits in this editor: what `listRenumbering` renumbers after by default. */
+const userEdit = (tr: Transaction) => !!tr.annotation(Transaction.userEvent) && !tr.isUserEvent('undo') && !tr.isUserEvent('redo')
+const never = () => false
+
+/**
+ * Which edits renumber ordered lists. `true` (default): the user's own edits in this editor, not undo/redo or
+ * programmatic changes. `false`: none. A function decides per transaction, including changes that didn't come from
+ * this editor's user (a collaborator's, the host's).
+ *
+ * Collaborating, two peers renumbering the same list both write their fix and both survive the merge (`4.4.`): let
+ * exactly one peer renumber, `listRenumbering.of(() => true)` on it and `false` on the others. Its fixes reach the
+ * others like any edit.
+ */
+export const listRenumbering = Facet.define<boolean | ((tr: Transaction) => boolean), (tr: Transaction) => boolean>({
+    combine: (values) => {
+        const v = values[0] ?? true
+        return typeof v === 'function' ? v : v ? userEdit : never
+    },
+})
 
 /** The run of ordered lists `list` belongs to: siblings separated only by blank lines, whatever their delimiter. */
 function chainOf(list: SyntaxNode, doc: Text): SyntaxNode[] {
@@ -192,24 +209,53 @@ function renumberChanges(state: EditorState, tree: Tree, positions: number[]): C
     return changes
 }
 
+/** The renumbering fixes for the lists at `positions` (in `state`), or none when the tree isn't ready. */
+export function renumberAt(state: EditorState, positions: number[]): ChangeSpec[] {
+    const tree = ensureSyntaxTree(state, Math.min(state.doc.length, Math.max(...positions) + 2000), 50)
+    return tree ? renumberChanges(state, tree, positions) : []
+}
+
 /**
- * Obsidian's numbering: after a user edit, every ordered list it touched (at each level up from the edit) is
- * numbered in sequence from its first item. Lists split only by blank lines, or by a change of `.`/`)`, count as
- * one. Undo/redo and programmatic changes (no user event) are left alone, so loading a note never rewrites it.
- * The fixes join the same transaction, so one undo reverts both.
+ * Obsidian's numbering: after an edit `listRenumbering` accepts, every ordered list it touched (at each level up from
+ * the edit) is numbered in sequence from its first item. Lists split only by blank lines, or by a change of `.`/`)`,
+ * count as one. By default only the user's edits count, so loading a note never rewrites it. A user edit's fixes join
+ * its transaction, so one undo reverts both.
  */
 const renumberFilter = EditorState.transactionFilter.of((tr) => {
-    if (!tr.docChanged || !tr.annotation(Transaction.userEvent) || tr.isUserEvent('undo') || tr.isUserEvent('redo') || !tr.startState.facet(listRenumbering)) return tr
+    if (!tr.docChanged || !tr.annotation(Transaction.userEvent) || !tr.startState.facet(listRenumbering)(tr)) return tr
     const positions: number[] = []
     tr.changes.iterChangedRanges((_fromA, _toA, fromB, toB) => positions.push(fromB, toB))
-    const tree = ensureSyntaxTree(tr.state, Math.min(tr.state.doc.length, Math.max(...positions) + 2000), 50)
-    if (!tree) return tr
-    const changes = renumberChanges(tr.state, tree, positions)
+    const changes = renumberAt(tr.state, positions)
     return changes.length ? [tr, { changes, sequential: true }] : tr
+})
+
+/**
+ * After changes from elsewhere that `listRenumbering` accepts, the fixes go in as a transaction of their own: folded
+ * into a collaborator's change, they would never be sent back to the others.
+ */
+const renumberAfterOthers = EditorView.updateListener.of((u) => {
+    if (!u.docChanged) return
+    const accepts = u.state.facet(listRenumbering)
+    const positions: number[] = []
+    u.transactions.forEach((t, i) => {
+        if (!t.docChanged || t.annotation(Transaction.userEvent) || !accepts(t)) return
+        const later = u.transactions.slice(i + 1)
+        t.changes.iterChangedRanges((_fromA, _toA, fromB, toB) => {
+            for (const p of [fromB, toB]) positions.push(later.reduce((pos, l) => l.changes.mapPos(pos), p))
+        })
+    })
+    if (!positions.length) return
+    const changes = renumberAt(u.state, positions)
+    if (!changes.length) return
+    queueMicrotask(() => {
+        // A newer update decides for itself.
+        if (u.view.state.doc === u.state.doc) u.view.dispatch({ changes, annotations: Transaction.addToHistory.of(false) })
+    })
 })
 
 export const listEditing = [
     renumberFilter,
+    renumberAfterOthers,
     Prec.high(keymap.of([
         { key: 'Enter', run: insertListNewline, shift: insertListContinuation },
         { key: 'Tab', run: indentListItem, shift: outdentListItem },

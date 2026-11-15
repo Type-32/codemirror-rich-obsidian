@@ -1,10 +1,11 @@
 <script setup lang="ts">
-// Phase 1 collab spike (throwaway): two editors, each on its own Y.Doc, synced in-page. No server.
+// Collaboration check: two editors, each on its own Y.Doc, synced in-page (no server), set up as a host would.
 import * as Y from 'yjs'
 import { Awareness, applyAwarenessUpdate, encodeAwarenessUpdate } from 'y-protocols/awareness'
 import { yCollab, yUndoManagerKeymap } from 'y-codemirror.next'
 import { keymap } from '@codemirror/view'
-import { Prec } from '@codemirror/state'
+import { Prec, Transaction } from '@codemirror/state'
+import { bodyLineAfter, listRenumbering } from '@type32/codemirror-rich-obsidian-editor'
 import { slashMenu } from '@type32/codemirror-rich-obsidian-editor/ext'
 
 const SEED = `---
@@ -62,12 +63,17 @@ watch(connected, (on) => {
 })
 
 // Built once per peer: a fresh `yCollab` per render leaves the sync plugin and the undo manager on different configs.
+// Peer A is the one that renumbers lists (for its own edits and after B's); B leaves numbering to A.
 const extensionsFor = (p: typeof A) => [
 	yCollab(p.text, p.awareness, { undoManager: yUndo ? p.undo : false }),
 	yUndo ? Prec.highest(keymap.of(yUndoManagerKeymap)) : [],
+	listRenumbering.of(p === A ? () => true : false),
+	bodyLineAfter.of(tr => !!tr.annotation(Transaction.userEvent)),
 	slashMenu(),
 ]
 const extA = extensionsFor(A), extB = extensionsFor(B)
+// One array: a new one per render (an inline literal) reconfigures the editor on every keystroke, rebuilding tables.
+const links = [{ name: 'My Note', filePath: '/my-note.md', referenceId: 'my-note' }]
 
 const editorA = ref(), editorB = ref()
 const same = computed(() => A.model.value === B.model.value)
@@ -85,7 +91,7 @@ if (import.meta.client) Object.assign(window, { __collab: { Y, peers, connected,
 		<div class="grid grid-cols-2 gap-6">
 			<div v-for="(p, i) in peers" :key="p.name" class="flex flex-col gap-2">
 				<div class="text-sm text-muted">Peer {{ p.name }}</div>
-				<Editor v-model="p.model.value" :ref="i ? (e => editorB = e) : (e => editorA = e)" class="w-full" :extensions="i ? extB : extA" :fold-gutter="false" :internal-link-map="[{ name: 'My Note', filePath: '/my-note.md', referenceId: 'my-note' }]" />
+				<Editor v-model="p.model.value" :ref="i ? (e => editorB = e) : (e => editorA = e)" class="w-full" :extensions="i ? extB : extA" :history="!yUndo" :fold-gutter="false" :internal-link-map="links" />
 			</div>
 		</div>
 	</div>

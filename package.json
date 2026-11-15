@@ -159,6 +159,7 @@
     "@nuxt/module-builder": "^1.0.3",
     "@nuxt/schema": "^4.6.4",
     "@nuxt/test-utils": "^4.3.4",
+    "@nuxt/ui": "^4.12.0",
     "@types/node": "^26.6.6",
     "@vitejs/plugin-vue": "^6.0.10",
     "ai": "^7.0.162",
@@ -171,7 +172,8 @@
     "typescript": "6.0.3",
     "vitest": "^5.1.0",
     "vue-codemirror6": "^1.7.0",
-    "vue-tsc": "^3.3.14"
+    "vue-tsc": "^3.3.14",
+    "yjs": "^13.6.33"
   },
   "trustedDependencies": [
     "@parcel/watcher",
