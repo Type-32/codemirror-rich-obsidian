@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest'
+import type { StateField } from '@codemirror/state'
+import type { DecorationSet } from '@codemirror/view'
 import { cellRange, newRow, parseTable, setCell } from '../src/runtime/utils/markdownTable'
+import { proseTablePlugin } from '../src/runtime/editor/plugins/codemirror-plugin-proses/proseTablePlugin'
+import { state } from './helpers'
 
 const source = [
     '| Name     |  Link   | Num |',
@@ -7,6 +11,19 @@ const source = [
     '| a        | [[x\\|y]] |   1 |',
     '|   | b |',
 ].join('\n')
+
+describe('rendered tables', () => {
+    const rendered = (src: string) => {
+        const s = state(`«»x\n\n${src}`, proseTablePlugin)
+        return s.field(proseTablePlugin[0] as StateField<DecorationSet>).size
+    }
+
+    it('renders top-level tables; tables in quotes and list items stay source, as in Obsidian', () => {
+        expect(rendered('| a | b |\n| - | - |\n| c | d |')).toBe(1)
+        expect(rendered('> | a | b |\n> | - | - |\n> | c | d |')).toBe(0)
+        expect(rendered('- item\n\n  | a | b |\n  | - | - |\n  | c | d |')).toBe(0)
+    })
+})
 
 const put = (src: string, row: number, col: number, text: string) => {
     const r = cellRange(src, row, col)!

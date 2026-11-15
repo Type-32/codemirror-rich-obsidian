@@ -1,5 +1,6 @@
 import { WidgetType } from '@codemirror/view';
 import type { EditorView } from '@codemirror/view';
+import { label } from '../../../kit/labels';
 
 const COPY_ICON = '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>'
 
@@ -14,14 +15,14 @@ export class LanguageFlairWidget extends WidgetType {
         super();
     }
 
-    toDOM(_view: EditorView): HTMLElement {
+    toDOM(view: EditorView): HTMLElement {
         const widgetRoot = document.createElement('div');
         widgetRoot.className = 'cm-codeblock-flair-container';
         widgetRoot.setAttribute('contenteditable', 'false');
 
         this.button = document.createElement('button');
         this.button.className = 'cm-codeblock-copy-button';
-        this.button.setAttribute('aria-label', 'Copy');
+        this.button.setAttribute('aria-label', label(view.state, 'ui.codeBlock.copy', 'Copy'));
         if (this.label) this.button.textContent = this.label;
         else this.button.innerHTML = COPY_ICON;
         this.button.onclick = (event) => {

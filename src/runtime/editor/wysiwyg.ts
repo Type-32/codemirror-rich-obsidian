@@ -3,8 +3,9 @@ import { markdown } from '@codemirror/lang-markdown'
 import { languages } from '@codemirror/language-data'
 import { GFM } from '@lezer/markdown'
 import { styleTags, tags as t } from '@lezer/highlight'
-import { autocompletion, closeBrackets } from '@codemirror/autocomplete'
-import type { Extension } from '@codemirror/state'
+import { closeBrackets, closeBracketsKeymap } from '@codemirror/autocomplete'
+import { EditorState, Prec, type Extension } from '@codemirror/state'
+import { keymap } from '@codemirror/view'
 
 import { richTextPlugin } from './plugins/richTextPlugin'
 import proseStylesPlugin from './plugins/lezerStylesHighlightingPlugin'
@@ -24,9 +25,10 @@ import { proseTablePlugin } from './plugins/codemirror-plugin-proses/proseTableP
 import { proseListPlugin, proseListEditMarkPlugin } from './plugins/codemirror-plugin-proses/proseListPlugin'
 import { proseHangingIndentPlugin } from './plugins/codemirror-plugin-proses/proseHangingIndentPlugin'
 import { editorLinkClickPlugin } from './plugins/codemirror-editor-plugins/editorLinkClickPlugin'
-import { editorInternalLinkAutocompletePlugin } from './plugins/codemirror-editor-plugins/editorInternalLinkAutocompletePlugin'
+import { linkQueryField, linkSuggestPlugin } from './plugins/codemirror-editor-plugins/linkSuggestPlugin'
+import LinkSuggest from '../components/Editor/LinkSuggest.vue'
+import { vueOverlay } from '../kit/overlay'
 import { editorKeymapPlugin } from './plugins/codemirror-editor-plugins/editorKeymapPlugin'
-import { customBracketClosingPlugin } from './plugins/codemirror-editor-plugins/customBracketClosingPlugin'
 import { customBracketClosingConfig } from './plugins/customBracketClosingConfig'
 import { indentationGuides } from './plugins/codemirror-editor-plugins/indentationGuidesPlugin'
 import { listEditing } from './plugins/codemirror-editor-plugins/listEditingPlugin'
@@ -38,6 +40,20 @@ import type { WysiwygPlugin } from './types/editor-types'
  * inline-code `monospace` pill), and a revealed fence's language and a `[ ]` task marker are formatting like Obsidian's.
  */
 const obsidianStyleTags = { props: [styleTags({ 'FencedCode/CodeText': t.content, 'FencedCode/CodeInfo': t.meta, 'Task/TaskMarker': t.meta })] }
+
+/**
+ * Bracket closing is CodeMirror's `closeBrackets` (`[[` → `[[]]`, typing over a closing bracket, Backspace deleting
+ * an empty pair, no closing quote after a word), switched by `customBracketClosingConfig` (`<Editor :bracket-closing>`):
+ * off, it is given no brackets to close.
+ */
+const bracketClosing = [
+    closeBrackets(),
+    Prec.high(keymap.of(closeBracketsKeymap)),
+    Prec.highest(EditorState.languageData.of(state => (state.facet(customBracketClosingConfig) ? [] : [{ closeBrackets: { brackets: [] } }]))),
+]
+
+/** `[[` completion and its popover, mounted the first time a completion opens (most table cells never do). */
+const linkSuggest = [linkSuggestPlugin, vueOverlay(LinkSuggest, state => state.field(linkQueryField, false) !== null)]
 
 /** Lezer config shared with `parseMarkdownToAST` so offline parsing matches the live editor. */
 export function markdownConfig(config?: WysiwygPlugin['lezer']) {
@@ -51,8 +67,7 @@ export function markdownConfig(config?: WysiwygPlugin['lezer']) {
 export default function wysiwyg(config?: WysiwygPlugin): Extension {
     return [
         nestedEditorContent.of(() => wysiwyg(config)),
-        autocompletion(),
-        closeBrackets(),
+        bracketClosing,
         mouseSelectingTracker,
         richTextPlugin,
         proseCodeBlockPlugin,
@@ -70,10 +85,9 @@ export default function wysiwyg(config?: WysiwygPlugin): Extension {
         proseHangingIndentPlugin,
 
         editorLinkClickPlugin,
-        editorInternalLinkAutocompletePlugin,
+        linkSuggest,
         editorKeymapPlugin,
         listEditing,
-        customBracketClosingPlugin,
         customBracketClosingConfig.of(true),
         indentationGuides(),
         syntaxHighlighting(proseStylesPlugin),

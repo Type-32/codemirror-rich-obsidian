@@ -35,6 +35,15 @@ export interface InternalLink {
 	 * An optional parameter to pass alongside into the component as the prop.
 	 */
 	componentProps?: Record<string, any>
+	/**
+	 * Other names of the note (Obsidian's `aliases` property). `[[` completion offers them; picking one inserts
+	 * `[[name|alias]]`.
+	 */
+	aliases?: string[]
+	/** The note's headings, offered by `[[` completion after `[[name#`. */
+	headings?: string[]
+	/** The note's blocks (`^id` at a paragraph's end) and their text, offered after `[[name#^`. */
+	blocks?: { id: string, text?: string }[]
 }
 
 export interface InternalLinkNode {

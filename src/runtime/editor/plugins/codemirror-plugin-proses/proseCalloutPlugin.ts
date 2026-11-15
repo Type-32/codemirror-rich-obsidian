@@ -3,6 +3,7 @@ import type { EditorState } from '@codemirror/state'
 import type { SyntaxNode } from '@lezer/common'
 import { CalloutWidget, parseCallout } from '../codemirror-widgets/proseCalloutWidget'
 import { selectionTouches } from '../../utility/tools'
+import { nestedInputs } from '../../utility/nestedEditor'
 import { createProsePlugin } from './createProsePlugin'
 
 /**
@@ -40,7 +41,7 @@ export const proseCalloutPlugin = createProsePlugin({
         const source = state.doc.sliceString(range.from, range.to)
         const callout = parseCallout(source)
         if (!callout) return false
-        out.push(Decoration.replace({ widget: new CalloutWidget(source, callout), block: true }).range(range.from, range.to))
+        out.push(Decoration.replace({ widget: new CalloutWidget(source, callout, nestedInputs(state)), block: true }).range(range.from, range.to))
         return false
     },
 })

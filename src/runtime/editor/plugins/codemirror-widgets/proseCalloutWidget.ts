@@ -1,6 +1,7 @@
 import { WidgetType, EditorView } from '@codemirror/view'
 import { calloutRegex } from '../../lezer-parsers/lezerCalloutParser'
-import { nestedEditor } from '../../utility/nestedEditor'
+import { nestedEditor, sameInputs } from '../../utility/nestedEditor'
+import { label } from '../../../kit/labels'
 
 /** One quote level (with any indentation before it, for callouts inside list items). */
 const QUOTE_LEVEL = /^[ \t]*> ?/
@@ -75,12 +76,12 @@ const nested = new WeakMap<HTMLElement, EditorView[]>()
  * Keyed on its source text, so edits and undo re-render while moves don't.
  */
 export class CalloutWidget extends WidgetType {
-    constructor(readonly source: string, readonly callout: Callout) {
+    constructor(readonly source: string, readonly callout: Callout, readonly inputs: readonly unknown[]) {
         super()
     }
 
     override eq(other: CalloutWidget) {
-        return other.source === this.source
+        return other.source === this.source && sameInputs(other.inputs, this.inputs)
     }
 
     toDOM(view: EditorView): HTMLElement {
@@ -96,9 +97,12 @@ export class CalloutWidget extends WidgetType {
         const titleEl = div('callout-title-inner')
         header.append(titleEl)
         if (fold) header.append(div('callout-fold', svg(FOLD_ICON)))
-        const edit = div('edit-block-button', svg(EDIT_ICON))
-        edit.setAttribute('aria-label', 'Edit this block')
-        header.append(edit)
+        // Only where it can do something: a read-only editor (disabled, or a callout's rendered copy) can't edit.
+        if (view.state.facet(EditorView.editable)) {
+            const edit = div('edit-block-button', svg(EDIT_ICON))
+            edit.setAttribute('aria-label', label(view.state, 'ui.callout.edit', 'Edit this block'))
+            header.append(edit)
+        }
         root.append(header)
         const views = [nestedEditor(view, title || type.charAt(0).toUpperCase() + type.slice(1), titleEl)]
         nested.set(root, views)

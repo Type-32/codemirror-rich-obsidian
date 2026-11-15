@@ -290,30 +290,6 @@ div[contenteditable='true']:focus {
         @apply line-through text-dimmed;
     }
 
-    .cm-tooltip {
-        @apply rounded-lg bg-default/70 shadow-lg backdrop-blur-sm border border-default font-sans p-2;
-
-        ul {
-            @apply grid grid-cols-1 font-sans;
-
-            li {
-                @apply grid grid-cols-1 rounded font-sans gap-1;
-
-                .cm-completionLabel {
-                    @apply mx-1 mt-1 text-toned;
-                }
-
-                .cm-completionDetail {
-                    @apply text-xs font-editor-code bg-elevated w-fit rounded text-muted px-1 mb-1;
-                }
-            }
-
-            li[aria-selected='true'] {
-                @apply bg-accented/70 backdrop-blur-sm border border-accented;
-            }
-        }
-    }
-
     .cm-gutter,
     .cm-gutters {
         @apply bg-transparent! border-none;
@@ -849,10 +825,44 @@ div[contenteditable='true']:focus {
     }
 }
 
-/* The properties panel's menus (type menu, name and value suggestions), portaled out of the editor: translucent with
-   the page blurred behind, as in Obsidian. */
-.cm-properties-menu {
+/* The editor's menus (property type menu, name and value suggestions, `[[` completion), portaled out of the editor:
+   translucent with the page blurred behind, as in Obsidian. */
+.cm-menu {
     @apply backdrop-blur-lg bg-default/75;
+}
+
+/* `[[` completion (`LinkSuggest.vue`): Nuxt UI's menu-item look; rows are absolutely placed in a windowed list, so they
+   keep the one height the component lays them out with. */
+.cm-link-suggest {
+    @apply max-h-60 w-72 max-w-[90vw] overflow-y-auto p-1 scroll-py-1;
+}
+
+.cm-link-suggest-space {
+    @apply relative;
+}
+
+.cm-link-suggest-item {
+    @apply absolute inset-x-0 flex items-center gap-1.5 px-2 rounded-md text-sm text-default cursor-pointer select-none;
+
+    &[aria-selected='true'] {
+        @apply bg-elevated/50 text-highlighted;
+    }
+}
+
+.cm-link-suggest-icon {
+    @apply size-5 shrink-0 text-dimmed;
+}
+
+.cm-link-suggest-text {
+    @apply flex flex-col min-w-0;
+}
+
+.cm-link-suggest-label {
+    @apply truncate;
+}
+
+.cm-link-suggest-detail {
+    @apply truncate text-xs text-muted;
 }
 
 /* Selection toolbar (`/ext`). Popover content is portalled to <body>, so these sit outside `.cm-rich-editor`. */

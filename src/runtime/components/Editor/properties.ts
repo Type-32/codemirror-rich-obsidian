@@ -1,6 +1,7 @@
 import type { InjectionKey } from 'vue'
-import type { InternalLink, PropertyType } from '../../editor/types/editor-types'
+import type { PropertyType } from '../../editor/types/editor-types'
 import type { MenuSize } from '../../editor/plugins/hostAppConfig'
+import type { LinkSuggestion } from '../../editor/utility/linkSearch'
 
 /** What `PropertiesPanel` gives its rows: edits go back to the editor as one YAML rewrite each. */
 export interface PropertiesApi {
@@ -18,17 +19,18 @@ export interface PropertiesApi {
     focusRow: (path: string[]) => void
     /** The editor's `contextMenuSize`, for the type menu. */
     menuSize: () => MenuSize | undefined
-    /** The editor's `internalLinkMap`, offered after `[[` in values. */
-    links: () => InternalLink[]
+    /** The editor's `[[` completions for the text typed after `[[` (its links, and this note's headings/blocks). */
+    linkSuggestions: (query: string) => LinkSuggestion[]
 }
 
 export const PROPERTIES: InjectionKey<PropertiesApi> = Symbol('properties')
 
 /**
- * The panel's menus (type menu, suggestions): translucent, with the page blurred behind, as in Obsidian. A class
- * styled in `editor.css`, which the host's Tailwind compiles (utility classes in a package's `.vue` files aren't).
+ * The editor's menus (type menu, suggestions, `[[` completion): translucent, with the page blurred behind, as in
+ * Obsidian. A class styled in `editor.css`, which the host's Tailwind compiles (utility classes in a package's `.vue`
+ * files aren't).
  */
-export const MENU_UI = 'cm-properties-menu'
+export const MENU_UI = 'cm-menu'
 
 /**
  * Content of the suggestion menus: Nuxt UI's defaults, plus keeping focus in the input while an item is clicked, so
@@ -67,16 +69,12 @@ export function wikilink(value: unknown): { target: string, text: string } | nul
 }
 
 /**
- * Links to offer while a value ends in an open `[[` or `![[` (as the editor's own `[[` completion does): each with
- * the whole value it completes `text` to. Names shared by several links complete to their file path.
+ * Link completions while a value ends in an open `[[` or `![[`, the same as in the note: each with the whole value it
+ * completes `text` to.
  */
-export function linkCompletions(text: string, links: InternalLink[]): { link: InternalLink, value: string }[] | null {
+export function linkCompletions(text: string, suggest: PropertiesApi['linkSuggestions']): { suggestion: LinkSuggestion, value: string }[] | null {
     const open = /!?\[\[([^\]|]*)$/.exec(text)
     if (!open) return null
-    const query = open[1]!.toLowerCase()
     const head = text.slice(0, open.index + open[0].length - open[1]!.length)
-    const names = links.map(l => l.name)
-    return links
-        .filter(l => l.name && (l.name.toLowerCase().includes(query) || l.filePath?.toLowerCase().includes(query)))
-        .map(link => ({ link, value: `${head}${link.filePath && names.indexOf(link.name) !== names.lastIndexOf(link.name) ? link.filePath : link.name}]]` }))
+    return suggest(open[1]!).map(suggestion => ({ suggestion, value: `${head}${suggestion.insert}]]` }))
 }

@@ -7,6 +7,8 @@ import { redo, undo } from '@codemirror/commands'
 import { nestedEditor, readOnly } from '../../editor/utility/nestedEditor'
 import { sameVisualLine } from '../../editor/utility/tools'
 import type { RenderedTable } from '../../editor/plugins/codemirror-widgets/proseTableWidget'
+import { label } from '../../kit/labels'
+import { panelEnd } from '../../editor/plugins/codemirror-plugin-proses/propertiesPlugin'
 import {
     type TableAlign, type TableModel,
     cellRange, deleteCol, deleteRow, escapeCell, insertCol, insertRow, moveCol, moveRow, newRow, serializeTable, setAlign, setCell,
@@ -70,6 +72,7 @@ function diff(a: string, b: string) {
 
 /** Mirror an edit (or cursor move) in the cell being edited onto its text in the source, and the cursor with it. */
 function writeThrough(u: ViewUpdate) {
+    if (!editable()) return
     const [r, c] = position.get(u.view)!
     const { source } = props.table.value
     const before = u.startState.doc.toString()
@@ -173,11 +176,19 @@ function horizontal(v: EditorView, dir: 1 | -1) {
     return true
 }
 
-/** Back to the document: the end of the line above the table, or the start of the line below. */
+/**
+ * Back to the document: the end of the line above the table, or the start of the line below. When there is no such
+ * line (the table opens or ends the note, or sits right under the properties panel) one is added, so typing can't
+ * land in the table's hidden source.
+ */
 function exit(below: boolean) {
+    const state = props.view.state
     const from = tableFrom(), to = from + props.table.value.source.length
     deactivate()
-    props.view.dispatch({ selection: { anchor: below ? Math.min(to + 1, props.view.state.doc.length) : Math.max(from - 1, 0) }, scrollIntoView: true })
+    const spec: TransactionSpec = below
+        ? to < state.doc.length ? { selection: { anchor: to + 1 } } : { changes: { from: to, insert: '\n' }, selection: { anchor: to + 1 } }
+        : from > 0 && panelEnd(state) !== from - 1 ? { selection: { anchor: from - 1 } } : { changes: { from, insert: '\n' }, selection: { anchor: from } }
+    props.view.dispatch({ ...spec, scrollIntoView: true })
     props.view.focus()
     return true
 }
@@ -212,7 +223,8 @@ const vCell: Directive<HTMLElement, [number, number]> = {
 function onCellMousedown(e: MouseEvent, r: number, c: number) {
     const cell = cells.get(key(r, c))
     if (!cell || cell === active || e.button !== 0 || !editable()) return
-    if ((e.target as Element).closest('a, .cm-link, .cm-clickable-link, .cm-table-handle')) return // links behave as links; handles drag
+    // Links behave as links, embeds (a base's toolbar, a diagram) as themselves, and handles drag.
+    if ((e.target as Element).closest('a, .cm-link, .cm-clickable-link, .vue-embed-widget, .cm-table-handle')) return
     e.preventDefault()
     e.stopPropagation()
     activate(cell, cell.posAtCoords({ x: e.clientX, y: e.clientY }, false))
@@ -237,32 +249,35 @@ function guardContextMenu(e: MouseEvent) {
     if (!editable()) e.stopPropagation()
 }
 
+/** `editorLabels` text for `ui.table.<key>`, or the English `fallback`. */
+const t = (key: string, fallback: string) => label(props.view.state, `ui.table.${key}`, fallback)
+
 const items = computed<ContextMenuItem[][]>(() => {
-    const t = target.value
-    if (!t) return []
+    const at = target.value
+    if (!at) return []
     const m = model.value
-    const alignItem = (label: string, icon: string, a: TableAlign): ContextMenuItem => ({
-        label, icon, type: 'checkbox', checked: (m.align[t.col] ?? null) === a,
-        onSelect: () => commit(setAlign(m, t.col, a)),
+    const alignItem = (key: string, fallback: string, icon: string, a: TableAlign): ContextMenuItem => ({
+        label: t(key, fallback), icon, type: 'checkbox', checked: (m.align[at.col] ?? null) === a,
+        onSelect: () => commit(setAlign(m, at.col, a)),
     })
     const rowOps: ContextMenuItem[] = [
-        { label: 'Insert row above', icon: 'i-lucide-arrow-up-to-line', disabled: t.row < 0, onSelect: () => commit(insertRow(m, t.row)) },
-        { label: 'Insert row below', icon: 'i-lucide-arrow-down-to-line', onSelect: () => commit(insertRow(m, t.row + 1)) },
-        { label: 'Delete row', icon: 'i-lucide-trash-2', color: 'error', disabled: t.row < 0, onSelect: () => commit(deleteRow(m, t.row)) },
+        { label: t('insertRowAbove', 'Insert row above'), icon: 'i-lucide-arrow-up-to-line', disabled: at.row < 0, onSelect: () => commit(insertRow(m, at.row)) },
+        { label: t('insertRowBelow', 'Insert row below'), icon: 'i-lucide-arrow-down-to-line', onSelect: () => commit(insertRow(m, at.row + 1)) },
+        { label: t('deleteRow', 'Delete row'), icon: 'i-lucide-trash-2', color: 'error', disabled: at.row < 0, onSelect: () => commit(deleteRow(m, at.row)) },
     ]
     const colOps: ContextMenuItem[] = [
-        { label: 'Insert column left', icon: 'i-lucide-arrow-left-to-line', onSelect: () => commit(insertCol(m, t.col)) },
-        { label: 'Insert column right', icon: 'i-lucide-arrow-right-to-line', onSelect: () => commit(insertCol(m, t.col + 1)) },
-        { label: 'Delete column', icon: 'i-lucide-trash-2', color: 'error', disabled: m.header.length <= 1, onSelect: () => { const n = deleteCol(m, t.col); if (n) commit(n) } },
+        { label: t('insertColumnLeft', 'Insert column left'), icon: 'i-lucide-arrow-left-to-line', onSelect: () => commit(insertCol(m, at.col)) },
+        { label: t('insertColumnRight', 'Insert column right'), icon: 'i-lucide-arrow-right-to-line', onSelect: () => commit(insertCol(m, at.col + 1)) },
+        { label: t('deleteColumn', 'Delete column'), icon: 'i-lucide-trash-2', color: 'error', disabled: m.header.length <= 1, onSelect: () => { const n = deleteCol(m, at.col); if (n) commit(n) } },
     ]
     const align: ContextMenuItem[] = [
-        alignItem('Align left', 'i-lucide-align-left', 'left'),
-        alignItem('Align center', 'i-lucide-align-center', 'center'),
-        alignItem('Align right', 'i-lucide-align-right', 'right'),
-        alignItem('Default alignment', 'i-lucide-align-justify', null),
+        alignItem('alignLeft', 'Align left', 'i-lucide-align-left', 'left'),
+        alignItem('alignCenter', 'Align center', 'i-lucide-align-center', 'center'),
+        alignItem('alignRight', 'Align right', 'i-lucide-align-right', 'right'),
+        alignItem('alignDefault', 'Default alignment', 'i-lucide-align-justify', null),
     ]
     const cell: ContextMenuItem[] = [
-        { label: 'Clear cell', icon: 'i-lucide-eraser', disabled: !(t.row < 0 ? m.header[t.col] : m.rows[t.row]?.[t.col]), onSelect: () => commit(setCell(m, t.row, t.col, '')) },
+        { label: t('clearCell', 'Clear cell'), icon: 'i-lucide-eraser', disabled: !(at.row < 0 ? m.header[at.col] : m.rows[at.row]?.[at.col]), onSelect: () => commit(setCell(m, at.row, at.col, '')) },
     ]
     return [rowOps, colOps, align, cell]
 })
@@ -314,7 +329,7 @@ function dragEnd() {
                                 class="cm-table-handle cm-table-col-handle"
                                 :class="{ 'is-visible': hover?.col === c }"
                                 draggable="true"
-                                title="Drag to reorder column"
+                                :title="t('dragColumn', 'Drag to reorder column')"
                                 @dragstart="dragStart('col', c, $event)"
                                 @dragend="dragEnd"
                             >
@@ -344,7 +359,7 @@ function dragEnd() {
                                 class="cm-table-handle cm-table-row-handle"
                                 :class="{ 'is-visible': hover?.row === r }"
                                 draggable="true"
-                                title="Drag to reorder row"
+                                :title="t('dragRow', 'Drag to reorder row')"
                                 @dragstart="dragStart('row', r, $event)"
                                 @dragend="dragEnd"
                             >
@@ -357,11 +372,11 @@ function dragEnd() {
             <!-- Hidden in read-only editors by CSS: the template doesn't re-render when the editor's editable state changes. -->
             <UButton
                 icon="i-lucide-plus" size="xs" color="neutral" variant="ghost" class="cm-table-add-row" tabindex="-1"
-                aria-label="Add row below" @click="goto(rows(), 0, 'start')"
+                :aria-label="t('addRow', 'Add row below')" @click="goto(rows(), 0, 'start')"
             />
             <UButton
                 icon="i-lucide-plus" size="xs" color="neutral" variant="ghost" class="cm-table-add-col" tabindex="-1"
-                aria-label="Add column to the right" @click="commit(insertCol(model, cols()))"
+                :aria-label="t('addColumn', 'Add column to the right')" @click="commit(insertCol(model, cols()))"
             />
         </div>
     </UContextMenu>

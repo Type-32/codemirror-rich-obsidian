@@ -14,7 +14,9 @@ const panelField = createProsePlugin({
     decorate(node, state, _active, out) {
         if (node.from !== 0) return false
         const yaml = propertiesYaml(state.doc.sliceString(node.from, node.to))
-        if (yaml !== null) out.push(Decoration.replace({ widget: new PropertiesWidget(yaml, state.facet(contextMenuSize)), block: true }).range(0, node.to))
+        if (yaml === null) return false
+        const panel = { yaml, options: state.facet(propertiesOptions), menuSize: state.facet(contextMenuSize), editable: state.facet(EditorView.editable) }
+        out.push(Decoration.replace({ widget: new PropertiesWidget(panel), block: true }).range(0, node.to))
         return false
     },
 }) as StateField<DecorationSet>
@@ -42,6 +44,21 @@ const protectFrontmatter = EditorState.changeFilter.of((tr) => {
     let atStart = false
     tr.changes.iterChanges((fromA, toA) => { if (fromA === 0 && toA === 0) atStart = true })
     return atStart ? false : [0, Math.min(end + 1, tr.startState.doc.length)]
+})
+
+/**
+ * Frontmatter that ends the note leaves no body line in the DOM for the caret, so typing would go nowhere: while the
+ * editor has focus, such a note gets a line break after its closing `---` to type on. Not an undo step, and only once
+ * the user is in the editor, so loading a note never rewrites it.
+ */
+const bodyLine = EditorView.updateListener.of((u) => {
+    if (!u.view.hasFocus || !(u.focusChanged || u.docChanged)) return
+    const end = panelEnd(u.state)
+    if (end === null || end !== u.state.doc.length || !u.state.facet(EditorView.editable)) return
+    queueMicrotask(() => {
+        if (panelEnd(u.view.state) !== u.view.state.doc.length) return
+        u.view.dispatch({ changes: { from: end, insert: '\n' }, selection: { anchor: end + 1 }, annotations: Transaction.addToHistory.of(false) })
+    })
 })
 
 const startedProperties = Annotation.define<true>()
@@ -96,5 +113,5 @@ const enterPanel = Prec.high(keymap.of([{
  * The YAML keeps its comments, order and formatting (see `utility/properties`).
  */
 export function propertiesPanel(options: PropertiesOptions = {}): Extension {
-    return [propertiesOptions.of(options), panelField, protectFrontmatter, startProperties, keepSelectionInBody, initialSelection, enterPanel]
+    return [propertiesOptions.of(options), panelField, protectFrontmatter, bodyLine, startProperties, keepSelectionInBody, initialSelection, enterPanel]
 }

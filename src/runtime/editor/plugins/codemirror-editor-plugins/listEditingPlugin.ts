@@ -11,7 +11,7 @@ import type { SyntaxNode, Tree } from '@lezer/common'
  */
 
 const QUOTE = /^(?: {0,3}> ?)*/
-const ITEM = /^([ \t]*)([-*+]|\d{1,9}[.)])([ \t]+|$)(\[.\][ \t]+)?/
+const ITEM = /^([ \t]*)([-*+]|\d{1,9}[.)])([ \t]+|$)(\[.\][ \t]+)?/u
 const NO_LIST: Record<string, true> = { FencedCode: true, CodeBlock: true, YAMLFrontMatter: true, TexBlock: true, HTMLBlock: true, CommentBlock: true }
 
 interface Item {

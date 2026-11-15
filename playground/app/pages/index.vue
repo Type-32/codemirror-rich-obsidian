@@ -47,6 +47,9 @@ const internalLinkMap = ref<InternalLink[]>([
         name: "My Note",
         filePath: "/notes/my-note",
         referenceId: "/notes/my-note",
+        aliases: ["Personal notes"],
+        headings: ["Overview", "Ideas", "Ideas for later"],
+        blocks: [{ id: "key", text: "The one thing to remember" }],
     },
     {
         name: "Another Note",

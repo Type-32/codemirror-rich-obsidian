@@ -7,11 +7,22 @@ import { contextMenuSize } from '../hostAppConfig'
 import { parseTable } from '../../../utils/markdownTable'
 import { sameVisualLine } from '../../utility/tools'
 import { createProsePlugin } from './createProsePlugin'
+import { nestedInputs } from '../../utility/nestedEditor'
+
+/**
+ * The model of `table` when it renders as a widget: well-formed (a valid delimiter row) and not inside a quote or
+ * list item, which Obsidian leaves as source too (a callout's body is rendered by a nested editor without its `>`,
+ * so tables in callouts do render).
+ */
+function renderedModel(state: EditorState, table: SyntaxNode) {
+    for (let n = table.parent; n; n = n.parent) if (n.name === 'Blockquote' || n.name === 'ListItem') return null
+    return parseTable(state.doc.sliceString(table.from, table.to))
+}
 
 /** Inside a table that renders as a widget: its cells' nested editors draw the node, so this editor must not. */
 export function inRenderedTable(state: EditorState, node: SyntaxNode): boolean {
     for (let n = node.parent; n; n = n.parent) {
-        if (n.name === 'Table') return parseTable(state.doc.sliceString(n.from, n.to)) !== null
+        if (n.name === 'Table') return renderedModel(state, n) !== null
     }
     return false
 }
@@ -61,19 +72,19 @@ function selectTableAbove(view: EditorView): boolean {
 }
 
 /**
- * GFM tables always render as a table of editable cells (see `TableWidget`): the cursor never enters the source;
- * ↑/↓ from the lines around a table move into its cells. Malformed tables (no valid delimiter row) fall through to
- * plain text so the user can repair them.
+ * GFM tables render as a table of editable cells (see `TableWidget`): the cursor never enters the source; ↑/↓ from
+ * the lines around a table move into its cells. Tables `renderedModel` rejects stay as text, so malformed ones can be
+ * repaired.
  */
 export const proseTablePlugin = [
     createProsePlugin({
         block: true,
         nodes: ['Table'],
         decorate(node, state, _active, out) {
-            const source = state.doc.sliceString(node.from, node.to)
-            const model = parseTable(source)
+            const model = renderedModel(state, node.node)
             if (!model) return false
-            out.push(Decoration.replace({ widget: new TableWidget(model, source, state.facet(contextMenuSize)), block: true }).range(node.from, node.to))
+            const source = state.doc.sliceString(node.from, node.to)
+            out.push(Decoration.replace({ widget: new TableWidget(model, source, state.facet(contextMenuSize), nestedInputs(state)), block: true }).range(node.from, node.to))
             return false
         },
     }),

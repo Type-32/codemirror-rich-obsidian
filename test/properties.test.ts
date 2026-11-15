@@ -4,6 +4,7 @@ import { convertValue, editProperties, inferType, propertiesYaml, removeProperty
 import { panelEnd, propertiesPanel } from '../src/runtime/editor/plugins/codemirror-plugin-proses/propertiesPlugin'
 import { state } from './helpers'
 import { linkCompletions, wikilink } from '../src/runtime/components/Editor/properties'
+import { linkSuggestions } from '../src/runtime/editor/utility/linkSearch'
 
 const YAML = 'tags:\n  - kthalatir\n  - lab/parity\n# where the image is\ncover: "[[Kthalatir.png]]"\nstatus: draft\nempty:\nflow: [a, b]\nnested:\n  a: 1\n  b: two\n'
 
@@ -33,6 +34,12 @@ describe('property edits keep the YAML as written', () => {
         expect(editProperties('', d => setProperty(d, ['new'], null))).toBe('new:\n')
         expect(editProperties('a: 1\n', d => setProperty(d, ['tags'], ['x', 'y']))).toBe('a: 1\ntags:\n  - x\n  - y\n')
         expect(editProperties('a: 1\n', d => removeProperty(d, ['a']))).toBe('')
+    })
+
+    it('edits and removes keys that YAML reads as numbers or booleans', () => {
+        expect(editProperties('2024: a\ntrue: b\n', d => setProperty(d, ['2024'], 'x'))).toBe('2024: x\ntrue: b\n')
+        expect(editProperties('2024: a\ntrue: b\n', d => removeProperty(d, ['true']))).toBe('2024: a\n')
+        expect(editProperties('n:\n  1: a\n', d => setProperty(d, ['n', '1'], 'b'))).toBe('n:\n  1: b\n')
     })
 })
 
@@ -98,12 +105,14 @@ describe('links in values', () => {
         expect(wikilink('text [[Lab]]')).toBeNull()
     })
 
-    it('completes an open `[[` like the editor: matches name or path; shared names complete to the path', () => {
+    it('completes an open `[[` with the editor\'s suggestions, closing the link', () => {
         const links = [{ name: 'Lab', referenceId: '1' }, { name: 'Note', filePath: 'a/Note.md', referenceId: '2' }, { name: 'Note', filePath: 'b/Note.md', referenceId: '3' }]
-        expect(linkCompletions('plain', links)).toBeNull()
-        expect(linkCompletions('see [[la', links)!.map(c => c.value)).toEqual(['see [[Lab]]'])
-        expect(linkCompletions('![[b/', links)!.map(c => c.value)).toEqual(['![[b/Note.md]]'])
-        expect(linkCompletions('[[', links)).toHaveLength(3)
-        expect(linkCompletions('[[Lab]] x', links)).toBeNull()
+        const suggest = (q: string) => linkSuggestions(q, links, () => ({ headings: ['Top'], blocks: [] }))
+        expect(linkCompletions('plain', suggest)).toBeNull()
+        expect(linkCompletions('see [[la', suggest)!.map(c => c.value)).toEqual(['see [[Lab]]'])
+        expect(linkCompletions('![[b/', suggest)!.map(c => c.value)).toEqual(['![[b/Note.md]]'])
+        expect(linkCompletions('[[#', suggest)!.map(c => c.value)).toEqual(['[[#Top]]'])
+        expect(linkCompletions('[[', suggest)).toHaveLength(3)
+        expect(linkCompletions('[[Lab]] x', suggest)).toBeNull()
     })
 })

@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { EditorState, type StateField } from '@codemirror/state'
+import { EditorState, Prec, type StateField } from '@codemirror/state'
+import { insertBracket } from '@codemirror/autocomplete'
 import { LanguageDescription, ensureSyntaxTree, syntaxTree } from '@codemirror/language'
 import { markdown } from '@codemirror/lang-markdown'
 import { languages } from '@codemirror/language-data'
@@ -10,7 +11,8 @@ import { parseCallout } from '../src/runtime/editor/plugins/codemirror-widgets/p
 import { codeBlockLabel, proseCodeBlockPlugin } from '../src/runtime/editor/plugins/codemirror-plugin-proses/proseCodeBlockCodemirrorViewPlugin'
 import { codeHighlighter } from '../src/runtime/editor/plugins/codeHighlighter'
 import proseStyles from '../src/runtime/editor/plugins/lezerStylesHighlightingPlugin'
-import { markdownConfig } from '../src/runtime/editor/wysiwyg'
+import wysiwyg, { markdownConfig } from '../src/runtime/editor/wysiwyg'
+import { customBracketClosingConfig } from '../src/runtime/editor/plugins/customBracketClosingConfig'
 import { state } from './helpers'
 import { texBlockSource, texTokens } from '../src/runtime/editor/plugins/codemirror-plugin-proses/proseLatexCodemirrorViewPlugin'
 
@@ -24,12 +26,26 @@ const isTask = (src: string) => {
 
 describe('tasks', () => {
     it('any single status character, followed by a space or tab', () => {
-        for (const src of ['- [ ] a', '- [x] a', '- [/] a', '- [-] a', '- [>] a', '- [?] a', '- []] a', '- [x]\ta', '1. [ ] a', '* [ ] a', '+ [ ] a'])
+        for (const src of ['- [ ] a', '- [x] a', '- [/] a', '- [-] a', '- [>] a', '- [?] a', '- []] a', '- [x]\ta', '- [😀] a', '1. [ ] a', '* [ ] a', '+ [ ] a'])
             expect(isTask(src), src).toBe(true)
     })
     it('not a task without the space, with an empty or long marker, or with nothing after it', () => {
         for (const src of ['- [ ]x', '- [] a', '- [ab] a', '- [ ]', '- [x]'])
             expect(isTask(src), src).toBe(false)
+    })
+})
+
+describe('bracket closing', () => {
+    const type = (on: boolean, ...chars: string[]) => {
+        let s = EditorState.create({ extensions: [wysiwyg(), Prec.highest(customBracketClosingConfig.of(on))] })
+        for (const c of chars) s = (insertBracket(s, c) ?? s.update({ changes: { from: s.selection.main.head, insert: c }, selection: { anchor: s.selection.main.head + 1 } })).state
+        return s.doc.toString()
+    }
+
+    it('closes `[[` to `[[]]` like Obsidian, and nothing when turned off', () => {
+        expect(type(true, '[', '[')).toBe('[[]]')
+        expect(type(true, '(', ')')).toBe('()')
+        expect(type(false, '[', '[')).toBe('[[')
     })
 })
 

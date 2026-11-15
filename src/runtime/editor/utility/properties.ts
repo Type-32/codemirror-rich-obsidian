@@ -69,8 +69,19 @@ export function editProperties(yaml: string, edit: (doc: Document) => void): str
     return isMap(doc.contents) && doc.contents.items.length ? doc.toString({ lineWidth: 0, nullStr: '', flowCollectionPadding: false }) : ''
 }
 
+/** Rows address keys as strings; this is the document's own key for each step (`2024` and `true` stay non-strings). */
+function keyPath(doc: Document, path: string[]): unknown[] {
+    const out: unknown[] = []
+    for (const step of path) {
+        const map = out.length ? doc.getIn(out, true) : doc.contents
+        const pair = isMap(map) ? map.items.find(p => String(isScalar(p.key) ? p.key.value : p.key) === step) : undefined
+        out.push(pair ? (isScalar(pair.key) ? pair.key.value : pair.key) : step)
+    }
+    return out
+}
+
 function pairAt(doc: Document, path: string[]) {
-    const parent = path.length > 1 ? doc.getIn(path.slice(0, -1), true) : doc.contents
+    const parent = path.length > 1 ? doc.getIn(keyPath(doc, path.slice(0, -1)), true) : doc.contents
     if (!isMap(parent)) return null
     const key = path.at(-1)
     return { parent: parent as YAMLMap, pair: (parent as YAMLMap).items.find(p => String(isScalar(p.key) ? p.key.value : p.key) === key) ?? null }
@@ -78,14 +89,15 @@ function pairAt(doc: Document, path: string[]) {
 
 /** Set the value at `path`, keeping a scalar's quoting style and a list's flow style. */
 export function setProperty(doc: Document, path: string[], value: unknown) {
-    const node = doc.getIn(path, true)
+    const keys = keyPath(doc, path)
+    const node = doc.getIn(keys, true)
     if (isScalar(node) && (value === null || typeof value !== 'object')) {
         node.value = value
         return
     }
     const created = doc.createNode(value)
     if (isSeq(node) && isSeq(created)) created.flow = node.flow
-    doc.setIn(path, created)
+    doc.setIn(keys, created)
 }
 
 /** Rename the key at `path` in place (position and comments kept). False if `key` is empty or already used there. */
@@ -103,5 +115,5 @@ export function renameProperty(doc: Document, path: string[], key: string): bool
 }
 
 export function removeProperty(doc: Document, path: string[]) {
-    doc.deleteIn(path)
+    doc.deleteIn(keyPath(doc, path))
 }

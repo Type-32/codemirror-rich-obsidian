@@ -3,6 +3,7 @@ import { computed, inject, nextTick, ref } from 'vue'
 import type { DropdownMenuItem } from '@nuxt/ui'
 import type { PropertyType } from '../../editor/types/editor-types'
 import { isListType } from '../../editor/utility/properties'
+import { LINK_ICONS } from '../../editor/utility/linkSearch'
 import { MENU_UI, PROPERTIES, SUGGESTIONS_CONTENT, TYPE_ICONS, TYPE_LABELS, linkCompletions, pathId, wikilink } from './properties'
 
 defineOptions({ name: 'PropertyRow' })
@@ -99,8 +100,12 @@ const valueItems = computed(() => {
     const text = listy ? pillDraft.value : draft.value
     // The menu writes the picked value into the input after `onSelect`: a list's input is cleared again once it has.
     const pick = (picked: string) => listy ? (pillDraft.value = picked, addPill(), nextTick(() => (pillDraft.value = ''))) : (draft.value = picked, commit(true))
-    const links = linkCompletions(text, api.links())
-    if (links) return links.map(({ link, value }) => ({ label: link.name, description: link.filePath, icon: 'i-lucide-file-text', value, onSelect: () => pick(value) }))
+    const links = linkCompletions(text, api.linkSuggestions)
+    if (links) {
+        return links.map(({ suggestion: s, value }) => ({
+            label: s.label, description: s.detail, icon: LINK_ICONS[s.kind], value, onSelect: () => pick(value),
+        }))
+    }
     const typed = text.trim().toLowerCase()
     return api.valueSuggestions(key.value)
         .filter(s => !list.value.includes(s) && s.toLowerCase().includes(typed))
@@ -125,7 +130,7 @@ function onSuggestKey(e: KeyboardEvent, then: () => void) {
 
 // Objects: child rows, plus adding a field (named `key`, `key1`, … to rename).
 function addField() {
-    const taken = Object.keys(props.value as object)
+    const taken = Object.keys(props.value ?? {}) // `key:` typed as an object is still empty
     let name = 'key'
     for (let i = 1; taken.includes(name); i++) name = `key${i}`
     api.setValue([...props.path, name], null)
@@ -185,6 +190,7 @@ function addField() {
                     value-key="value"
                     :content="SUGGESTIONS_CONTENT"
                     ignore-filter
+                    virtualize
                     open-on-focus
                     :open="menuShown"
                     size="sm" variant="none" class="cm-property-pill-input" :ui="{ base: 'px-0 cm-property-edit', trailing: 'hidden', content: MENU_UI }"
@@ -214,6 +220,7 @@ function addField() {
                 value-key="value"
                 :content="SUGGESTIONS_CONTENT"
                 ignore-filter
+                virtualize
                 open-on-focus
                 :open="menuShown"
                 size="sm" variant="none" class="cm-property-input" :ui="{ base: 'px-0', trailing: 'hidden', content: MENU_UI }"

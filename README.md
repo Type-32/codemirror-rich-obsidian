@@ -5,13 +5,13 @@
 - https://github.com/segphault/codemirror-rich-markdoc, **_for the foundation of this entire project._**
 - https://github.com/erykwalder/lezer-markdown-obsidian, for OFM Lezer Parsers.
 - https://github.com/surmon-china/vue-codemirror, for the CodeMirror 6 component in Vue.
-- https://github.com/ebullient/markdown-it-obsidian-callouts, for his awesome markdown-to-html callouts markdown-it plugin
 - https://github.com/mgmeyers/obsidian-indentation-guides, for indentation guides
-- Markdown-It
 - https://github.com/thecodrr/alfaaz, for insanely fast word/line-counting functions
 - https://github.com/yuri2peter/codemirror-ai-enhancer, for providing the simple AI completion editing experience
 
 ### Related References & Resources
+- https://github.com/ebullient/markdown-it-obsidian-callouts, for his awesome markdown-to-html callouts markdown-it plugin (rendered callouts up to 0.3)
+- Markdown-It (rendered callouts and table cells up to 0.3)
 - https://github.com/heavycircle/remark-obsidian, for mostly wiki link alias & highlights & callouts parsing
 - https://github.com/flowershow/remark-wiki-link, for wiki link parsing
 - https://github.com/CTRL-Neo-Studios/simple-markdown-editor, my initial trial that quickly degraded into a shitslop because of overuse of AI
@@ -143,6 +143,19 @@ List and quote editing follows Obsidian:
 - **Tab / Shift-Tab** move an item, with its children, a level in or out. The first item of a list stays put. In quotes the indentation goes after the `>`.
 - **Backspace** deletes one character; it never removes a list mark on its own.
 - **Ordered lists are renumbered after every edit** that touches them, in sequence from their first number. Lists split only by blank lines or a `.`/`)` change count as one. Undo reverts the edit and the renumbering together. Loading or setting the document programmatically never renumbers. Turn it off with `listRenumbering.of(false)` from `/kit`.
+
+Typing `[[` (or `![[`) opens Obsidian's link completion: the notes of `internalLinkMap`, ranked as you type (exact name, prefix, word start, inside a name, file path, then fuzzy), and their aliases, which complete to `[[name|alias]]`. `[[name#` offers that note's headings and `[[name#^` its blocks; `[[#` and `[[#^` offer the current note's. Only the rows in view are rendered, so a vault of any size scrolls smoothly. Give the extra targets on each link:
+
+```ts
+const internalLinkMap: InternalLink[] = [{
+	name: 'My Note', filePath: '/notes/my-note.md', referenceId: 'my-note',
+	aliases: ['Personal notes'],                                 // offered with the notes; picked as [[My Note|Personal notes]]
+	headings: ['Overview', 'Ideas'],                             // after [[My Note#
+	blocks: [{ id: 'key', text: 'The one thing to remember' }],  // after [[My Note#^
+}]
+```
+
+With nothing typed, links keep the map's order, so a host can put recent notes first.
 
 ## Extensions
 
@@ -378,6 +391,11 @@ UI strings:
 | `ui.properties.add`, `ui.properties.addField`, `ui.properties.name`, `ui.properties.deleteFrontmatter` | Add property, Add field, Property name, Delete frontmatter |
 | `ui.properties.empty`, `ui.properties.remove`, `ui.properties.typeMenu` | Empty, Remove, Property type |
 | `ui.properties.type.text` … `.list`, `.number`, `.checkbox`, `.date`, `.datetime`, `.tags`, `.aliases`, `.object`, `.unknown` | Text, List, Number, Checkbox, Date, Date & time, Tags, Aliases, Object, Unknown |
+| `ui.table.insertRowAbove`, `.insertRowBelow`, `.deleteRow` | Insert row above, Insert row below, Delete row |
+| `ui.table.insertColumnLeft`, `.insertColumnRight`, `.deleteColumn` | Insert column left, Insert column right, Delete column |
+| `ui.table.alignLeft`, `.alignCenter`, `.alignRight`, `.alignDefault`, `.clearCell` | Align left, Align center, Align right, Default alignment, Clear cell |
+| `ui.table.addRow`, `.addColumn`, `.dragRow`, `.dragColumn` | Add row below, Add column to the right, Drag to reorder row, Drag to reorder column |
+| `ui.codeBlock.copy`, `ui.callout.edit` | Copy, Edit this block |
 
 No key is both a label and a prefix of other keys, so the labels can live in nested i18n files (`ui.properties.typeMenu` is the type menu's title; `ui.properties.type.*` are the type names).
 
@@ -408,6 +426,7 @@ Rules that keep extensions hot-pluggable:
 - **Create plugins at module level.** `vueOverlay(...)`, `ViewPlugin`s and `StateField`s must be module constants. CodeMirror keeps a plugin alive across reconfigures only while the *same* plugin object stays in the config. A fresh call inside a `computed` remounts it on every change.
 - **Pass per-use options through a `Facet`.** `myFacet.of(options)` can be a new value on every render. That's how `selectionToolbar({ items })` updates without remounting.
 - **Overlay components get `editor: EditorContext`**: `{ view, state, update, focused }`. `state` and `update` are shallow refs replaced on every view update. Watch `update` with `flush: 'sync'` if you need every update rather than the last one per tick.
+- **Overlays most editors never show can mount lazily:** `vueOverlay(component, state => …)` mounts the first time the condition holds (the `[[` popover does this, so table cells, each a nested editor, don't each mount one).
 - **Component-mounted UI sees the full Vue tree.** Overlays and widgets render with the Editor's app context *and* its ancestors' provides, so Nuxt UI components that need `<UApp>` (tooltips, toasts) work.
 
 `EditorAction` (`{ id, label, icon?, kbds?, keywords?, color?, run?, panel?, isActive?, isEnabled? }`) is the shared item model. `panel` is a component rendered in place of the action's button (props `{ editor, close }`) for actions that need input, like `link`. `color` (e.g. `'error'`) tints the item in menus.

@@ -30,10 +30,10 @@ export function sameVisualLine(view: EditorView, a: number, b: number): boolean 
     return !ca || !cb || Math.abs(ca.top - cb.top) < 1
 }
 
-/** Nesting depth of a line: each leading tab or 4-space group is one level. */
+/** Nesting depth of a line: each tab or 4-space group after its leading `>` quote markers is one level. */
 export function indentLevel(lineText: string): number {
     let level = 0
-    for (let i = 0; i < lineText.length; ) {
+    for (let i = /^(?: {0,3}> ?)*/.exec(lineText)![0].length; i < lineText.length; ) {
         if (lineText[i] === '\t') i++
         else if (lineText.startsWith('    ', i)) i += 4
         else break

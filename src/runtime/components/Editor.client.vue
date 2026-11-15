@@ -22,7 +22,7 @@ import type {
 import { ref, shallowRef, onMounted, onBeforeUnmount, watch, getCurrentInstance, type AppContext } from 'vue';
 
 const doc = defineModel<string>()
-// `properties` needs an explicit default: Vue casts an absent prop whose type includes `false` to `false`.
+// Explicit defaults: Vue casts an absent prop whose type includes `boolean`/`false` to `false`.
 const props = withDefaults(defineProps<{
     class?: string
     internalLinkMap?: InternalLink[]
@@ -37,7 +37,7 @@ const props = withDefaults(defineProps<{
     properties?: PropertiesOptions | false
     /** Nuxt UI size of the menus the editor opens: a property's type menu, a table's context menu. Default `md`. */
     contextMenuSize?: MenuSize
-}>(), { properties: () => ({}) })
+}>(), { properties: () => ({}), bracketClosing: true, foldGutter: true })
 const emit = defineEmits<{
     'internal-link-click': [detail: InternalLinkClickDetail]
     'external-link-click': [detail: ExternalLinkClickDetail]
@@ -74,8 +74,8 @@ onMounted(() => {
         keymap.of(props.disabled ? [] : [...standardKeymap, ...historyKeymap, indentWithTab]),
         internalLinkCompartment.of(internalLinkMapFacet.of(props.internalLinkMap || [])),
         specialCodeBlockCompartment.of(specialCodeBlockMapFacet.of(props.specialCodeBlockMap || [])),
-        bracketClosingCompartment.of(customBracketClosingConfig.of(props.bracketClosing ?? true)),
-        foldGutterCompartment.of(props.foldGutter ?? true ? foldGutter() : []),
+        bracketClosingCompartment.of(customBracketClosingConfig.of(props.bracketClosing)),
+        foldGutterCompartment.of(props.foldGutter ? foldGutter() : []),
         editorKeywordSearchPlugin,
         vueContextFacet.of(vueContext),
         searchCompartment.of(searchOptionsFacet.of(props.searchOptions || { query: '' })),
@@ -109,8 +109,8 @@ function reconfigure(effect: StateEffect<unknown>) {
 
 watch(() => props.internalLinkMap, m => reconfigure(internalLinkCompartment.reconfigure(internalLinkMapFacet.of(m || []))), { deep: true })
 watch(() => props.specialCodeBlockMap, m => reconfigure(specialCodeBlockCompartment.reconfigure(specialCodeBlockMapFacet.of(m || []))), { deep: true })
-watch(() => props.bracketClosing, v => reconfigure(bracketClosingCompartment.reconfigure(customBracketClosingConfig.of(v ?? true))))
-watch(() => props.foldGutter, v => reconfigure(foldGutterCompartment.reconfigure(v ?? true ? foldGutter() : [])))
+watch(() => props.bracketClosing, v => reconfigure(bracketClosingCompartment.reconfigure(customBracketClosingConfig.of(v))))
+watch(() => props.foldGutter, v => reconfigure(foldGutterCompartment.reconfigure(v ? foldGutter() : [])))
 watch(() => props.searchOptions, o => reconfigure(searchCompartment.reconfigure(searchOptionsFacet.of(o || { query: '' }))), { deep: true })
 watch(() => props.extensions, e => reconfigure(extensionsCompartment.reconfigure(e ?? [])))
 watch(() => props.properties, p => reconfigure(propertiesCompartment.reconfigure(propertiesExtension(p))))

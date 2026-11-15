@@ -4,18 +4,20 @@ import { EditorView } from '@codemirror/view'
 import { parseDocument, type Document } from 'yaml'
 import type { PropertyType } from '../../editor/types/editor-types'
 import { convertValue, editProperties, frontmatterOf, inferType, removeProperty, renameProperty, setProperty } from '../../editor/utility/properties'
-import { frontmatterEnd, propertiesOptions } from '../../editor/plugins/propertiesConfig'
+import { frontmatterEnd } from '../../editor/plugins/propertiesConfig'
 import { internalLinkMapFacet } from '../../editor/plugins/linkMappingConfig'
-import type { MenuSize } from '../../editor/plugins/hostAppConfig'
+import { noteTargets } from '../../editor/plugins/codemirror-editor-plugins/linkSuggestPlugin'
+import { linkSuggestions } from '../../editor/utility/linkSearch'
+import type { PanelState } from '../../editor/plugins/codemirror-widgets/propertiesWidget'
 import { label } from '../../kit/labels'
 import PropertyRow from './PropertyRow.vue'
 import { MENU_UI, PROPERTIES, SUGGESTIONS_CONTENT, TYPE_ICONS, pathId, type PropertiesApi } from './properties'
 
-const props = defineProps<{ view: EditorView, yaml: ShallowRef<string>, menuSize: ShallowRef<MenuSize | undefined> }>()
+const props = defineProps<{ view: EditorView, panel: ShallowRef<PanelState> }>()
 const { view } = props
 const root = ref<HTMLElement>()
-const options = () => view.state.facet(propertiesOptions)
-const data = computed(() => (parseDocument(props.yaml.value).toJS() ?? {}) as Record<string, unknown>)
+const options = () => props.panel.value.options
+const data = computed(() => (parseDocument(props.panel.value.yaml).toJS() ?? {}) as Record<string, unknown>)
 /** Types picked here for keys the host hasn't typed (until it persists them through `onTypeChange`). */
 const picked = ref<Record<string, PropertyType>>({})
 const t = (key: string, fallback: string) => label(view.state, key, fallback)
@@ -25,11 +27,11 @@ const rowEl = (path: string[]) => [...root.value?.querySelectorAll<HTMLElement>(
 function write(edit: (doc: Document) => void) {
     const end = frontmatterEnd(view.state)
     if (end === null) return
-    view.dispatch({ changes: { from: 0, to: end, insert: frontmatterOf(editProperties(props.yaml.value, edit)) } })
+    view.dispatch({ changes: { from: 0, to: end, insert: frontmatterOf(editProperties(props.panel.value.yaml, edit)) } })
 }
 
 const api: PropertiesApi = {
-    editable: view.state.facet(EditorView.editable),
+    get editable() { return props.panel.value.editable },
     t,
     typeOf: (path, value) => (path.length === 1 ? options().types?.[path[0]!] ?? picked.value[path[0]!] : undefined) ?? inferType(path.at(-1)!, value),
     setValue: (path, value) => write(d => setProperty(d, path, value)),
@@ -59,8 +61,8 @@ const api: PropertiesApi = {
         await nextTick()
         rowEl(path)?.focus()
     },
-    menuSize: () => props.menuSize.value,
-    links: () => view.state.facet(internalLinkMapFacet),
+    menuSize: () => props.panel.value.menuSize,
+    linkSuggestions: query => linkSuggestions(query, view.state.facet(internalLinkMapFacet), () => noteTargets(view.state)),
 }
 provide(PROPERTIES, api)
 
@@ -195,6 +197,7 @@ onBeforeUnmount(() => observer?.disconnect())
                 value-key="label"
                 :content="SUGGESTIONS_CONTENT"
                 ignore-filter
+                virtualize
                 open-on-focus
                 :open="keyMenuOpen && keyItems.length > 0"
                 size="sm" variant="none" class="cm-property-key" :ui="{ base: 'px-0', trailing: 'hidden', content: MENU_UI }"

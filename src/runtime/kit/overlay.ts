@@ -21,26 +21,35 @@ export interface EditorContext {
  * returned extension is configured. Call at **module level**: CodeMirror keeps a plugin alive across
  * reconfigures only while the same plugin object stays in the config, so a fresh call per render
  * would remount the component every time the host's extension list changes.
+ *
+ * With `mountWhen`, the component mounts the first time it returns true (then stays): for overlays most editors
+ * never show, such as completion menus in the nested editors of table cells.
  */
-export function vueOverlay(component: Component) {
+export function vueOverlay(component: Component, mountWhen?: (state: EditorState) => boolean) {
     return ViewPlugin.define((view) => {
-        const el = document.createElement('div')
-        el.className = 'cm-vue-overlay'
-        view.dom.appendChild(el)
         const state = shallowRef(view.state)
         const update = shallowRef<ViewUpdate | null>(null)
         const focused = ref(view.hasFocus)
-        const editor: EditorContext = markRaw({ view: markRaw(view), state, update, focused })
-        const unmount = mountVueComponent(view, el, component, { editor })
+        let el: HTMLElement | null = null
+        let unmount: (() => void) | null = null
+        const mount = () => {
+            el = document.createElement('div')
+            el.className = 'cm-vue-overlay'
+            view.dom.appendChild(el)
+            const editor: EditorContext = markRaw({ view: markRaw(view), state, update, focused })
+            unmount = mountVueComponent(view, el, component, { editor })
+        }
+        if (!mountWhen || mountWhen(view.state)) mount()
         return {
             update(u: ViewUpdate) {
                 state.value = u.state
                 update.value = u
                 if (u.focusChanged) focused.value = u.view.hasFocus
+                if (!unmount && mountWhen!(u.state)) mount()
             },
             destroy() {
-                unmount()
-                el.remove()
+                unmount?.()
+                el?.remove()
             },
         }
     })

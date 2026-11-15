@@ -19,7 +19,9 @@ export type Measure = (text: string) => number
 
 /** Quote markers, then indent groups (tab or 4 spaces, each wrapped in `.cm-indent`), then leftover spaces. */
 const PREFIX = /^((?: {0,3}> ?)*)((?:\t| {4})*)([ \t]*)/
-const NO_LAYOUT: Record<string, true> = { FencedCode: true, CodeBlock: true, YAMLFrontMatter: true, TexBlock: true, HTMLBlock: true, CommentBlock: true, Table: true }
+// Tables aren't here: a rendered one replaces its lines anyway, and one left as source (in a quote or list item)
+// lays out like the text around it.
+const NO_LAYOUT: Record<string, true> = { FencedCode: true, CodeBlock: true, YAMLFrontMatter: true, TexBlock: true, HTMLBlock: true, CommentBlock: true }
 
 export function cssWidth(w: Width): string {
     const terms: string[] = []

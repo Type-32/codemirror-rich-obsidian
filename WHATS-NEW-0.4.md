@@ -37,7 +37,10 @@
   - Cells are nested editors: `.cm-table-cell > .cm-table-cell-content > .cm-editor`, instead of `contenteditable` cells holding markdown-it HTML.
   - The header sits on the page, bold and aligned to the start. The body is one rounded box with inner lines.
   - Drag handles (`.cm-table-handle.cm-table-col-handle` / `.cm-table-row-handle`) are bars above the hovered cell's column and left of its row, not an extra row and column with `.cm-table-corner`.
+  - Tables inside a plain quote or a list item stay as source, as in Obsidian (tables in callouts still render).
   - `markdown-it` is no longer a dependency.
+- **`bracketClosing` and `foldGutter` now default to on**, as their docs always said and as in Obsidian. Vue turned an absent boolean prop into `false`, so both were off unless set. Pass `:bracket-closing="false"` / `:fold-gutter="false"` to keep them off.
+  - Bracket closing is now CodeMirror's `closeBrackets` alone; the custom closer that ran alongside it is gone. `[[` gives `[[]]` (the old closer swallowed the second `[`). Typing a closing bracket steps over it, Backspace deletes an empty pair, and no quote is closed after a word (`don't`).
 - **Frontmatter shows as a properties panel by default.** Pass `:properties="false"` to `<Editor>` to keep the raw YAML.
   - While the panel is shown, typing can't edit the YAML behind it, and the cursor stays in the body.
   - Programmatic changes (`v-model`, `useEditorFrontmatter`, `view.dispatch` without a user event) still can.
@@ -49,14 +52,15 @@
 
 Obsidian's Properties view, in the note.
 
-- **Typing `---` as the first line of a note without properties starts them**, as in Obsidian: the note gets empty frontmatter and "Add property" opens. After you name a property, the cursor goes straight to its value, for every type.
+- **Typing `---` as the first line of a note without properties starts them**, as in Obsidian: the note gets empty frontmatter and "Add property" opens. After you name a property, the cursor goes straight to its value (objects have none: their fields are added with "Add field").
 - **Empty properties can be deleted:** with no properties, "Delete frontmatter" (`ui.properties.deleteFrontmatter`) sits right of "Add property" and removes the empty `---` block.
 - **Built from Nuxt UI components:** `sm` buttons (type icon, Add property, Delete frontmatter, Add field), `sm` inputs (name, values), `UCheckbox`, `UBadge` list items with an `xs` remove button, and `ULink` wikilinks.
 - **Suggestion menus, as in Obsidian** (`UInputMenu`, replacing the native `<datalist>`s):
   - Naming a new property offers `keySuggestions` and every name in `types` (Obsidian offers every property in the vault), each with its type's icon.
   - Editing a text value or adding to a list offers `valueSuggestions(key)`; after `[[` or `![[` it offers the editor's links (`internalLinkMap`), as the note's own `[[` completion does, and picking one completes the link.
   - The menu narrows as you type and hides when nothing matches. ↑/↓ highlight an item; Enter or a click picks it; Escape closes the menu, then cancels.
-- **The type menu and the suggestion menus are translucent with the page blurred behind** (`.cm-properties-menu`: `backdrop-blur-lg`, `bg-default/75`).
+  - Long lists are virtualized: only the rows in view are in the DOM, and scrolling shows the rest.
+- **The type menu and the suggestion menus are translucent with the page blurred behind** (`.cm-menu`: `backdrop-blur-lg`, `bg-default/75`; the note's `[[` list uses it too).
 - **`<Editor :context-menu-size>`** (`xs`–`xl`, Nuxt UI's `md` by default) sizes the property type menu and the table context menu.
 - **Rows:** type icon (type menu and Remove), name (rename in place), value.
 - **Value editors:**
@@ -70,7 +74,10 @@ Obsidian's Properties view, in the note.
   - ↑/↓/Tab move between rows; Enter edits a value with its text selected, then saves (Escape cancels);
   - Escape returns to the note.
 - **Types are per property name, like Obsidian's `types.json`.** `properties.types` sets them and `onTypeChange` persists the user's choice. Unlisted keys are inferred (`tags`/`aliases` by name, lists, numbers, checkboxes, dates, objects).
-- **Suggestions:** `keySuggestions` (names offered when adding) and `valueSuggestions(key)` (offered in list inputs).
+- **Suggestions:** `keySuggestions` (names offered when adding) and `valueSuggestions(key)` (offered in text values and list inputs).
+- **The panel follows the editor:** turning it read-only (or back) and changing `properties.types` or the other options update the panel at once.
+- **Keys YAML reads as numbers or booleans** (`2024:`, `true:`) can be edited, renamed and removed; editing used to add a second, quoted key.
+- **Frontmatter that ends the note** gets a line break before the first thing you type below it; typing there used to write into the closing `---`.
 - **Labels:** `ui.properties.*` keys in `editorLabels`.
 
 ## Code blocks
@@ -85,7 +92,8 @@ Obsidian's Properties view, in the note.
 
 ## Tasks
 
-- **Any single character is a status:** `- [/]`, `- [-]`, `- [>]`, `- [?]`… It must be followed by a space or tab, so `- [ ]text` is not a task.
+- **Any single character is a status:** `- [/]`, `- [-]`, `- [>]`, `- [?]`, `- [😀]`… It must be followed by a space or tab, so `- [ ]text` is not a task.
+- **Checkboxes in read-only editors** (disabled, or inside a rendered callout) don't toggle.
 - **Every status but a space is checked.** Only `x`/`X` are struck through. Clicking a checked box clears it.
 - **A revealed `[ ]` is dimmed** like other formatting.
 
@@ -100,10 +108,23 @@ Obsidian's Properties view, in the note.
 - **`[!type|metadata]`:** `data-callout` holds the type and `data-callout-metadata` the rest, so `[!note|wide]` gets the note styling.
 - **Callouts inside list items render as callouts.** Obsidian shows them as code blocks; we deliberately don't copy that.
 - **Icons follow Obsidian's defaults and aliases:** `summary`/`tldr`, `hint`/`important`, `check`/`done`, `help`/`faq`, `caution`/`attention`, `fail`/`missing`, `error`, `cite`.
+- **Callouts follow the editor:** changing `internalLinkMap`, `specialCodeBlockMap`, labels, `bracketClosing` or the editor's editability re-renders them (late-loaded links used to stay unresolved). The `</>` button (`ui.callout.edit`) shows only in an editable editor.
 - **Math in callouts:**
   - It renders once, inside the callout. It used to render a second time below it, with the `>` markers in the formula.
   - It renders inside plain quotes too, without their `>` markers.
   - Its lines keep the quote's indent while you edit them.
+
+## Link completion (`[[`)
+
+- **A Nuxt UI popover**, like the slash menu, replacing `@codemirror/autocomplete`'s list (and its `.cm-tooltip-autocomplete` styling). Rows show an icon, the name and, below it, the file path (`.cm-link-suggest`, `.cm-link-suggest-item[aria-selected]`, `-icon`, `-label`, `-detail`). ↑/↓ select (wrapping), Enter or Tab picks, Escape closes, the mouse highlights and clicks.
+- **No limit on results, and no cost for them:** the list keeps only the rows in view (and a few either side) in the DOM, so a 5,000-link vault scrolls with about a dozen rows rendered, by keyboard or mouse wheel.
+- **One search for the note and the properties panel**, ranked: exact name, then names starting with what's typed, word starts, inside a name, then file paths, then fuzzy (`mn` → "My Note"); shorter names first. With nothing typed, links keep the host's `internalLinkMap` order (sort it by recency, say). The map is indexed once per array the host passes, not on every keystroke.
+- **Aliases, headings and blocks, as in Obsidian.** `InternalLink` takes optional `aliases`, `headings` and `blocks` (`{ id, text? }`):
+  - aliases are offered with the notes and complete to `[[name|alias]]`;
+  - `[[name#` offers the note's headings, `[[name#^` its blocks, written with the note's own name;
+  - `[[#` and `[[#^` offer the headings and blocks (`^id` at a line's end) of the note being edited.
+- **Picking puts the cursor after the link's `]]`**, adding the `]]` when bracket closing hasn't. A pick with the cursor inside an existing link replaces its whole target.
+- **Inside table cells** the popover is mounted the first time it opens; `vueOverlay(component, mountWhen)` (from `/kit`) does this for any overlay.
 
 ## Math
 
@@ -164,9 +185,12 @@ Checked key by key against Obsidian.
   - Escape: the line below the table.
   - ↓ on the line above a table enters its first cell; ↑ on the line below enters its last row.
   - Backspace at the start of the line below a table selects the table (press again to delete it).
-- **Read-only editors and callouts:** cells, the context menu and the drag handles don't edit. They used to change a disabled editor's table, and a table inside a callout without saving it to the note.
+- **Read-only editors and callouts:** cells, the context menu and the drag handles don't edit. They used to change a disabled editor's table, and a table inside a callout without saving it to the note. Disabling the editor while a cell is being edited ends the edit.
+- **Leaving a table at the start or end of the note, or right under the properties panel,** adds the line to land on; the cursor used to land in the table's hidden source.
+- **Embeds in cells** (a base, a diagram) take their own clicks instead of starting a cell edit. Cells follow the host's `bracketClosing`.
 - **↑/↓ and clicks below a table land on the right line.** A vertical margin on the table used to throw CodeMirror's line positions off, so ↑ from the line below jumped over the table.
 - **Add buttons:** `+` below the table adds a row and puts the cursor in it; `+` to its right adds a column (Obsidian's).
+- **The context menu, add buttons and drag handles go through `editorLabels`** (`ui.table.*` keys, listed in the README).
 - **New variables:**
   - Obsidian's names: `--table-border-width`, `--table-border-color`, `--table-background` (body cells), `--table-text-size`, `--table-line-height`;
   - `--table-header-background`, `--table-header-border-color`, `--table-header-color`, `--table-header-weight`;

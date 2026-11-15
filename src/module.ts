@@ -24,7 +24,8 @@ export default defineNuxtModule<ModuleOptions>({
 	},
 	moduleDependencies: {
 		'@nuxt/ui': {
-			version: '>=4.4.0'
+			// The properties panel's suggestion inputs use `UInputMenu`'s `mode="autocomplete"` (4.8+); matches the peer range.
+			version: '>=4.12.0'
 		}
 	},
 	async setup(_options, _nuxt) {

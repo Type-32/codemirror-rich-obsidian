@@ -28,6 +28,8 @@ class CheckboxWidget extends WidgetType {
         checkbox.dataset.checked = String(this.status !== ' ')
         checkbox.onclick = (event) => {
             event.preventDefault()
+            // A read-only editor (disabled, or a callout's rendered copy) doesn't change: its note wouldn't.
+            if (!view.state.facet(EditorView.editable)) return
             view.dispatch({ changes: { from: this.from + 1, to: this.to - 1, insert: this.status === ' ' ? 'x' : ' ' } })
         }
         return checkbox
