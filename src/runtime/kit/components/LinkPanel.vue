@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
+import UButton from '@nuxt/ui/components/Button.vue'
+import UInput from '@nuxt/ui/components/Input.vue'
 import type { EditorContext } from '../overlay'
 import { setLink } from '../commands'
 import { label } from '../labels'

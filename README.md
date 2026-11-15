@@ -38,17 +38,80 @@ Run with your preferred package manager:
 bun add @type32/codemirror-rich-obsidian-editor
 ```
 
-Add module in Nuxt Config:
+The package has an entry for each kind of app:
+
+| Your app | Import from | You also need |
+|---|---|---|
+| Nuxt | `…/nuxt` (the module) | `@nuxt/ui` |
+| Vue (Vite) | `…/vue` | Vue and Nuxt UI, [set up for Vue](https://ui.nuxt.com/docs/getting-started/installation/vue) |
+| Any CodeMirror 6 editor | the package root | CodeMirror and Lezer (peers), `katex` for math |
+
+The root is the framework-free core (the live preview, its facets, commands, link search, the frontmatter and table helpers, and every type), and the Vue and Nuxt entries are built on it.
+
+### Nuxt
 
 ```ts
 export default defineNuxtConfig({
 	// Your config...
 	modules: [
 		// Your other modules...
-		'@type32/codemirror-rich-obsidian-editor',
+		'@type32/codemirror-rich-obsidian-editor/nuxt',
 	],
 })
 ```
+
+`<Editor>` and `<CodeEditor>` are auto-imported and the stylesheet is added for you. Until 0.5 the module was the package root.
+
+### Vue
+
+```ts
+// main.ts, with Nuxt UI's Vite plugin (`ui()` from '@nuxt/ui/vite') in vite.config.ts
+import './main.css'                                              // @import "tailwindcss"; @import "@nuxt/ui";
+import 'katex/dist/katex.min.css'
+import '@type32/codemirror-rich-obsidian-editor/tailwind.css'   // the editor's stylesheet, compiled by your Tailwind
+import ui from '@nuxt/ui/vue-plugin'
+createApp(App).use(ui).mount('#app')
+```
+
+```vue
+<script setup lang="ts">
+import { Editor } from '@type32/codemirror-rich-obsidian-editor/vue'
+</script>
+
+<template>
+	<UApp>
+		<Editor v-model="doc" />
+	</UApp>
+</template>
+```
+
+If your app could load two copies of Nuxt UI (a linked package, a workspace), add `resolve: { dedupe: ['@nuxt/ui', 'reka-ui'] }` to the Vite config. With two copies, tooltips can't find `<UApp>`. The Nuxt module does this itself.
+
+### CodeMirror only
+
+```ts
+import 'katex/dist/katex.min.css'
+import '@type32/codemirror-rich-obsidian-editor/editor.css'
+import { EditorView, drawSelection, keymap } from '@codemirror/view'
+import { defaultKeymap, history, historyKeymap } from '@codemirror/commands'
+import { internalLinkMapFacet, wysiwyg } from '@type32/codemirror-rich-obsidian-editor'
+
+new EditorView({
+	parent: document.querySelector('.cm-rich-editor')!,   // the stylesheet is scoped to `.cm-rich-editor`
+	doc: markdown,
+	extensions: [
+		history(), drawSelection(), keymap.of([...defaultKeymap, ...historyKeymap]), EditorView.lineWrapping,
+		wysiwyg(),
+		internalLinkMapFacet.of(links),
+	],
+})
+```
+
+Everything in the note renders as it does in `<Editor>`: marks, links, tags, math, tasks, lists, callouts and code. A few surfaces are UI the core doesn't draw:
+- **Tables and the properties panel** stay markdown unless a `tableRenderer` / `propertiesRenderer` draws them (`Renderer<P> = (view, el, props) => { update(props), destroy() }`, with `propertiesPanel()` for the frontmatter). The Vue ones are `vueRenderers()` from `/vue`.
+- **`[[` completion** needs a list: add `linkSuggestPlugin` and render `linkSuggestionsIn(state)`, picking with `pickLinkSuggestion(view, item)`.
+
+`editor.css` is precompiled: Tailwind's theme and the utilities the editor uses, plus Nuxt UI's design tokens with their default colours (primary green, neutral slate). It has no preflight and doesn't style `body`. A `.dark` class on an ancestor switches to dark colours. Override the `--ui-*` variables to match your theme.
 
 Customize the editor fonts:
 
@@ -157,6 +220,24 @@ const internalLinkMap: InternalLink[] = [{
 
 With nothing typed, links keep the map's order, so a host can put recent notes first.
 
+### Embeds and custom code blocks
+
+`![[link]]` renders as an embed when its `InternalLink` has `embedMount` (a function) or `embedComponent` (a Vue component). A fenced code block whose info string matches a `specialCodeBlockMap` entry renders with its `mount` or `component` instead of as code:
+
+```ts
+const kanban: EmbedMount = (el, props) => {          // props: linkData, filePath, subpath, display, ...componentProps
+	const board = renderBoard(el, props.filePath)
+	return () => board.destroy()                       // called when the embed goes
+}
+const links: InternalLink[] = [
+	{ name: 'Board.kanban', referenceId: 'board', embedMount: kanban },
+	{ name: 'Photo.png', referenceId: 'photo', embedComponent: ImageEmbedComponent },
+]
+const blocks: SpecialCodeBlockMapping[] = [{ codeInfo: 'mermaid', mount: (el, { codeContent }) => renderMermaid(el, codeContent) }]
+```
+
+An embed re-renders when one of its props changes or its function or component is a different one. A link list rebuilt with new but equal objects keeps the rendered embeds. Keep one function per kind of embed, not a new closure per rebuild. Components need the Vue layer (`<Editor>`, or `vueRenderers()`); in a CodeMirror-only editor, use `mount`.
+
 ## Extensions
 
 Extensions are plain CodeMirror `Extension`s passed through the `extensions` prop. The prop is reactive: change the array and the editor reconfigures in place. `[]` is an empty extension, so toggling one off is a ternary:
@@ -181,7 +262,8 @@ const extensions = computed(() => [
 Entry points:
 - `@type32/codemirror-rich-obsidian-editor/ext`: default extensions.
 - `@type32/codemirror-rich-obsidian-editor/ext/ai` (+ `/ext/ai/tools` for servers): the opt-in AI assistant; needs the optional peers `ai`, `@ai-sdk/vue` and `@ai-sdk/openai-compatible`.
-- `@type32/codemirror-rich-obsidian-editor/kit`: the authoring API those defaults are built on. A default extension imports nothing a user extension can't.
+- `@type32/codemirror-rich-obsidian-editor/kit`: the authoring API those defaults are built on (Vue overlays, actions, and the core's commands and queries again). A default extension imports nothing a user extension can't.
+- `@type32/codemirror-rich-obsidian-editor`: the core alone, for extensions that don't use Vue: facets, commands, queries, `nestedExtensions`, the renderers, and every type.
 
 ### Selection toolbar
 
@@ -246,7 +328,7 @@ Point it at any OpenAI-compatible API: Ollama, LM Studio, vLLM, OpenRouter, Open
 
 ```ts
 export default defineNuxtConfig({
-	modules: ['@type32/codemirror-rich-obsidian-editor'],
+	modules: ['@type32/codemirror-rich-obsidian-editor/nuxt'],
 	cmOfmEditor: {
 		ai: { baseURL: 'http://localhost:11434/v1', model: 'llama3.2' }, // + apiKey?, headers?
 	},
@@ -428,6 +510,7 @@ Rules that keep extensions hot-pluggable:
 - **Overlay components get `editor: EditorContext`**: `{ view, state, update, focused }`. `state` and `update` are shallow refs replaced on every view update. Watch `update` with `flush: 'sync'` if you need every update rather than the last one per tick.
 - **Overlays most editors never show can mount lazily:** `vueOverlay(component, state => …)` mounts the first time the condition holds (the `[[` popover does this, so table cells, each a nested editor, don't each mount one).
 - **Component-mounted UI sees the full Vue tree.** Overlays and widgets render with the Editor's app context *and* its ancestors' provides, so Nuxt UI components that need `<UApp>` (tooltips, toasts) work.
+- **Nested editors get only what you hand them.** Callout titles and bodies and table cells are editors too, built from the live preview and the editor's mappings and labels, not from your `extensions`. Whatever should also work inside them (a decoration, a syntax highlight, a renderer) goes through `nestedExtensions.of(extension)` (from the root) as well. They pass it on to their own nested editors, so a table inside a callout gets it. Menus and overlays don't belong there: they would run once per cell.
 
 `EditorAction` (`{ id, label, icon?, kbds?, keywords?, color?, run?, panel?, isActive?, isEnabled? }`) is the shared item model. `panel` is a component rendered in place of the action's button (props `{ editor, close }`) for actions that need input, like `link`. `color` (e.g. `'error'`) tints the item in menus.
 
@@ -456,8 +539,8 @@ Ship `.vue` files in an extension? Style them with Nuxt UI props or your own CSS
 - ~~Tables don't render.~~ See above.
 - ~~Indents are tabs / list indents are a pain.~~ Indent guides and active-guide highlighting work; the guide-level off-by-one is fixed.
 - ~~Task lists don't work.~~ Working.
-- ~~Embedded videos/notes/canvases unsupported~~ — `internalLinkMap` lets hosts map links to their own embed components.
-- ~~Mermaid/bases code blocks unsupported~~ — `specialCodeBlockMap` lets hosts map a code-fence language to their own component.
+- ~~Embedded videos/notes/canvases unsupported~~ — `internalLinkMap` lets hosts render embeds with their own components or `mount` functions.
+- ~~Mermaid/bases code blocks unsupported~~ — `specialCodeBlockMap` lets hosts render a code-fence language with their own component or `mount` function.
 - ~~YAML Frontmatter parsed as raw text~~ — shown as Obsidian's Properties panel (`properties` prop; `false` for raw YAML). `useEditorFrontmatter` still offers get/set/clear helpers.
 
 ## Contributions

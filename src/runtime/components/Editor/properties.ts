@@ -3,6 +3,14 @@ import type { PropertyType } from '../../editor/types/editor-types'
 import type { MenuSize } from '../../editor/plugins/hostAppConfig'
 import type { LinkSuggestion } from '../../editor/utility/linkSearch'
 
+/** Icon of each kind of suggestion, in every `[[` list (the note's and the properties panel's). */
+export const LINK_ICONS: Record<LinkSuggestion['kind'], string> = {
+    note: 'i-lucide-file-text',
+    alias: 'i-lucide-forward',
+    heading: 'i-lucide-heading',
+    block: 'i-lucide-square-dashed-text',
+}
+
 /** What `PropertiesPanel` gives its rows: edits go back to the editor as one YAML rewrite each. */
 export interface PropertiesApi {
     editable: boolean

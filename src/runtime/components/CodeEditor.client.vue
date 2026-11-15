@@ -120,24 +120,22 @@ defineExpose({ view })
 
 <template>
 	<div :class="props.class ? props.class : 'w-full h-full overflow-visible'">
-		<ClientOnly class="overflow-visible">
-			<div class="w-full cm-code-editor overflow-visible">
-				<CodeMirror
-					v-model="doc"
-					placeholder="Your code here..."
-					:basic="false"
-					:autofocus="true"
-					:indent-with-tab="true"
-					:tab-size="4"
-					:tab="true"
-					:indent-unit="'\t'"
-					:extensions="extensions"
-					@ready="handleReady"
-					class="w-full h-full cm-code-editor overflow-visible"
-					:disabled="props.disabled"
-					:readonly="props.disabled"
-				/>
-			</div>
-		</ClientOnly>
+		<div class="w-full cm-code-editor overflow-visible">
+			<CodeMirror
+				v-model="doc"
+				placeholder="Your code here..."
+				:basic="false"
+				:autofocus="true"
+				:indent-with-tab="true"
+				:tab-size="4"
+				:tab="true"
+				:indent-unit="'\t'"
+				:extensions="extensions"
+				@ready="handleReady"
+				class="w-full h-full cm-code-editor overflow-visible"
+				:disabled="props.disabled"
+				:readonly="props.disabled"
+			/>
+		</div>
 	</div>
 </template>

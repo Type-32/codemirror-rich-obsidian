@@ -3,10 +3,15 @@ import { ensureSyntaxTree } from '@codemirror/language'
 import { markdown } from '@codemirror/lang-markdown'
 import type { Command, EditorView } from '@codemirror/view'
 import { markdownConfig } from '../src/runtime/editor/wysiwyg'
+import { propertiesRenderer, tableRenderer } from '../src/runtime/editor/plugins/renderers'
 
 // The editor's own parser config (fenced-code languages aside).
 // @ts-ignore lezer extension typing is looser than lang-markdown's
 export const lang = markdown(markdownConfig())
+
+/** Renderers that draw nothing, so tables and the properties panel render as widgets without the Vue layer. */
+const noop = () => ({ update() {}, destroy() {} })
+export const renderers = [tableRenderer.of(noop), propertiesRenderer.of(noop)]
 
 export function parsed(s: EditorState) {
     ensureSyntaxTree(s, s.doc.length, 5000)

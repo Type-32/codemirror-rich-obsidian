@@ -2,17 +2,18 @@ import { Annotation, EditorSelection, EditorState, Prec, Transaction, type Exten
 import { Decoration, EditorView, ViewPlugin, keymap, type DecorationSet } from '@codemirror/view'
 import { PropertiesWidget } from '../codemirror-widgets/propertiesWidget'
 import { contextMenuSize } from '../hostAppConfig'
+import { propertiesRenderer } from '../renderers'
 import { propertiesOptions } from '../propertiesConfig'
 import { propertiesYaml } from '../../utility/properties'
 import type { PropertiesOptions } from '../../types/editor-types'
 import { createProsePlugin } from './createProsePlugin'
 
-/** The panel over the frontmatter, when its YAML is a mapping Obsidian would show; invalid YAML stays as source. */
+/** The panel over the frontmatter, when a `propertiesRenderer` is set and its YAML is a mapping Obsidian would show; invalid YAML stays as source. */
 const panelField = createProsePlugin({
     block: true,
     nodes: ['YAMLFrontMatter'],
     decorate(node, state, _active, out) {
-        if (node.from !== 0) return false
+        if (node.from !== 0 || !state.facet(propertiesRenderer)) return false
         const yaml = propertiesYaml(state.doc.sliceString(node.from, node.to))
         if (yaml === null) return false
         const panel = { yaml, options: state.facet(propertiesOptions), menuSize: state.facet(contextMenuSize), editable: state.facet(EditorView.editable) }

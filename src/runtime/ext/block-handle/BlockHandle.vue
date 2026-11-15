@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, ref, shallowRef, watch } from 'vue'
+import UIcon from '@nuxt/ui/components/Icon.vue'
+import UPopover from '@nuxt/ui/components/Popover.vue'
 import { EditorView } from '@codemirror/view'
 import {
     ActionList, blockAt, canMoveBlock, deleteBlock, dropTarget, floatingContent, label, moveBlock, moveBlockTo, resolveActions,

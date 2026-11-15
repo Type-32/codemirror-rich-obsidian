@@ -9,14 +9,6 @@ export interface LinkSuggestion {
     insert: string
 }
 
-/** Icon of each kind of suggestion, in every `[[` list (the note's and the properties panel's). */
-export const LINK_ICONS: Record<LinkSuggestion['kind'], string> = {
-    note: 'i-lucide-file-text',
-    alias: 'i-lucide-forward',
-    heading: 'i-lucide-heading',
-    block: 'i-lucide-square-dashed-text',
-}
-
 /** Headings and blocks of the note being edited, for `[[#…` and `[[#^…`. */
 export interface NoteTargets {
     headings: string[]

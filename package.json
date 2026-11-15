@@ -1,16 +1,26 @@
 {
   "name": "@type32/codemirror-rich-obsidian-editor",
   "version": "0.4.4",
-  "description": "OFM Editor Component for Nuxt.",
+  "description": "Obsidian-flavored Markdown live preview for CodeMirror 6, with Vue components and a Nuxt module.",
   "repository": "https://github.com/Type-32/codemirror-rich-obsidian",
   "license": "MIT",
   "type": "module",
   "private": false,
   "exports": {
     ".": {
+      "types": "./dist/runtime/index.d.ts",
+      "import": "./dist/runtime/index.js"
+    },
+    "./vue": {
+      "types": "./dist/runtime/vue/index.d.ts",
+      "import": "./dist/runtime/vue/index.js"
+    },
+    "./nuxt": {
       "types": "./dist/types.d.mts",
       "import": "./dist/module.mjs"
     },
+    "./editor.css": "./dist/editor.css",
+    "./tailwind.css": "./dist/runtime/assets/css/editor.css",
     "./kit": {
       "types": "./dist/runtime/kit/index.d.ts",
       "import": "./dist/runtime/kit/index.js"
@@ -28,10 +38,16 @@
       "import": "./dist/runtime/ext/ai/tools.js"
     }
   },
-  "main": "./dist/module.mjs",
+  "main": "./dist/runtime/index.js",
   "typesVersions": {
     "*": {
       ".": [
+        "./dist/runtime/index.d.ts"
+      ],
+      "vue": [
+        "./dist/runtime/vue/index.d.ts"
+      ],
+      "nuxt": [
         "./dist/types.d.mts"
       ],
       "kit": [
@@ -64,7 +80,6 @@
   },
   "dependencies": {
     "@catppuccin/codemirror": "^1.0.3",
-    "@nuxt/kit": "^4.6.4",
     "alfaaz": "^1.1.0",
     "diff": "^9.0.0",
     "lezer-markdown-obsidian": "^0.0.3",
@@ -90,7 +105,9 @@
     "codemirror": "^6.0.2",
     "katex": "^0.16.33",
     "tailwindcss": "^4.2.1",
-    "vue-codemirror6": "^1.4.2"
+    "vue": "^3.5.0",
+    "vue-codemirror6": "^1.4.2",
+    "@nuxt/kit": "^4.0.0"
   },
   "peerDependenciesMeta": {
     "@ai-sdk/openai-compatible": {
@@ -103,6 +120,21 @@
       "optional": true
     },
     "katex": {
+      "optional": true
+    },
+    "vue": {
+      "optional": true
+    },
+    "vue-codemirror6": {
+      "optional": true
+    },
+    "@nuxt/ui": {
+      "optional": true
+    },
+    "tailwindcss": {
+      "optional": true
+    },
+    "@nuxt/kit": {
       "optional": true
     }
   },

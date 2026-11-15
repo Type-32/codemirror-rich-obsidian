@@ -42,7 +42,7 @@ export default defineNuxtModule<ModuleOptions>({
 		// so the browser would be served `exports.…` as is.
 		_nuxt.options.build.transpile.push(
 			'lezer-markdown-obsidian',
-			// /kit and /ext ship `.vue` files that rely on Nuxt auto-imports (UButton, …).
+			// The components, /kit and /ext ship `.vue` files.
 			resolver.resolve('./runtime'),
 		)
 
@@ -68,21 +68,15 @@ export default defineNuxtModule<ModuleOptions>({
 		extendViteConfig((config) => {
 			config.resolve ??= {}
 			config.resolve.dedupe ??= []
-			config.resolve.dedupe.push(...codemirrorPackages)
+			// Nuxt UI too: the components import it themselves, and a second copy (a linked package, a workspace)
+			// would have its own provide/inject keys, so a tooltip wouldn't find the host's `<UApp>`.
+			config.resolve.dedupe.push(...codemirrorPackages, '@nuxt/ui', 'reka-ui')
 
 			config.optimizeDeps ??= {}
 			config.optimizeDeps.include ??= []
 			config.optimizeDeps.exclude ??= []
 			config.optimizeDeps.exclude.push(...codemirrorPackages)
 		})
-
-		_nuxt.options.alias['#codemirror-rich-obsidian-editor'] = resolver.resolve(
-			'./runtime/editor/types',
-		)
-
-		_nuxt.options.alias['#codemirror-rich-obsidian-editor#css'] = resolver.resolve(
-			'./runtime/assets/css',
-		)
 
 		// Pin the public subpaths to this module's runtime, so the stub build (src) and the published
 		// build (dist) both load the same facet/field instances as Editor.client.vue.
@@ -97,6 +91,8 @@ export default defineNuxtModule<ModuleOptions>({
 		_nuxt.options.alias[`${pkg}/ext/ai`] = resolver.resolve(hasAi && hasAiVue && hasCompat ? './runtime/ext/ai' : './runtime/ext/ai/unavailable')
 		_nuxt.options.alias[`${pkg}/kit`] = resolver.resolve('./runtime/kit')
 		_nuxt.options.alias[`${pkg}/ext`] = resolver.resolve('./runtime/ext')
+		_nuxt.options.alias[`${pkg}/vue`] = resolver.resolve('./runtime/vue')
+		_nuxt.options.alias[pkg] = resolver.resolve('./runtime/index')
 
 		// Server side of the AI assistant: private config, the default route, and `useEditorAiModel()`.
 		const ai = _options.ai ?? {}

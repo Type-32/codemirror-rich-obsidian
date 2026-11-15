@@ -2,7 +2,7 @@ import { Decoration } from '@codemirror/view'
 import { LanguageDescription } from '@codemirror/language'
 import { languages } from '@codemirror/language-data'
 import { EndFenceWidget, LanguageFlairWidget } from '../codemirror-widgets/proseCodeBlockWidgets'
-import { ProseVueComponentEmbedWidget } from '../codemirror-widgets/proseVueComponentEmbedWidget'
+import { EmbedWidget, canEmbed } from '../codemirror-widgets/embedWidget'
 import { specialCodeBlockMapFacet } from '../specialCodeBlockMappingConfig'
 import { createProsePlugin } from './createProsePlugin'
 
@@ -37,9 +37,9 @@ export const proseCodeBlockPlugin = createProsePlugin({
         const code = bodyFrom <= bodyTo ? state.doc.sliceString(state.doc.line(bodyFrom).from, state.doc.line(bodyTo).to) : ''
 
         const special = closed && state.facet(specialCodeBlockMapFacet).find(m => m.codeInfo === language)
-        if (special && !active) {
+        if (special && !active && canEmbed(state, special)) {
             out.push(Decoration.replace({
-                widget: new ProseVueComponentEmbedWidget(special.component, { codeContent: code }, node.from, node.to),
+                widget: new EmbedWidget({ mount: special.mount, component: special.component }, { codeContent: code }, node.from, node.to),
                 block: true,
             }).range(node.from, node.to))
             return false

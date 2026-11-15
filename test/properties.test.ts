@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { EditorSelection } from '@codemirror/state'
 import { convertValue, editProperties, inferType, propertiesYaml, removeProperty, renameProperty, setProperty } from '../src/runtime/editor/utility/properties'
 import { panelEnd, propertiesPanel } from '../src/runtime/editor/plugins/codemirror-plugin-proses/propertiesPlugin'
-import { state } from './helpers'
+import { renderers, state } from './helpers'
 import { linkCompletions, wikilink } from '../src/runtime/components/Editor/properties'
 import { linkSuggestions } from '../src/runtime/editor/utility/linkSearch'
 
@@ -73,7 +73,7 @@ describe('frontmatter', () => {
 
 describe('the panel', () => {
     const DOC = '---\na: 1\n---\nbody'
-    const panel = (doc: string, sel = doc.length) => state(doc.slice(0, sel) + '«»' + doc.slice(sel), propertiesPanel())
+    const panel = (doc: string, sel = doc.length) => state(doc.slice(0, sel) + '«»' + doc.slice(sel), [renderers, propertiesPanel()])
 
     it('replaces valid frontmatter only', () => {
         expect(panelEnd(panel(DOC))).toBe(12)

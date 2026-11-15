@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { ExternalLinkClickDetail, InternalLink, InternalLinkClickDetail, SpecialCodeBlockMapping } from '#codemirror-rich-obsidian-editor/editor-types'
+import type { EmbedMount, ExternalLinkClickDetail, InternalLink, InternalLinkClickDetail, SpecialCodeBlockMapping } from '@type32/codemirror-rich-obsidian-editor'
 import { EditorImageEmbedComponent, TestCustomCodeBlock } from '#components'
 import type { TabsItem } from '@nuxt/ui'
 import { EditorView } from '@codemirror/view'
@@ -42,6 +42,15 @@ const extensions = computed(() => [
 	zhLabels.value ? zh : [],
 ])
 
+// A plain-DOM embed (`embedMount`, no component). `window.__liveEmbeds` counts mounted ones: each unmounts when it goes.
+const liveEmbed: EmbedMount = (el, props) => {
+	const w = window as unknown as { __liveEmbeds?: number }
+	w.__liveEmbeds = (w.__liveEmbeds ?? 0) + 1
+	el.textContent = `Plain DOM embed of ${props.filePath}`
+	el.style.cssText = 'padding: 0.75rem; border: 1px dashed var(--ui-border); border-radius: 0.5rem; font-size: 0.875rem'
+	return () => { w.__liveEmbeds!-- }
+}
+
 const internalLinkMap = ref<InternalLink[]>([
     {
         name: "My Note",
@@ -71,7 +80,13 @@ const internalLinkMap = ref<InternalLink[]>([
         filePath: "/Kthalatir.png",
         referenceId: "/images/kthalatir",
         embedComponent: EditorImageEmbedComponent,
-    }
+    },
+    {
+        name: "Widget.canvas",
+        filePath: "/Widget.canvas",
+        referenceId: "/widget",
+        embedMount: liveEmbed,
+    },
 ]);
 
 const specialCodeBlockMap = ref<SpecialCodeBlockMapping[]>([

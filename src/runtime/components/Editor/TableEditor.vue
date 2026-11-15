@@ -1,12 +1,15 @@
 <script setup lang="ts">
 import { computed, nextTick, onMounted, ref, type Directive, type ShallowRef } from 'vue'
+import UButton from '@nuxt/ui/components/Button.vue'
+import UContextMenu from '@nuxt/ui/components/ContextMenu.vue'
+import UIcon from '@nuxt/ui/components/Icon.vue'
 import type { ContextMenuItem } from '@nuxt/ui'
 import { Compartment, EditorState, Prec, Transaction, type TransactionSpec } from '@codemirror/state'
 import { EditorView, drawSelection, keymap, type ViewUpdate } from '@codemirror/view'
 import { redo, undo } from '@codemirror/commands'
 import { nestedEditor, readOnly } from '../../editor/utility/nestedEditor'
 import { sameVisualLine } from '../../editor/utility/tools'
-import type { RenderedTable } from '../../editor/plugins/codemirror-widgets/proseTableWidget'
+import type { RenderedTable } from '../../editor/plugins/renderers'
 import { label } from '../../kit/labels'
 import { panelEnd } from '../../editor/plugins/codemirror-plugin-proses/propertiesPlugin'
 import {
@@ -224,7 +227,7 @@ function onCellMousedown(e: MouseEvent, r: number, c: number) {
     const cell = cells.get(key(r, c))
     if (!cell || cell === active || e.button !== 0 || !editable()) return
     // Links behave as links, embeds (a base's toolbar, a diagram) as themselves, and handles drag.
-    if ((e.target as Element).closest('a, .cm-link, .cm-clickable-link, .vue-embed-widget, .cm-table-handle')) return
+    if ((e.target as Element).closest('a, .cm-link, .cm-clickable-link, .cm-embed-widget, .cm-table-handle')) return
     e.preventDefault()
     e.stopPropagation()
     activate(cell, cell.posAtCoords({ x: e.clientX, y: e.clientY }, false))

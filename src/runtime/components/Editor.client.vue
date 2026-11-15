@@ -8,7 +8,8 @@ import wysiwyg from '../editor/wysiwyg'
 import { internalLinkMapFacet } from '../editor/plugins/linkMappingConfig'
 import { specialCodeBlockMapFacet } from '../editor/plugins/specialCodeBlockMappingConfig'
 import { customBracketClosingConfig } from '../editor/plugins/customBracketClosingConfig'
-import { contextMenuSize, vueContextFacet, type MenuSize } from '../editor/plugins/hostAppConfig'
+import { contextMenuSize, type MenuSize } from '../editor/plugins/hostAppConfig'
+import { vueRenderers } from '../vue/renderers'
 import { editorKeywordSearchPlugin, searchOptionsFacet } from '../editor/plugins/codemirror-editor-plugins/editorKeywordSearchPlugin'
 import { propertiesPanel } from '../editor/plugins/codemirror-plugin-proses/propertiesPlugin'
 import type {
@@ -77,7 +78,7 @@ onMounted(() => {
         bracketClosingCompartment.of(customBracketClosingConfig.of(props.bracketClosing)),
         foldGutterCompartment.of(props.foldGutter ? foldGutter() : []),
         editorKeywordSearchPlugin,
-        vueContextFacet.of(vueContext),
+        vueRenderers(vueContext),
         searchCompartment.of(searchOptionsFacet.of(props.searchOptions || { query: '' })),
         wysiwyg(),
         EditorView.editable.of(!props.disabled),
@@ -129,24 +130,22 @@ defineExpose({ view })
 
 <template>
     <div :class="props.class ? props.class : 'w-full h-full overflow-visible'" ref="editorElement">
-        <ClientOnly class="overflow-visible">
-            <div class="w-full cm-rich-editor overflow-visible">
-                <CodeMirror
-                    v-model="doc"
-                    placeholder="Start typing your markdown content here..."
-                    :basic="false"
-                    :autofocus="true"
-                    :indent-with-tab="true"
-                    :tab-size="4"
-                    :tab="true"
-                    :indent-unit="'\t'"
-                    :extensions="cmExtensions"
-                    @ready="handleReady"
-                    class="w-full h-full cm-rich-editor overflow-visible"
-                    :disabled="props.disabled"
-                    :readonly="props.disabled"
-                />
-            </div>
-        </ClientOnly>
+        <div class="w-full cm-rich-editor overflow-visible">
+            <CodeMirror
+                v-model="doc"
+                placeholder="Start typing your markdown content here..."
+                :basic="false"
+                :autofocus="true"
+                :indent-with-tab="true"
+                :tab-size="4"
+                :tab="true"
+                :indent-unit="'\t'"
+                :extensions="cmExtensions"
+                @ready="handleReady"
+                class="w-full h-full cm-rich-editor overflow-visible"
+                :disabled="props.disabled"
+                :readonly="props.disabled"
+            />
+        </div>
     </div>
 </template>

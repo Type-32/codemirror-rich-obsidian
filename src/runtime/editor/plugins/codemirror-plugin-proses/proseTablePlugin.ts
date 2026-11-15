@@ -4,17 +4,19 @@ import { Prec, type EditorState, type Line } from '@codemirror/state'
 import type { SyntaxNode } from '@lezer/common'
 import { TableWidget, tableEntry } from '../codemirror-widgets/proseTableWidget'
 import { contextMenuSize } from '../hostAppConfig'
+import { tableRenderer } from '../renderers'
 import { parseTable } from '../../../utils/markdownTable'
 import { sameVisualLine } from '../../utility/tools'
 import { createProsePlugin } from './createProsePlugin'
 import { nestedInputs } from '../../utility/nestedEditor'
 
 /**
- * The model of `table` when it renders as a widget: well-formed (a valid delimiter row) and not inside a quote or
- * list item, which Obsidian leaves as source too (a callout's body is rendered by a nested editor without its `>`,
- * so tables in callouts do render).
+ * The model of `table` when it renders as a widget: a `tableRenderer` is set, the table is well-formed (a valid
+ * delimiter row) and not inside a quote or list item, which Obsidian leaves as source too (a callout's body is
+ * rendered by a nested editor without its `>`, so tables in callouts do render).
  */
 function renderedModel(state: EditorState, table: SyntaxNode) {
+    if (!state.facet(tableRenderer)) return null
     for (let n = table.parent; n; n = n.parent) if (n.name === 'Blockquote' || n.name === 'ListItem') return null
     return parseTable(state.doc.sliceString(table.from, table.to))
 }

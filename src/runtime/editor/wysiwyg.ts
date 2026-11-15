@@ -25,9 +25,6 @@ import { proseTablePlugin } from './plugins/codemirror-plugin-proses/proseTableP
 import { proseListPlugin, proseListEditMarkPlugin } from './plugins/codemirror-plugin-proses/proseListPlugin'
 import { proseHangingIndentPlugin } from './plugins/codemirror-plugin-proses/proseHangingIndentPlugin'
 import { editorLinkClickPlugin } from './plugins/codemirror-editor-plugins/editorLinkClickPlugin'
-import { linkQueryField, linkSuggestPlugin } from './plugins/codemirror-editor-plugins/linkSuggestPlugin'
-import LinkSuggest from '../components/Editor/LinkSuggest.vue'
-import { vueOverlay } from '../kit/overlay'
 import { editorKeymapPlugin } from './plugins/codemirror-editor-plugins/editorKeymapPlugin'
 import { customBracketClosingConfig } from './plugins/customBracketClosingConfig'
 import { indentationGuides } from './plugins/codemirror-editor-plugins/indentationGuidesPlugin'
@@ -51,9 +48,6 @@ const bracketClosing = [
     Prec.high(keymap.of(closeBracketsKeymap)),
     Prec.highest(EditorState.languageData.of(state => (state.facet(customBracketClosingConfig) ? [] : [{ closeBrackets: { brackets: [] } }]))),
 ]
-
-/** `[[` completion and its popover, mounted the first time a completion opens (most table cells never do). */
-const linkSuggest = [linkSuggestPlugin, vueOverlay(LinkSuggest, state => state.field(linkQueryField, false) !== null)]
 
 /** Lezer config shared with `parseMarkdownToAST` so offline parsing matches the live editor. */
 export function markdownConfig(config?: WysiwygPlugin['lezer']) {
@@ -85,7 +79,6 @@ export default function wysiwyg(config?: WysiwygPlugin): Extension {
         proseHangingIndentPlugin,
 
         editorLinkClickPlugin,
-        linkSuggest,
         editorKeymapPlugin,
         listEditing,
         customBracketClosingConfig.of(true),

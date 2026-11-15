@@ -3,7 +3,7 @@ import type { StateField } from '@codemirror/state'
 import type { DecorationSet } from '@codemirror/view'
 import { cellRange, newRow, parseTable, setCell } from '../src/runtime/utils/markdownTable'
 import { proseTablePlugin } from '../src/runtime/editor/plugins/codemirror-plugin-proses/proseTablePlugin'
-import { state } from './helpers'
+import { renderers, state } from './helpers'
 
 const source = [
     '| Name     |  Link   | Num |',
@@ -14,7 +14,7 @@ const source = [
 
 describe('rendered tables', () => {
     const rendered = (src: string) => {
-        const s = state(`«»x\n\n${src}`, proseTablePlugin)
+        const s = state(`«»x\n\n${src}`, [renderers, proseTablePlugin])
         return s.field(proseTablePlugin[0] as StateField<DecorationSet>).size
     }
 
@@ -22,6 +22,11 @@ describe('rendered tables', () => {
         expect(rendered('| a | b |\n| - | - |\n| c | d |')).toBe(1)
         expect(rendered('> | a | b |\n> | - | - |\n> | c | d |')).toBe(0)
         expect(rendered('- item\n\n  | a | b |\n  | - | - |\n  | c | d |')).toBe(0)
+    })
+
+    it('stay source without a table renderer (the editor without its Vue layer)', () => {
+        const s = state(`«»x\n\n| a |\n| - |\n| b |\n`, proseTablePlugin)
+        expect(s.field(proseTablePlugin[0] as StateField<DecorationSet>).size).toBe(0)
     })
 })
 

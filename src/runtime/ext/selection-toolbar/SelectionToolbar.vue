@@ -1,5 +1,8 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, ref, shallowRef, watch } from 'vue'
+import UButton from '@nuxt/ui/components/Button.vue'
+import UPopover from '@nuxt/ui/components/Popover.vue'
+import UTooltip from '@nuxt/ui/components/Tooltip.vue'
 import { EditorView, type ViewUpdate } from '@codemirror/view'
 import type { EditorState } from '@codemirror/state'
 import { floatingContent, formattableRange, keepEditorFocus, mouseSelectingField, resolveActions, virtualAnchor, type EditorAction, type EditorContext } from '../../kit'

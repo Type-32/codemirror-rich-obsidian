@@ -1,8 +1,11 @@
 <script setup lang="ts">
 import { computed, nextTick, ref, shallowRef, watch } from 'vue'
+import UIcon from '@nuxt/ui/components/Icon.vue'
+import UPopover from '@nuxt/ui/components/Popover.vue'
 import { floatingContent, virtualAnchor, type EditorContext } from '../../kit/overlay'
 import { closeLinkSuggest, linkQueryField, linkSuggestionsIn, pickLinkSuggestion, selectLinkSuggestion } from '../../editor/plugins/codemirror-editor-plugins/linkSuggestPlugin'
-import { LINK_ICONS, type LinkSuggestion } from '../../editor/utility/linkSearch'
+import type { LinkSuggestion } from '../../editor/utility/linkSearch'
+import { LINK_ICONS } from './properties'
 
 const props = defineProps<{ editor: EditorContext }>()
 const { view } = props.editor

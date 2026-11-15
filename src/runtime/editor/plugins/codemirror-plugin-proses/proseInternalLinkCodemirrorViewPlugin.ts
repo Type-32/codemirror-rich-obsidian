@@ -1,6 +1,6 @@
 import { Decoration } from '@codemirror/view'
 import { internalLinkMapFacet } from '../linkMappingConfig'
-import { ProseVueComponentEmbedWidget } from '../codemirror-widgets/proseVueComponentEmbedWidget'
+import { EmbedWidget, canEmbed } from '../codemirror-widgets/embedWidget'
 import { createProsePlugin } from './createProsePlugin'
 import { inRenderedCallout } from './proseCalloutPlugin'
 import { inRenderedTable } from './proseTablePlugin'
@@ -8,7 +8,7 @@ import { inRenderedTable } from './proseTablePlugin'
 const hidden = Decoration.replace({})
 
 /**
- * `[[path#sub|alias]]` → <a>; `![[path]]` with a registered `embedComponent` → block widget
+ * `[[path#sub|alias]]` → <a>; `![[path]]` whose link has an `embedMount` or `embedComponent` → block widget
  * under the line (source hidden unless touched). Unregistered embeds render as links. Embeds inside a rendered
  * callout or table are left to its nested editors, which draw them in place.
  */
@@ -27,14 +27,15 @@ export const proseInternalLinkPlugin = createProsePlugin({
         const displayNode = link.getChild('InternalDisplay')
         const subpathNode = link.getChild('InternalSubpath')
 
-        if (isEmbed && linkInfo?.embedComponent) {
+        const target = { mount: linkInfo?.embedMount, component: linkInfo?.embedComponent }
+        if (isEmbed && linkInfo && canEmbed(state, target)) {
             if (inRenderedCallout(state, main) || inRenderedTable(state, main)) return false
             const props: Record<string, unknown> = { linkData: linkInfo, ...linkInfo.componentProps }
             if (linkInfo.filePath) props.filePath = linkInfo.filePath
             if (displayNode) props.display = state.doc.sliceString(displayNode.from, displayNode.to)
             if (subpathNode) props.subpath = state.doc.sliceString(subpathNode.from + 1, subpathNode.to) // without "#"
             out.push(Decoration.widget({
-                widget: new ProseVueComponentEmbedWidget(linkInfo.embedComponent, props, node.from, node.to),
+                widget: new EmbedWidget(target, props, node.from, node.to),
                 block: true,
                 side: 1,
             }).range(state.doc.lineAt(node.from).to))
