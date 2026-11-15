@@ -38,8 +38,9 @@ export default defineNuxtModule<ModuleOptions>({
 		addImportsDir(resolver.resolve('runtime/composables'))
 		addImportsDir(resolver.resolve('runtime/utils'))
 
+		// Not `alfaaz`: it is CommonJS, and Nuxt keeps everything listed here out of Vite's pre-bundling,
+		// so the browser would be served `exports.…` as is.
 		_nuxt.options.build.transpile.push(
-			'alfaaz',
 			'lezer-markdown-obsidian',
 			// /kit and /ext ship `.vue` files that rely on Nuxt auto-imports (UButton, …).
 			resolver.resolve('./runtime'),
