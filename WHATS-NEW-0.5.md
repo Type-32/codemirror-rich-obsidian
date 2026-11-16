@@ -36,6 +36,12 @@ Notes of 1,000 to 100,000 lines, pathological input (floods of delimiters, deep 
 - **Frontmatter with a YAML alias bomb** stays source instead of a blank properties panel.
 - KaTeX output is cached for at most 500 formulas, and `maxSize` keeps `\rule` from covering the page.
 
+## Other languages
+
+- **`<Editor placeholder>` and `<CodeEditor placeholder>`**: the empty-editor text was the one UI string `editorLabels` couldn't translate.
+- **Link search ignores accents**: `cafe` finds "Café", `resume` finds "Résumé". Marks that tell letters apart stay (ゲ and ケ are different).
+- Tested: tags, links, embeds, highlights, callouts and block ids in Chinese, Japanese, Korean, Arabic, Cyrillic and accented Latin parse the same in the editor and the comark plugin, and typing Chinese, Japanese and Korean through an input method works.
+
 ## Entries
 
 | Import | For | Contents |

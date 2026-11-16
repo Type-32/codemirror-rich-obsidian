@@ -82,12 +82,17 @@ const internalLinkMap = ref<InternalLink[]>([
         referenceId: "/images/kthalatir",
         embedComponent: EditorImageEmbedComponent,
     },
-    {
-        name: "Widget.canvas",
-        filePath: "/Widget.canvas",
-        referenceId: "/widget",
-        embedMount: liveEmbed,
-    },
+	{
+		name: "Widget.canvas",
+		filePath: "/Widget.canvas",
+		referenceId: "/widget",
+		embedMount: liveEmbed,
+	},
+	{
+		name: "极乐迪斯科",
+		filePath: "/disco-elysium.md",
+		referenceId: "/de"
+	},
 ]);
 
 const specialCodeBlockMap = ref<SpecialCodeBlockMapping[]>([

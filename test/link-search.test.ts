@@ -45,4 +45,14 @@ describe('link suggestions', () => {
         expect(suggest('#').map(s => s.insert)).toEqual(['#Intro', '#Methods'])
         expect(suggest('#^que').map(s => s.insert)).toEqual(['#^q1'])
     })
+
+    it('ignore accents both ways, but keep marks that tell letters apart', () => {
+        const notes = [link('Café'), link('Résumé', { filePath: 'docs/Résumé.md' }), link('ゲーム'), link('ケーキ'), link('한국어')]
+        const find = (q: string) => linkSuggestions(q, notes, () => HERE).map(s => s.label)
+        expect(find('cafe')).toEqual(['Café'])
+        expect(find('CAFÉ')).toEqual(['Café'])
+        expect(find('resume')).toEqual(['Résumé'])
+        expect(find('ゲ')).toEqual(['ゲーム'])
+        expect(find('한국')).toEqual(['한국어'])
+    })
 })

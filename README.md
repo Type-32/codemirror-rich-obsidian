@@ -593,6 +593,10 @@ No key is both a label and a prefix of other keys, so the labels can live in nes
 
 In your own components, `label(state, key, fallback)` reads the same facet.
 
+`<Editor placeholder>` and `<CodeEditor placeholder>` set the text shown while empty.
+
+Notes in any script work as in Obsidian: tags (`#标签`, `#日本語/サブ`, `#тег`), links, embeds, callout titles, block ids and the comark plugin. Link search ignores case and accents (`cafe` finds "Café"), but keeps marks that tell letters apart (ゲ and ケ).
+
 ### Writing your own
 
 ```ts

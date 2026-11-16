@@ -34,8 +34,11 @@ const props = withDefaults(defineProps<{
 	/** Custom theme for dark mode. Defaults to Catppuccin Mocha. */
 	darkTheme?: Extension,
 	colorMode?: string
+	/** Shown while the editor is empty. */
+	placeholder?: string
 }>(), {
-	colorMode: 'dark'
+	colorMode: 'dark',
+	placeholder: 'Your code here...',
 })
 const extensions = shallowRef<Extension[]>([])
 const view = shallowRef<EditorView>()
@@ -123,7 +126,7 @@ defineExpose({ view })
 		<div class="w-full cm-code-editor overflow-visible">
 			<CodeMirror
 				v-model="doc"
-				placeholder="Your code here..."
+				:placeholder="props.placeholder"
 				:basic="false"
 				:autofocus="true"
 				:indent-with-tab="true"

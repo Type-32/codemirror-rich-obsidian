@@ -50,7 +50,9 @@ const props = withDefaults(defineProps<{
      * cells parse the same. Changing it reparses the note; pass the same object between renders.
      */
     markdown?: MarkdownOptions
-}>(), { properties: () => ({}), bracketClosing: true, foldGutter: true, history: true })
+    /** Shown while the note is empty (translate it with the rest of your UI). */
+    placeholder?: string
+}>(), { properties: () => ({}), bracketClosing: true, foldGutter: true, history: true, placeholder: 'Start typing your markdown content here...' })
 const emit = defineEmits<{
     'internal-link-click': [detail: InternalLinkClickDetail]
     'external-link-click': [detail: ExternalLinkClickDetail]
@@ -162,7 +164,7 @@ defineExpose({ view })
             <CodeMirror
                 :model-value="initialDoc"
                 @update:model-value="value => doc = String(value)"
-                placeholder="Start typing your markdown content here..."
+                :placeholder="props.placeholder"
                 :basic="false"
                 :autofocus="true"
                 :indent-with-tab="true"
