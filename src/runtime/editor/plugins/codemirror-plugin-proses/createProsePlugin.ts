@@ -36,7 +36,13 @@ function build(cfg: ProsePluginConfig, nodes: Record<string, true>, state: Edito
 }
 
 /**
- * Did the selection change which of this plugin's nodes it touches? Cheap enough to run on
+ * Containers whose rendering decides how nodes inside them render (`inRenderedCallout`, `inRenderedTable`): the
+ * selection crossing one re-renders what's inside even when it touches none of a plugin's own nodes.
+ */
+const CONTAINERS: Record<string, true> = { Blockquote: true, Table: true }
+
+/**
+ * Did the selection change which of this plugin's nodes (or their containers) it touches? Cheap enough to run on
  * every caret move: only nodes overlapping old∪new selection are visited.
  */
 function crossedNode(nodes: Record<string, true>, tr: Transaction): boolean {
@@ -48,14 +54,53 @@ function crossedNode(nodes: Record<string, true>, tr: Transaction): boolean {
 		from: lo, to: hi,
 		enter(node) {
 			if (crossed) return false
-			if (!nodes[node.name]) return
+			if (!nodes[node.name] && !CONTAINERS[node.name]) return
 			// No doc change on this path, so the node range is valid in both states.
 			if (selectionTouches(before, node.from, node.to) !== selectionTouches(after, node.from, node.to)) crossed = true
-			return false
+			return nodes[node.name] ? false : undefined
 		},
 	})
 	return crossed
 }
+
+/**
+ * [from, to] widened to whole top-level blocks (children of the document) and whole lines, until both hold: a
+ * node's decorations stay on its lines, but may sit past its block (math ending mid-line puts its widget at the line end).
+ */
+function blocksAround(state: EditorState, from: number, to: number): [number, number] {
+	const tree = syntaxTree(state), doc = state.doc
+	const top = (pos: number, side: -1 | 1) => {
+		let node = tree.resolve(pos, side)
+		while (node.parent?.parent) node = node.parent
+		return node.parent ? node : null
+	}
+	for (;;) {
+		const lo = Math.min(doc.lineAt(from).from, top(from, -1)?.from ?? from)
+		const hi = Math.max(doc.lineAt(to).to, top(to, 1)?.to ?? to)
+		if (lo === from && hi === to) return [from, to]
+		from = lo
+		to = hi
+	}
+}
+
+/**
+ * [from, to] (in the new doc) grown until both ends are block boundaries in the old tree and the new one. Past such
+ * a boundary the text is the same and the parser is back at document level, so the two parses agree there; an edit
+ * can still reshape the next block (a `$$` line turned paragraph text), which this pulls in.
+ */
+function settle(tr: Transaction, from: number, to: number): [number, number] {
+	const back = tr.changes.invertedDesc
+	for (;;) {
+		const [a, b] = blocksAround(tr.startState, back.mapPos(from, -1), back.mapPos(to, 1))
+		const [c, d] = blocksAround(tr.state, Math.min(from, tr.changes.mapPos(a, -1)), Math.max(to, tr.changes.mapPos(b, 1)))
+		if (c === from && d === to) return [from, to]
+		from = c
+		to = d
+	}
+}
+
+/** Has the parser covered the whole document? Partial trees grow later, anywhere past where they stop. */
+const complete = (state: EditorState) => syntaxTree(state).length === state.doc.length
 
 export function createProsePlugin(cfg: ProsePluginConfig): Extension {
 	const nodes: Record<string, true> = Object.fromEntries(cfg.nodes.map(n => [n, true]))
@@ -67,14 +112,51 @@ export function createProsePlugin(cfg: ProsePluginConfig): Extension {
 
 	if (cfg.block) {
 		const full = (state: EditorState) => Decoration.set(build(cfg, nodes, state, 0, state.doc.length), true)
+		/**
+		 * Rebuild only inside `regions` (positions in `state`), keeping the rest of `decos`. A region grows until it
+		 * covers everything rebuilt for it (a node reaching past it emits there), so nothing is left twice.
+		 */
+		const patch = (decos: DecorationSet, state: EditorState, regions: [number, number][]) => {
+			for (let [from, to] of regions) {
+				let add: Range<Decoration>[]
+				for (;;) {
+					add = build(cfg, nodes, state, from, to)
+					let lo = from, hi = to
+					for (const r of add) { if (r.from < lo) lo = r.from; if (r.to > hi) hi = r.to }
+					if (lo === from && hi === to) break
+					from = lo
+					to = hi
+				}
+				decos = decos.update({ filter: (f, t) => t < from || f > to, add, sort: true })
+			}
+			return decos
+		}
+		/** The blocks around each of `state`'s selection ranges (no doc change: both states share the tree). */
+		const selected = (state: EditorState, tree: EditorState) => state.selection.ranges.map(r => blocksAround(tree, r.from, r.to))
 		return StateField.define<DecorationSet>({
 			create: full,
 			update(value, tr) {
 				const dragging = tr.state.field(mouseSelectingField, false)
 				const released = tr.startState.field(mouseSelectingField, false) && !dragging
-				if (tr.docChanged || tr.reconfigured || released || facetChanged(tr) || parsed(tr)) return full(tr.state)
+				if (tr.reconfigured || released || facetChanged(tr) || (!tr.docChanged && parsed(tr))) return full(tr.state)
+				if (tr.docChanged) {
+					// Two complete parses differ only around the edit: rebuild the blocks it touched in either tree (a typed
+					// fence turns everything after it into code, so its block reaches the end), and the blocks the selection
+					// left and arrived at. A partial tree changes later past its end, so it rebuilds in full.
+					if (!complete(tr.startState) || !complete(tr.state)) return full(tr.state)
+					// ponytail: each region patches the set once, so a big batch (a merged sync, a multi-cursor edit) costs
+					// regions × decorations; past 32 one full rebuild is cheaper. Merge adjacent regions if that's ever hot.
+					let count = 0
+					tr.changes.iterChangedRanges(() => count++)
+					if (count > 32) return full(tr.state)
+					const regions: [number, number][] = []
+					tr.changes.iterChangedRanges((_fromA, _toA, fromB, toB) => regions.push(settle(tr, fromB, toB)))
+					for (const r of tr.startState.selection.ranges) regions.push(settle(tr, tr.changes.mapPos(r.from, -1), tr.changes.mapPos(r.to, 1)))
+					for (const r of tr.state.selection.ranges) regions.push(settle(tr, r.from, r.to))
+					return patch(value.map(tr.changes), tr.state, regions)
+				}
 				if (dragging) return value
-				if (tr.selection && crossedNode(nodes, tr)) return full(tr.state)
+				if (tr.selection && crossedNode(nodes, tr)) return patch(value, tr.state, [...selected(tr.startState, tr.state), ...selected(tr.state, tr.state)])
 				return value
 			},
 			provide: f => EditorView.decorations.from(f),

@@ -81,7 +81,9 @@ export interface InternalLinkClickDetail {
 	referenceId?: string;
 }
 
+/** `external-link-click`: the editor never follows links itself. */
 export interface ExternalLinkClickDetail {
+    /** As written in the note, any scheme (`javascript:` too): check it before opening. */
     url: string;
     text: string | null;
 }

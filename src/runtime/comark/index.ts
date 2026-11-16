@@ -2,6 +2,7 @@
 // (same rules as its Lezer parsers, `test/comark-parity.test.ts` holds that), into nodes hosts map to their components.
 import { defineComarkPlugin, type MarkdownExitPlugin } from 'comark'
 import { calloutRegex } from '../editor/lezer-parsers/lezerCalloutParser'
+import { inlineCommentEnd } from '../editor/lezer-parsers/lezerCommentParser'
 
 // Comark parses with markdown-exit; its `MarkdownItPlugin` type names `markdown-it`, which isn't installed with it.
 type MarkdownIt = Parameters<MarkdownExitPlugin>[0]
@@ -27,16 +28,18 @@ const BLOCK_ID = /\s\^([\w-]+)$/
 /** A task item's marker: any one character in brackets, then whitespace (`lezerTaskListParser`). */
 const TASK = /^\[(.)\][ \t]+/u
 
+type RuleOptions = { alt?: string[] }
+
 /** Registers `fn` before the first of `anchors` the ruler has, else at the end (comark's own rules may be absent). */
-function insert<F>(ruler: { before(anchor: string, name: string, fn: F): void, push(name: string, fn: F): void }, anchors: string[], name: string, fn: F) {
+function insert<F>(ruler: { before(anchor: string, name: string, fn: F, options?: RuleOptions): void, push(name: string, fn: F, options?: RuleOptions): void }, anchors: string[], name: string, fn: F, options?: RuleOptions) {
     for (const anchor of anchors) {
         try {
-            ruler.before(anchor, name, fn)
+            ruler.before(anchor, name, fn, options)
             return
         }
         catch { /* not registered */ }
     }
-    ruler.push(name, fn)
+    ruler.push(name, fn, options)
 }
 
 const attrs = (record: Record<string, string | undefined>): [string, string][] =>
@@ -109,11 +112,12 @@ const hashtag: InlineRule = (state, silent) => {
     return true
 }
 
-/** `%%comment%%` on one line: dropped, as Obsidian's reading view does. */
+/** `%%comment%%` on one line, to the first unescaped `%%`: dropped, as Obsidian's reading view does. */
 const inlineComment: InlineRule = (state) => {
-    const m = /^%%[^\n]*[^\n\\]%%/.exec(state.src.slice(state.pos, state.posMax))
-    if (!m) return false
-    state.pos += m[0].length
+    if (state.src.charCodeAt(state.pos) !== 0x25 || state.src.charCodeAt(state.pos + 1) !== 0x25) return false
+    const end = inlineCommentEnd(state, state.src, state.pos, state.posMax)
+    if (end < 0) return false
+    state.pos = end
     return true
 }
 
@@ -231,7 +235,9 @@ export const ofm = defineComarkPlugin((options: OfmOptions = {}) => ({
         insert(md.inline.ruler, ['emphasis'], 'ofm_highlight', highlight)
         insert(md.inline.ruler, ['emphasis'], 'ofm_hashtag', hashtag)
         insert(md.inline.ruler, ['emphasis'], 'ofm_comment', inlineComment)
-        insert(md.block.ruler, ['paragraph'], 'ofm_comment', blockComment)
+        // First, and ending paragraphs (as `%%` lines do in the editor): otherwise every comment line first ran the
+        // setext-heading rule, which scans to the next paragraph end, and runs of comment blocks took quadratic time.
+        insert(md.block.ruler, ['table', 'code', 'paragraph'], 'ofm_comment', blockComment, { alt: ['paragraph', 'reference', 'blockquote', 'list'] })
         insert(md.core.ruler, ['task-lists-mdc', 'inline'], 'ofm_blocks', blocks)
         md.core.ruler.after('inline', 'ofm_checkboxes', checkboxes)
     }],

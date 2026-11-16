@@ -343,6 +343,11 @@ const doc = await parseMarkdown(note, {
 
 Map the new tags to your components (`<Markdown :components="{ wikilink: NoteLink, 'internal-embed': NoteEmbed, callout: Callout }">` in `@comark/vue`). Unmapped ones render as elements of that name. Math and footnotes are comark's own plugins (`math()`, `footnotes()`). One difference from Obsidian is comark's own: `[text]` alone is a span (rendered without the brackets) rather than literal text.
 
+**Notes from other people** (shared vaults, collaborators, published pages):
+- comark rejects a note whose frontmatter isn't valid YAML (`YAMLException`); catch it and render the note without its frontmatter, or show it as text. The editor shows such frontmatter as source.
+- Rendering math with KaTeX: its `maxExpand` limits expansions, not their size, so a few `\def` lines can expand to millions of glyphs and crash the tab. The editor maps the definers (`\def`, `\gdef`, `\edef`, `\xdef`, `\let`, `\futurelet`, `\newcommand`, `\renewcommand`, `\providecommand`, `\DeclareMathOperator`) to plain text through KaTeX's `macros` option; do the same in your math component.
+- Links keep whatever URL the note has; comark's renderer drops `javascript:` and similar schemes. The editor never follows a link itself: `external-link-click` hands you the raw URL, so check its scheme before opening it.
+
 ## Extensions
 
 Extensions are plain CodeMirror `Extension`s passed through the `extensions` prop. The prop is reactive: change the array and the editor reconfigures in place. `[]` is an empty extension, so toggling one off is a ternary:
@@ -651,9 +656,13 @@ What extensions can build on, beyond the exports listed above. All of it may sti
 ## Known Issues
 - `[text]` without a link target is styled as a link, unlike in Obsidian.
 - Tables are widget-only: the markdown source is never shown. Each cell renders like the note (links, tags, math). Click a cell to edit it with live preview; every keystroke is written into that cell's text in the source, and the table is not re-padded. Keys follow Obsidian: Tab/Shift-Tab and Enter move between cells (adding a row at the end), ↑/↓/←/→ cross cell edges and leave the table, and Escape returns to the note. Right-click for a Nuxt UI context menu with insert/delete row & column, alignment and clear cell; drag the `⋮⋮` handles to reorder rows/columns. Malformed tables (bad delimiter row) fall back to plain text so they can be repaired.
+- Math can't define macros: `\def`, `\newcommand` and the other definers render as red text. In KaTeX a few defining lines can expand to millions of glyphs and crash the tab, and a note's math may come from anyone it's shared with. Obsidian (MathJax) allows them.
+- Typing costs about 1 ms a keystroke in a 1,000-line note, 10 ms at 10,000 lines and 30 ms at 50,000 (measured in Chrome on an M-series Mac).
+- About 100 KB of `==`, `[](` or `a**` in a single paragraph makes each keystroke take seconds: Lezer matches those delimiters in quadratic time. Ordinary notes never get close.
+- Deleting a blank first line above `---` frontmatter leaves it drawn as rules until that block is edited again or the note reopens (Lezer reuses the old parse there).
 
 ### Resolved
-- ~~Rendered block replacement recomputes all regions on every operation.~~ Every prose plugin now goes through `createProsePlugin`: inline decorations are viewport-scoped and patch only changed lines; block decorations rebuild only when the selection actually crosses one of the plugin's nodes.
+- ~~Rendered block replacement recomputes all regions on every operation.~~ Every prose plugin now goes through `createProsePlugin`: inline decorations are viewport-scoped and patch only changed lines; block decorations (callouts, tables, embeds, math and code blocks) rebuild only the blocks an edit or selection change touches.
 - ~~Marks reveal on `mousedown`; Obsidian reveals on `mouseup`.~~ Decoration rebuilds are suspended while drag-selecting and run once on release.
 - ~~Nested callouts can lose data / render as a plain quote.~~ Callout bodies render with the editor itself, so nested callouts render as callouts, and clicking reveals the whole source.
 - ~~Tables don't render.~~ See above.

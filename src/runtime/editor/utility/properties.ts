@@ -56,7 +56,15 @@ export function propertiesYaml(frontmatter: string): string | null {
     const lines = frontmatter.split('\n')
     const yaml = lines.slice(1, -1).map(l => `${l}\n`).join('')
     const doc = parseDocument(yaml)
-    return doc.errors.length || !(doc.contents === null || isMap(doc.contents)) ? null : yaml
+    if (doc.errors.length || !(doc.contents === null || isMap(doc.contents))) return null
+    // The panel shows `toJS()`; it throws past yaml's alias limit (an alias bomb), so such frontmatter stays source.
+    try {
+        doc.toJS()
+    }
+    catch {
+        return null
+    }
+    return yaml
 }
 
 /** Frontmatter text for `yaml` (as returned by `editProperties`). */

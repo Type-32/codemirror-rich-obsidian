@@ -20,6 +20,21 @@ Nothing else in `<Editor>`'s props, events or `/kit` and `/ext` names changed.
 - **`InternalLink.embedComponent` and `SpecialCodeBlockMapping.component` are typed `unknown`**, so the types don't depend on Vue; pass a Vue component as before. `SpecialCodeBlockMapping.component` is optional now (or give `mount`).
 - **`katex` and `vue-codemirror6` are required peer dependencies**, installed for you. `katex` was optional in 0.4, so npm and pnpm never installed it, though the stylesheet imports KaTeX's. `@nuxt/ui`, `tailwindcss` and `vue` became optional, so a CodeMirror-only app doesn't get Nuxt UI. Nuxt and Vue apps install it themselves.
 - **`WysiwygPlugin['lezer']` is `MarkdownOptions`** (`extensions`, `codeLanguages`) instead of any object.
+- **Math can't define macros.** `\def`, `\newcommand` and the other definers render as red text: a few defining lines could expand to millions of glyphs and crash the tab, for every peer. Macros never carried over between formulas anyway.
+- **Comments end at the first `%%`.** `%%a%% shown %%b%%` shows `shown`; it used to hide the whole line. A comment followed by text on its line is an inline comment in that paragraph, as in the comark plugin.
+
+## Fixes from stress and fuzz testing
+
+Notes of 1,000 to 100,000 lines, pathological input (floods of delimiters, deep nesting, a 5 MB line, huge tables and frontmatter), 24,000 random notes run through the editor and its commands, and a security review of what a shared note can do.
+
+- **Hangs:** two comments on one line (`%%todo%% %%later%%`) froze the editor until the tab ran out of memory, and so did a `-` or `*` right before a block's closing `$$`/`%%` with text after it (`$$\n-$$ x`). `Comment` is now the editor's own parser instead of `lezer-markdown-obsidian`'s.
+- **Crash:** a link with no text yet (`[](https://…)`) threw on every update.
+- **`external-link-click` never fired.** External links are now handled like internal ones, and the editor never follows a link itself, read-only editors (callouts, table cells, `disabled`) included. `detail.url` is the note's own text: check its scheme before opening.
+- **Typing in long notes:** callouts, tables, embeds, math and code blocks used to rebuild over the whole note on every keystroke; they now rebuild only the blocks an edit touches. In Chrome, at 50,000 lines: 109 → 29 ms a keystroke; at 10,000: 17 → 10 ms. A test checks these updates against a full render after random edits and caret moves.
+- **Math inside a callout or table** now re-renders when the caret enters or leaves that callout or table, not only the formula itself.
+- **Quadratic scans:** escaped comments (`\%%` repeated, 2.8 s → 14 ms on 160 KB) in the editor and the comark plugin, runs of comment blocks in the comark plugin (37 s → 7 ms on 150 KB; a `%%` line now ends a paragraph there too, as in the editor), and link completion in a property value.
+- **Frontmatter with a YAML alias bomb** stays source instead of a blank properties panel.
+- KaTeX output is cached for at most 500 formulas, and `maxSize` keeps `\rule` from covering the page.
 
 ## Entries
 

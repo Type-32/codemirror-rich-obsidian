@@ -44,3 +44,10 @@ Paragraph with a block id ^para-1
   > body with ==mark==
 
 > Quote with [[Quoted link]] and #quotedtag
+
+%%one%% [[Between comments]] %%two%%
+
+A paragraph line
+%%
+[[Hidden in a comment]]
+%%

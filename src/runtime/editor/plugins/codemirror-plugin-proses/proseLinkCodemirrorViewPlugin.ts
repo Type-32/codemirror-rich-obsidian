@@ -45,7 +45,8 @@ export const proseLinkPlugin = createProsePlugin({
             const marks = n.getChildren('LinkMark')
             const open = marks.find(m => state.doc.sliceString(m.from, m.to) === '[')
             const close = marks.find(m => state.doc.sliceString(m.from, m.to) === ']')
-            if (!url || !open || !close) return false
+            // `[](url)` (text not typed yet) stays source: an empty mark would throw, and hiding it would leave nothing.
+            if (!url || !open || !close || open.to === close.from) return false
             const href = state.doc.sliceString(url.from, url.to)
             out.push(hidden.range(node.from, open.to))
             out.push(Decoration.mark({

@@ -2,7 +2,8 @@
 
 import { Strikethrough, Table } from '@lezer/markdown'
 import {lezerHashtagParser} from './lezerHashtagParser';
-import {Mark, Comment, Footnote} from "lezer-markdown-obsidian";
+import {Mark, Footnote} from "lezer-markdown-obsidian";
+import { lezerCommentParser } from './lezerCommentParser'
 import {lezerYamlFrontmatterParser} from "./lezerYamlFrontmatterParser";
 import {lezerInternalLinkParser} from "./lezerInternalLinkParser";
 import {lezerLatexParser} from "./lezerLatexParser";
@@ -10,7 +11,7 @@ import { lezerCalloutParser } from './lezerCalloutParser'
 import { lezerTaskListParser } from './lezerTaskListParser'
 
 export const CustomOFM = [ // the array here must remain implicit because the version of @lezer/markdown that lezer-markdown-obsidian uses is different than the one this project is using.
-    Comment,
+    lezerCommentParser,
     Footnote,
     lezerHashtagParser,
     lezerInternalLinkParser,

@@ -69,6 +69,12 @@ describe('frontmatter', () => {
         expect(propertiesYaml('---\n- a list\n---')).toBeNull()
         expect(propertiesYaml('---\na: [\n---')).toBeNull()
     })
+
+    it('stays source when the panel could not show it (an alias bomb past yaml’s limit)', () => {
+        const bomb = 'a: &a [x,x,x,x,x,x,x,x,x,x]\nb: &b [*a,*a,*a,*a,*a,*a,*a,*a,*a,*a]\nc: [*b,*b,*b,*b,*b,*b,*b,*b,*b,*b]\n'
+        expect(propertiesYaml(`---\n${bomb}---`)).toBeNull()
+        expect(propertiesYaml('---\na: &x 1\nb: *x\n---')).toBe('a: &x 1\nb: *x\n')
+    })
 })
 
 describe('the panel', () => {

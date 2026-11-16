@@ -81,7 +81,8 @@ export function wikilink(value: unknown): { target: string, text: string } | nul
  * completes `text` to.
  */
 export function linkCompletions(text: string, suggest: PropertiesApi['linkSuggestions']): { suggestion: LinkSuggestion, value: string }[] | null {
-    const open = /!?\[\[([^\]|]*)$/.exec(text)
+    // `[` excluded, as in the note (`linkSuggestPlugin`'s `OPEN`): it also keeps the scan linear on a run of `[`.
+    const open = /!?\[\[([^[\]|]*)$/.exec(text)
     if (!open) return null
     const head = text.slice(0, open.index + open[0].length - open[1]!.length)
     return suggest(open[1]!).map(suggestion => ({ suggestion, value: `${head}${suggestion.insert}]]` }))

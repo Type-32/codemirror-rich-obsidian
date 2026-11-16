@@ -107,7 +107,7 @@ const handleInternalLinkClick = (detail: InternalLinkClickDetail) => {
 };
 
 const handleExternalLinkClick = (detail: ExternalLinkClickDetail) => {
-    if (detail.url) {
+    if (/^(https?|mailto):/i.test(detail.url)) {
         window.open(detail.url, '_blank');
     }
 };
