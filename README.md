@@ -45,6 +45,7 @@ The package has an entry for each kind of app:
 | Nuxt | `…/nuxt` (the module) | `@nuxt/ui` |
 | Vue (Vite) | `…/vue` | Vue and Nuxt UI, [set up for Vue](https://ui.nuxt.com/docs/getting-started/installation/vue) |
 | Any CodeMirror 6 editor | the package root | CodeMirror and Lezer (peers), `katex` for math |
+| Rendering notes (reading view, publish, chat) | `…/comark` | [comark](https://comark.dev) |
 
 The root is the framework-free core (the live preview, its facets, commands, link search, the frontmatter and table helpers, and every type), and the Vue and Nuxt entries are built on it.
 
@@ -307,6 +308,43 @@ const doc = ref(ytext.toString())
 - **Properties, tables and `v-model` write only what changed.** A property edited on one peer and another property on the other merge into one frontmatter. A column added while someone types in a cell keeps the table and the text: the new column's padding goes after the cell's spaces, not against its text. Prefer writing the `Y.Text` over `v-model`, but writing `v-model` doesn't move what others typed.
 - **Pass stable arrays** for `internal-link-map`, `special-code-block-map` and `extensions`, not literals in the template. A new array reconfigures the editor, and the reconfigure redraws tables, so a cell being typed in loses focus. This applies without collaboration too.
 - **Not yet:** a remote cursor in the frontmatter is drawn at the start of the first body line, and cursors inside tables and callouts aren't drawn.
+
+## Rendering notes with comark
+
+For reading views, published pages and chat messages, `/comark` is a [comark](https://comark.dev) plugin that parses Obsidian's syntax with the editor's rules. A test runs the same notes through both parsers and checks they find the same links, embeds, tags, highlights, callouts and tasks.
+
+```shell
+bun add comark
+```
+
+```ts
+import { parseMarkdown } from 'comark'
+import math from 'comark/plugins/math'
+import { ofm } from '@type32/codemirror-rich-obsidian-editor/comark'
+
+const doc = await parseMarkdown(note, {
+	plugins: [math(), ofm({
+		// Extra attributes for each link and embed, e.g. from your `InternalLink`s.
+		resolveLink: target => {
+			const link = links.find(l => l.name === target || l.filePath === target)
+			return link && { href: `/notes/${link.referenceId}`, referenceId: link.referenceId }
+		},
+	})],
+})
+```
+
+| Markdown | Node |
+|---|---|
+| `[[Note#Heading\|Alias]]` | `['wikilink', { target, subpath?, display?, ...resolveLink }, text]` |
+| `![[Picture.png\|300]]` | `['internal-embed', { target, subpath?, display?, ...resolveLink }]` |
+| `==text==` | `['mark', {}, ...]` |
+| `#tag/sub` | `['hashtag', { tag: 'tag/sub' }, '#tag/sub']` |
+| `> [!tip]- Title` | `['callout', { type, metadata?, fold? }, ['callout-title', {}, ...], ['callout-content', {}, ...]]` (no title: the type, capitalised) |
+| `- [/] task` | `['li', { class: 'task-list-item', 'data-task': '/' }, ['input', { type: 'checkbox', ... }], ...]`, any status |
+| `text ^block-id` | `blockId: 'block-id'` on the paragraph or list item |
+| `%%comment%%` | nothing |
+
+Map the new tags to your components (`<Markdown :components="{ wikilink: NoteLink, 'internal-embed': NoteEmbed, callout: Callout }">` in `@comark/vue`). Unmapped ones render as elements of that name. Math and footnotes are comark's own plugins (`math()`, `footnotes()`). One difference from Obsidian is comark's own: `[text]` alone is a span (rendered without the brackets) rather than literal text.
 
 ## Extensions
 
@@ -608,7 +646,7 @@ What extensions can build on, beyond the exports listed above. All of it may sti
   - `TexBlock`, `TexInline` (`TexMarker`)
   - `Task` (`TaskMarker`)
   - `YAMLFrontMatter` (`YAMLMarker`, `YAMLContent`)
-  - `Mark` (highlight), `CommentBlock`, `CommentInline`, `Footnote`, `FootnoteReference`
+  - `Mark` (`MarkMarker`; highlight), `Comment` (`CommentMarker`), `Footnote` (`FootnoteLabel`, `FootnoteMark`), `FootnoteReference`
 - **Facets:** `internalLinkMapFacet`, `specialCodeBlockMapFacet`, `editorLabels`, `customBracketClosingConfig`, `contextMenuSize`, `listRenumbering`, `bodyLineAfter`, `nestedExtensions`, `tableRenderer`, `propertiesRenderer`, `componentMounter`, `searchOptionsFacet`; `/ext`'s `toolbarItems` and `slashItems`.
 - **State fields:** `headingsField`, `linkQueryField`, `mouseSelectingField`.
 - **CSS classes:** the rendered constructs (`.cm-callout-widget` with Obsidian's `.callout`, `.callout-title`, `.callout-content`; `.cm-table-widget`; `.cm-properties`, `.cm-property`; `.cm-embed-widget`, `.cm-image-embed`; `.cm-codeblock`; `.cm-task-line`; `.cm-link`, `.cm-clickable-link`; `.cm-math`), the menus (`.cm-menu`, `.cm-link-suggest*`, `.cm-action-list*`), and the CSS variables in this README. The rest of `editor.css` is internal.

@@ -92,6 +92,7 @@ export default defineNuxtModule<ModuleOptions>({
 		_nuxt.options.alias[`${pkg}/kit`] = resolver.resolve('./runtime/kit')
 		_nuxt.options.alias[`${pkg}/ext`] = resolver.resolve('./runtime/ext')
 		_nuxt.options.alias[`${pkg}/vue`] = resolver.resolve('./runtime/vue')
+		_nuxt.options.alias[`${pkg}/comark`] = resolver.resolve('./runtime/comark')
 		_nuxt.options.alias[pkg] = resolver.resolve('./runtime/index')
 
 		// Server side of the AI assistant: private config, the default route, and `useEditorAiModel()`.

@@ -30,4 +30,8 @@ describe('the core entry', () => {
         expect(seen.size).toBeGreaterThan(30)
         expect(framework).toEqual([])
     })
+
+    it('nor does the comark plugin (`/comark`)', () => {
+        expect(walk(resolve(__dirname, '../src/runtime/comark/index.ts')).framework).toEqual([])
+    })
 })

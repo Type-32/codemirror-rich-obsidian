@@ -1,6 +1,6 @@
 # 0.5 refactor plan — `@type32/codemirror-rich-obsidian-editor`
 
-Status: Phases 1–4 done (collab spike, boundaries, collab-ready editor, host Markdown syntax). Next: Phase 5 (comark). User-facing changes are tracked in `WHATS-NEW-0.5.md`.
+Status: Phases 1–5 done (collab spike, boundaries, collab-ready editor, host Markdown syntax, comark plugin). Next: Phase 6 (docs and release). User-facing changes are tracked in `WHATS-NEW-0.5.md`.
 
 Already done in 0.4 for Vertex: `alfaaz` removed from `build.transpile` in `module.ts` (CommonJS, was kept out of pre-bundling). Vertex can delete its `nuxt.config.ts` hook when it upgrades.
 
@@ -146,6 +146,14 @@ Driven by the spike (findings F1–F8 below):
 - Output nodes carry props (`target`, `heading`, `alias`, `calloutType`, …) so hosts map them to components. Option `resolveLink(target)` fed by `InternalLink[]`.
 - **Parity guard**: shared fixtures in `test/fixtures/ofm/`; one test asserts the Lezer tree and the comark tree find the same constructs in each.
 - Independent of Phases 3–4; can run alongside once Phase 2.2 exposes the core entry.
+
+**Phase 5 done (2026-11-15).**
+- **Baseline (comark 0.9.2, defaults + `math()` + `footnotes()`):** frontmatter, footnotes, math and `[ ]`/`[x]` tasks work. `[[x]]` → nested spans (comark's `[text]` span syntax), `![[x]]` → `!` + spans, `==x==`/`%%x%%`/`#tag`/`^id` → plain text (comments visible), callouts: only GitHub's 5 types via `alert`, fold marker and title merged into the body, `[/]` not a task.
+- **Plugin** (`src/runtime/comark/index.ts`, `ofm(options)`, name `ofm`): comark turns tokens into nodes by token type and drops unknown types, so inline constructs emit `mdc_inline_span_open/close` (tag `wikilink`, `mark`, `hashtag`) or `mdc_inline_component` (`internal-embed`, not `embed`, an HTML element); callouts rewrite `blockquote_open/close` to `mdc_block_open/close` (tag `callout`) with `mdc_block_slot_open` `callout-title`/`callout-content`, before inline parsing, so comark's `alert` never sees them; task items of every status are handled before comark's `task-lists-mdc` rule, emitting the same checkbox token plus `data-task`. Rules are placed before comark's span rule (`comark_inline_span`) with fallbacks when a rule is absent. Parsing rules mirror the Lezer ones (wikilink bounds, `hashtagRE`, comment regexes, `calloutRegex` imported from core, `noteTargets`' block id).
+- **Node names differ from the plan's props:** `target`/`subpath`/`display` (the `InternalLinkClickDetail` vocabulary) rather than `heading`/`alias`; `callout` has `type` (lower-cased, as `data-callout`), `metadata`, `fold`. `resolveLink(target) → attrs` instead of taking `InternalLink[]` (one line for hosts; any attribute they need).
+- **Types:** comark's `MarkdownItPlugin` names `markdown-it` (not installed with it, so `unknown`); typed through `MarkdownExitPlugin`.
+- **Parity:** `test/comark-parity.test.ts` over `test/fixtures/ofm/` (vault notes `Callouts`, `Lab`, `MathCallout`, `Tables`, plus `Syntax.md` for embeds, block comments, every task status, block ids, tag edge cases). Lezer side parses callout titles apart, as nested editors do. Found during it: none on the editor side; on comark's, `[text]` alone is a span (comark's syntax, documented).
+- **Packaging:** `/comark` export, `comark` optional peer (`^0.9.0`), Nuxt alias, the boundary test covers `/comark` too. Rendered through `comark/render/html` from the built `dist`; component mapping replaces a tag.
 
 ## Phase 6 — Docs and release
 

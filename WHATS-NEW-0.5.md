@@ -19,6 +19,7 @@
 | `@type32/codemirror-rich-obsidian-editor` | any CodeMirror 6 editor | `wysiwyg()`, its facets, commands and queries, link search, `[[` completion state, renderer facets, `nestedExtensions`, frontmatter and table helpers, every type |
 | `…/vue` | Vue + Nuxt UI | `Editor`, `CodeEditor`, `ImageEmbedComponent`, `vueRenderers()`, `mountVueComponent` |
 | `…/nuxt` | Nuxt | the module |
+| `…/comark` | comark | the OFM parser plugin (`comark` is an optional peer) |
 | `…/kit`, `…/ext`, `…/ext/ai` | unchanged | |
 | `…/editor.css` | hosts without Tailwind | precompiled stylesheet |
 | `…/tailwind.css` | Vue hosts with Tailwind and Nuxt UI | the source stylesheet (Nuxt adds it itself) |
@@ -74,3 +75,10 @@ Checked with y-codemirror.next on two peers, offline edits included (the playgro
   - `v-model`: a value set by the host replaced the whole document, moving the cursor and a collaborator's concurrent edit. Now only the difference is written, and the cursor stays.
   - `textChanges(a, b)` (root) is the helper they use.
 - **Not yet:** remote cursors in the frontmatter are drawn at the first body line; inside tables and callouts they aren't drawn.
+
+## Rendering notes with comark (`/comark`)
+
+- **`ofm(options?)`**, a comark plugin parsing Obsidian's syntax with the editor's rules: `[[wikilinks]]` → `wikilink`, `![[embeds]]` → `internal-embed`, `==highlights==` → `mark`, `#tags` → `hashtag`, callouts → `callout` with `callout-title` and `callout-content` (every type, aliases, `+`/`-` fold, `|metadata`, nesting), every task status (`data-task`), block ids (`blockId`), and comments dropped.
+- **Stock comark gets all of these wrong**: `[[x]]` comes out as nested spans, comments show, only GitHub's 5 alert types are callouts (and a fold marker joins the body text), and `[/]` isn't a task.
+- **`resolveLink(target)`** adds attributes (an `href`, a `referenceId`) to links and embeds.
+- **A parity test** runs the same notes through the editor's parser and comark with this plugin, and checks they find the same links, embeds, tags, highlights, callouts and tasks: callout edge cases (aliases, folds, metadata, nesting, lazy continuation, code and tables inside), tasks of every status, and comments.
