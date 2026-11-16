@@ -23,14 +23,15 @@ export const readOnly: Extension = [EditorState.readOnly.of(true), EditorView.ed
 export const nestedExtensions = Facet.define<Extension, readonly Extension[]>()
 
 /**
- * What a nested editor takes from its parent (mappings, labels, bracket closing, `nestedExtensions`, and whether the
- * parent is editable). Widgets holding nested editors keep this and compare it in `eq`, so a change re-renders them
- * instead of leaving their nested editors on the old values.
+ * What a nested editor takes from its parent (mappings, labels, bracket closing, `nestedExtensions`, the live preview's
+ * own config such as host Markdown syntax, and whether the parent is editable). Widgets holding nested editors keep this
+ * and compare it in `eq`, so a change re-renders them instead of leaving their nested editors on the old values.
  */
 export function nestedInputs(state: EditorState): readonly unknown[] {
     return [
         state.facet(internalLinkMapFacet), state.facet(specialCodeBlockMapFacet), state.facet(editorLabels),
         state.facet(customBracketClosingConfig), state.facet(EditorView.editable), state.facet(nestedExtensions),
+        state.facet(nestedEditorContent),
     ]
 }
 

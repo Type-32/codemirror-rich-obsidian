@@ -18,6 +18,7 @@ import type {
     SpecialCodeBlockMapping,
     InternalLinkClickDetail,
     ExternalLinkClickDetail,
+    MarkdownOptions,
     PropertiesOptions,
     SearchOptions
 } from '../editor/types/editor-types'
@@ -44,6 +45,11 @@ const props = withDefaults(defineProps<{
      * collaboration binding's undo manager, so each peer undoes only its own edits. Read when the editor mounts.
      */
     history?: boolean
+    /**
+     * Markdown syntax added to the editor's (Lezer `MarkdownConfig`s) and the fenced-code languages. Callouts and table
+     * cells parse the same. Changing it reparses the note; pass the same object between renders.
+     */
+    markdown?: MarkdownOptions
 }>(), { properties: () => ({}), bracketClosing: true, foldGutter: true, history: true })
 const emit = defineEmits<{
     'internal-link-click': [detail: InternalLinkClickDetail]
@@ -59,6 +65,7 @@ const searchCompartment = new Compartment()
 const extensionsCompartment = new Compartment()
 const propertiesCompartment = new Compartment()
 const contextMenuSizeCompartment = new Compartment()
+const markdownCompartment = new Compartment()
 const propertiesExtension = (p: PropertiesOptions | false | undefined) => (p === false ? [] : propertiesPanel(p))
 const editorElement = ref<HTMLElement>()
 const instance = getCurrentInstance()
@@ -90,7 +97,7 @@ onMounted(() => {
         editorKeywordSearchPlugin,
         vueRenderers(vueContext),
         searchCompartment.of(searchOptionsFacet.of(props.searchOptions || { query: '' })),
-        wysiwyg(),
+        markdownCompartment.of(wysiwyg({ lezer: props.markdown })),
         EditorView.editable.of(!props.disabled),
         extensionsCompartment.of(props.extensions ?? []),
         propertiesCompartment.of(propertiesExtension(props.properties)),
@@ -126,6 +133,7 @@ watch(() => props.searchOptions, o => reconfigure(searchCompartment.reconfigure(
 watch(() => props.extensions, e => reconfigure(extensionsCompartment.reconfigure(e ?? [])))
 watch(() => props.properties, p => reconfigure(propertiesCompartment.reconfigure(propertiesExtension(p))))
 watch(() => props.contextMenuSize, s => reconfigure(contextMenuSizeCompartment.reconfigure(contextMenuSize.of(s))))
+watch(() => props.markdown, m => reconfigure(markdownCompartment.reconfigure(wysiwyg({ lezer: m }))))
 
 /** The host set `v-model` to something the editor doesn't show: write what changed. Not while composing (IME). */
 function syncFromModel() {

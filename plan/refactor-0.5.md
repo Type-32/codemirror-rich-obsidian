@@ -1,6 +1,6 @@
 # 0.5 refactor plan — `@type32/codemirror-rich-obsidian-editor`
 
-Status: Phases 1 (collab spike), 2 (boundaries) and 3 (collab-ready editor) done. Next: Phase 4. User-facing changes are tracked in `WHATS-NEW-0.5.md`.
+Status: Phases 1–4 done (collab spike, boundaries, collab-ready editor, host Markdown syntax). Next: Phase 5 (comark). User-facing changes are tracked in `WHATS-NEW-0.5.md`.
 
 Already done in 0.4 for Vertex: `alfaaz` removed from `build.transpile` in `module.ts` (CommonJS, was kept out of pre-bundling). Vertex can delete its `nuxt.config.ts` hook when it upgrades.
 
@@ -120,7 +120,7 @@ Driven by the spike (findings F1–F8 below):
 - **F3:** `listRenumbering` takes `boolean | (tr) => boolean`. User edits it accepts renumber in the same transaction (as before); other accepted changes (no user event) get a separate transaction from `renumberAfterOthers`, since y-codemirror.next skips updates whose first transaction is remote. Only one peer may renumber at all, not just "repair": two peers fixing their own edits is what made `4.4.`.
 - **F8:** `bodyLineAfter` facet (`(tr) => boolean`, default all). Focus still always adds the line, so two peers opening a frontmatter-only note offline at once still get two lines (accepted: an extra blank line).
 - **F4:** `history` prop, read at mount. Table cells forward Mod-z/Mod-y to the note's keymap (`runScopeHandlers`), so they reach a collaboration undo manager.
-- **F2 residue:** structural table edits re-pad every cell; padding inserted where a peer is typing in a cell merges as `d  B`. Table and text survive; avoiding it means not re-padding on structural edits (a formatting change, not made).
+- **F2 residue (fixed in Phase 4):** structural table edits re-pad every cell, and the padding was inserted right after a cell's text, where a peer typing at its end collides; which cell their text ended up in depended on the peers' Yjs client ids. `textChanges` now slides pure insertions right over text they start with (diff normalisation), so padding goes after the cell's spaces. `test/collab.test.ts` runs F2 with both client-id orders.
 - **Found:** an inline array literal for `internal-link-map` reconfigures the editor on each parent render, which rebuilds tables and drops a cell's focus while typing (pre-existing, also without collaboration). Documented in the README; not guarded (deep comparison of link maps per render).
 - **Checks:** `test/collab.test.ts` (two `Y.Doc`s: F1, F2, F3, F6), and the `/collab` page by real typing and clicks: lists offline and connected, a property edited through the panel on each peer, a column added from the table menu while the other types in a cell, undo/redo including from inside a cell, a host `v-model` write during an offline edit.
 
@@ -131,6 +131,13 @@ Driven by the spike (findings F1–F8 below):
 - README: list the surface plugins may depend on (tree node names, facets, fields, CSS classes), marked unstable until 1.0.
 - **[V1] Nested editors take host extensions.** Today `nestedEditor()` copies the link map, code-block map, labels, Vue context, bracket closing and tab size, and nothing from the `extensions` prop. Add a `nestedExtensions` facet in core: whatever a host or plugin provides through it is also installed in callouts and table cells, and re-provided so callouts inside callouts get it too. Opt-in, not "all extensions": the slash menu, the AI panel, overlays and a collab binding must not be instantiated per cell. The facet's value joins `nestedInputs`, so widgets re-render when it changes.
 - **Check**: test that adds an inline syntax and a decoration through `extensions` and sees both, and that a decoration provided through `nestedExtensions` shows inside a callout, a table cell, a callout inside a callout, and a table inside a callout.
+
+**Phase 4 done (2026-11-15).**
+- `<Editor :markdown>` (`MarkdownOptions = { extensions?: MarkdownExtension[], codeLanguages? }`, replacing `WysiwygPlugin['lezer']`'s `any`) goes into `wysiwyg()` through a compartment. `nestedEditorContent` (the closure carrying the config) joined `nestedInputs`, so callouts and tables redraw when the syntax changes.
+- Code-block labels read `codeLanguagesFacet` (provided by `wysiwyg()`); `codeBlockLabel(info, codeLanguages?)` handles both a list and a function.
+- `parseMarkdownToAST(text, options?)` caches a parser per options object. `useEditorUtils().getDocAst()` now uses the view's own language parser (it used the default config, missing host syntax).
+- **Checks:** `test/host-syntax.test.ts` (the live preview's parser, its nested-editor content, and `parseMarkdownToAST` all see a `{{var}}` syntax), label tests with custom languages. In the playground, `{{variables}}` syntax + a `nestedExtensions` decoration rendered in the note, a heading, a table cell, a callout title and body, a callout in a callout and a table in a callout; toggling the `markdown` prop reparses (0 vs 6 `Variable` nodes via `getDocAst`); a `dataview` fence mapped to SQL is labelled "Dataview" and highlighted.
+- README: "Your own Markdown syntax" and "Plugin surface" (node names, facets, fields, CSS classes; unstable until 1.0).
 
 ## Phase 5 — comark plugin (`/comark`)
 

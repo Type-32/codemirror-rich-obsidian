@@ -10,6 +10,7 @@
 - **Image embeds (`![alt](src)`, bare image URLs) are plain DOM**, `.cm-image-embed > img` and its caption `div`, styled by `editor.css` as before. They used to mount `ImageEmbedComponent`, which is still exported for your own `embedComponent`s.
 - **`InternalLink.embedComponent` and `SpecialCodeBlockMapping.component` are typed `unknown`**, so the types don't depend on Vue; pass a Vue component as before. `SpecialCodeBlockMapping.component` is optional now (or give `mount`).
 - **`@nuxt/kit` is an optional peer dependency** instead of a dependency; Nuxt apps have it. `@nuxt/ui`, `tailwindcss`, `vue` and `vue-codemirror6` are optional peers too: a CodeMirror-only app needs none of them.
+- **`WysiwygPlugin['lezer']` is `MarkdownOptions`** (`extensions`, `codeLanguages`) instead of any object.
 
 ## Entries
 
@@ -51,6 +52,14 @@
 - **`nestedExtensions.of(extension)`** installs an extension in every nested editor too (callout titles and bodies, table cells), and they pass it on to theirs, so a table inside a callout gets it. Opt-in: the editor's own extensions don't reach nested editors, so menus and overlays aren't mounted once per cell.
 - `<Editor>`'s Vue UI (tables, properties, the `[[` popover, component embeds) reaches nested editors this way.
 
+## Your own Markdown syntax
+
+- **`<Editor :markdown="{ extensions, codeLanguages }">`** (`MarkdownOptions`; `wysiwyg({ lezer })` without Vue) adds Lezer Markdown syntax to the editor's and sets the fenced-code languages. Changing it reparses the note.
+- **Callouts and table cells parse the same syntax**, at any depth, and redraw when it changes.
+- **`useEditorUtils().getDocAst()` parses with the editor's own parser**, host syntax included (it used the default config). `parseMarkdownToAST(text, options)` takes the same options.
+- **The code block's label uses your `codeLanguages`** (a `dataview` fence you map shows "Dataview"); it always used `@codemirror/language-data`'s names.
+- **The README lists the plugin surface**: syntax tree node names, facets, state fields and CSS classes extensions may rely on. Unstable until 1.0.
+
 ## Collaboration
 
 Checked with y-codemirror.next on two peers, offline edits included (the playground's `/collab` page, and `test/collab.test.ts` with two `Y.Doc`s). The README has the setup.
@@ -61,7 +70,7 @@ Checked with y-codemirror.next on two peers, offline edits included (the playgro
 - **`bodyLineAfter`** decides which changes add the empty line after a frontmatter that ends the note (default: all, as before). Accepting only this peer's edits keeps two peers from both adding it.
 - **Edits write only what changed.**
   - The properties panel: two peers editing different properties merged into a doubled frontmatter (`---…------…---`); now into one.
-  - Table structural edits (rows, columns, alignment, drag): a column added while someone typed in a cell put their text before the header row, and the table stopped rendering. Now the table and the text survive (the new column's padding can land in the cell being typed in: `d  B`).
+  - Table structural edits (rows, columns, alignment, drag): a column added while someone typed in a cell put their text before the header row, and the table stopped rendering. Now the table and the text survive, the typed text in its own cell: the new column's padding goes after the cell's spaces, not against its text.
   - `v-model`: a value set by the host replaced the whole document, moving the cursor and a collaborator's concurrent edit. Now only the difference is written, and the cursor stays.
   - `textChanges(a, b)` (root) is the helper they use.
 - **Not yet:** remote cursors in the frontmatter are drawn at the first body line; inside tables and callouts they aren't drawn.

@@ -14,6 +14,8 @@ const MAX_EDITS = 1_000
  * The changes turning `a` into `b` (positions in `a`, plus `at`): what was edited, not a replacement of the whole
  * text. A cursor, or a collaborator's concurrent edit, outside them stays where it is. The common prefix and suffix
  * are trimmed, and the rest is diffed by character (one replacement when it's very long or very different).
+ * Insertions sit as far right as an equivalent diff allows, e.g. a table's padding after a cell's spaces rather than
+ * against its text, where someone may be typing.
  */
 export function textChanges(a: string, b: string, at = 0): TextChange[] {
     let start = 0
@@ -39,5 +41,14 @@ export function textChanges(a: string, b: string, at = 0): TextChange[] {
         }
         else pos += part.value.length
     }
+    // `d` + `   |    ` + ` |` is `d ` + `  |     ` + `|`: slide each pure insertion right over the text it starts with.
+    out.forEach((c, i) => {
+        if (c.from !== c.to) return
+        const limit = out[i + 1]?.from ?? at + a.length
+        while (c.from < limit && a[c.from - at] === c.insert[0]) {
+            c.insert = c.insert.slice(1) + c.insert[0]
+            c.from = c.to = c.from + 1
+        }
+    })
     return out
 }

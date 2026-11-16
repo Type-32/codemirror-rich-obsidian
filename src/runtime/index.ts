@@ -45,6 +45,6 @@ export {
 } from './utils/markdownTable'
 
 export type {
-    EmbedMount, ExternalLinkClickDetail, Frontmatter, InternalLink, InternalLinkClickDetail, PropertiesOptions, PropertyType,
-    SearchOptions, SpecialCodeBlockMapping, WysiwygPlugin,
+    CodeLanguages, EmbedMount, ExternalLinkClickDetail, Frontmatter, InternalLink, InternalLinkClickDetail, MarkdownOptions,
+    PropertiesOptions, PropertyType, SearchOptions, SpecialCodeBlockMapping, WysiwygPlugin,
 } from './editor/types/editor-types'

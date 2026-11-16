@@ -158,7 +158,7 @@ Customize lists, indentation and checkboxes (Obsidian's variable names; defaults
 }
 ```
 
-Customize code blocks. Fenced code is highlighted with the language from its info string (`@codemirror/language-data`, loaded on demand; pass `wysiwyg({ lezer: { codeLanguages } })` to use your own list). As in Obsidian, a rendered block shows the language's name top-right (a copy icon when there's none; click to copy the code), and a cursor anywhere inside reveals both fences. An unclosed fence stays as source. Tokens get `cm-code-*` classes, and blocks and inline code take their box from the same variables, so it's all plain CSS (`:root` for light, `.dark` for dark):
+Customize code blocks. Fenced code is highlighted with the language from its info string (`@codemirror/language-data`, loaded on demand; pass your own list as `<Editor :markdown="{ codeLanguages }">`, or `wysiwyg({ lezer: { codeLanguages } })` without Vue). As in Obsidian, a rendered block shows the language's name top-right, taken from that list (a copy icon when there's none; click to copy the code), and a cursor anywhere inside reveals both fences. An unclosed fence stays as source. Tokens get `cm-code-*` classes, and blocks and inline code take their box from the same variables, so it's all plain CSS (`:root` for light, `.dark` for dark):
 
 ```css
 :root {
@@ -238,6 +238,37 @@ const blocks: SpecialCodeBlockMapping[] = [{ codeInfo: 'mermaid', mount: (el, { 
 
 An embed re-renders when one of its props changes or its function or component is a different one. A link list rebuilt with new but equal objects keeps the rendered embeds. Keep one function per kind of embed, not a new closure per rebuild. Components need the Vue layer (`<Editor>`, or `vueRenderers()`); in a CodeMirror-only editor, use `mount`.
 
+### Your own Markdown syntax
+
+`<Editor :markdown="{ extensions }">` adds Lezer Markdown syntax ([`MarkdownConfig`](https://github.com/lezer-parser/markdown#user-content-markdownconfig)s) to the editor's own, which is CommonMark, GFM and Obsidian's. Callouts and table cells parse the same, as do `useEditorUtils().getDocAst()` and `parseMarkdownToAST(text, options)` when given the same options. Changing the object reparses the note, so keep one per configuration, outside the template.
+
+A node is only parsed; drawing it is up to an extension. To draw it inside callouts and table cells too, provide that extension through `nestedExtensions` as well:
+
+```ts
+import type { MarkdownConfig } from '@lezer/markdown'
+import { nestedExtensions, type MarkdownOptions } from '@type32/codemirror-rich-obsidian-editor'
+
+/** `{{name}}`: a template variable. */
+const variable: MarkdownConfig = {
+	defineNodes: [{ name: 'Variable' }],
+	parseInline: [{
+		name: 'Variable',
+		parse(cx, next, pos) {
+			if (next !== 123 /* { */ || cx.char(pos + 1) !== 123) return -1
+			const end = cx.slice(pos, cx.end).indexOf('}}')
+			return end > 2 ? cx.addElement(cx.elt('Variable', pos, pos + end + 2)) : -1
+		},
+	}],
+}
+export const markdown: MarkdownOptions = { extensions: [variable] }
+// A ViewPlugin decorating `Variable` nodes (see the playground's `extensions/index.ts`), in the note and nested editors.
+export const variables = [variableHighlight, nestedExtensions.of(variableHighlight)]
+```
+
+```vue
+<Editor v-model="doc" :markdown="markdown" :extensions="[variables]" />
+```
+
 ### Collaboration
 
 The editor works with a CRDT binding such as [y-codemirror.next](https://github.com/yjs/y-codemirror.next). It doesn't ship one: the binding, the provider and who is connected are yours.
@@ -273,7 +304,7 @@ const doc = ref(ytext.toString())
 - **`:history="false"`** leaves undo to the binding's undo manager, so each peer undoes only its own edits. CodeMirror's history would undo other people's text. Undo in a table cell goes to whatever the note binds, so it reaches the undo manager too.
 - **One peer renumbers lists.** Two peers renumbering the same list both write their fix, and both survive the merge (`4.4. three`). `listRenumbering` takes a function: true on one peer, for its own edits and after the others' changes (its fixes are sent like any edit), and `false` on the rest.
 - **`bodyLineAfter`**: a note that is only frontmatter gets an empty line to type on. Accept only this peer's own edits, so two peers don't both add one when a change makes the note end at its frontmatter.
-- **Properties, tables and `v-model` write only what changed.** A property edited on one peer and another property on the other merge into one frontmatter. A column added while someone types in a cell keeps the table and the text. (The new column re-pads the table, and that padding can land in the cell being typed in: `d  B`.) Prefer writing the `Y.Text` over `v-model`, but writing `v-model` doesn't move what others typed.
+- **Properties, tables and `v-model` write only what changed.** A property edited on one peer and another property on the other merge into one frontmatter. A column added while someone types in a cell keeps the table and the text: the new column's padding goes after the cell's spaces, not against its text. Prefer writing the `Y.Text` over `v-model`, but writing `v-model` doesn't move what others typed.
 - **Pass stable arrays** for `internal-link-map`, `special-code-block-map` and `extensions`, not literals in the template. A new array reconfigures the editor, and the reconfigure redraws tables, so a cell being typed in loses focus. This applies without collaboration too.
 - **Not yet:** a remote cursor in the frontmatter is drawn at the start of the first body line, and cursors inside tables and callouts aren't drawn.
 
@@ -566,6 +597,21 @@ The kit also exports what the built-ins are made of:
 - **Helpers:** `mountVueComponent`, `mouseSelectingField`
 
 Ship `.vue` files in an extension? Style them with Nuxt UI props or your own CSS. Tailwind v4 doesn't scan `node_modules`, so utility classes inside a published package won't be generated in the host app.
+
+### Plugin surface
+
+What extensions can build on, beyond the exports listed above. All of it may still change before 1.0; renames will be listed in the release notes.
+- **Syntax tree nodes**, beyond CommonMark and GFM:
+  - `InternalLink` (`InternalMark`, `InternalPath`, `InternalSubpath`, `InternalDisplay`) and `Embed` (`EmbedMark`, then an `InternalLink`)
+  - `HashtagTag` (`HashtagTagMark`, `HashtagTagLabel`)
+  - `Callout` (`CalloutMark`, `CalloutType`, `CalloutFoldMark`, `CalloutTitle`)
+  - `TexBlock`, `TexInline` (`TexMarker`)
+  - `Task` (`TaskMarker`)
+  - `YAMLFrontMatter` (`YAMLMarker`, `YAMLContent`)
+  - `Mark` (highlight), `CommentBlock`, `CommentInline`, `Footnote`, `FootnoteReference`
+- **Facets:** `internalLinkMapFacet`, `specialCodeBlockMapFacet`, `editorLabels`, `customBracketClosingConfig`, `contextMenuSize`, `listRenumbering`, `bodyLineAfter`, `nestedExtensions`, `tableRenderer`, `propertiesRenderer`, `componentMounter`, `searchOptionsFacet`; `/ext`'s `toolbarItems` and `slashItems`.
+- **State fields:** `headingsField`, `linkQueryField`, `mouseSelectingField`.
+- **CSS classes:** the rendered constructs (`.cm-callout-widget` with Obsidian's `.callout`, `.callout-title`, `.callout-content`; `.cm-table-widget`; `.cm-properties`, `.cm-property`; `.cm-embed-widget`, `.cm-image-embed`; `.cm-codeblock`; `.cm-task-line`; `.cm-link`, `.cm-clickable-link`; `.cm-math`), the menus (`.cm-menu`, `.cm-link-suggest*`, `.cm-action-list*`), and the CSS variables in this README. The rest of `editor.css` is internal.
 
 ## Known Issues
 - `[text]` without a link target is styled as a link, unlike in Obsidian.

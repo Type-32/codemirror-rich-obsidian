@@ -1,19 +1,26 @@
 import { Decoration } from '@codemirror/view'
+import { Facet } from '@codemirror/state'
 import { LanguageDescription } from '@codemirror/language'
 import { languages } from '@codemirror/language-data'
 import { EndFenceWidget, LanguageFlairWidget } from '../codemirror-widgets/proseCodeBlockWidgets'
 import { EmbedWidget, canEmbed } from '../codemirror-widgets/embedWidget'
 import { specialCodeBlockMapFacet } from '../specialCodeBlockMappingConfig'
+import type { CodeLanguages } from '../../types/editor-types'
 import { createProsePlugin } from './createProsePlugin'
 
 const lineBegin = Decoration.line({ attributes: { class: 'cm-codeblock cm-line-codeblock-begin' } })
 const lineContent = Decoration.line({ attributes: { class: 'cm-codeblock cm-line-codeblock-content' } })
 const lineEnd = Decoration.line({ attributes: { class: 'cm-codeblock cm-line-codeblock-end' } })
 
-/** The flair text for a fence's info string: the language's name, the raw first word if unknown, '' for none. */
-export function codeBlockLabel(info: string) {
+/** The languages the editor highlights fenced code with (`wysiwyg()` provides them), for the label's name. */
+export const codeLanguagesFacet = Facet.define<CodeLanguages, CodeLanguages>({ combine: values => values[0] ?? languages })
+
+/** The label for a fence's info string: its language's name in `codeLanguages`, the raw first word if unknown, '' for none. */
+export function codeBlockLabel(info: string, codeLanguages: CodeLanguages = languages) {
     const lang = /^\S*/.exec(info)![0]
-    return lang ? LanguageDescription.matchLanguageName(languages, lang, true)?.name ?? lang : ''
+    if (!lang) return ''
+    const found = typeof codeLanguages === 'function' ? codeLanguages(lang) : LanguageDescription.matchLanguageName(codeLanguages, lang, true)
+    return found?.name ?? lang
 }
 
 /**
@@ -25,7 +32,7 @@ export function codeBlockLabel(info: string) {
 export const proseCodeBlockPlugin = createProsePlugin({
     block: true,
     nodes: ['FencedCode'],
-    reconfigureOn: [specialCodeBlockMapFacet],
+    reconfigureOn: [specialCodeBlockMapFacet, codeLanguagesFacet],
     decorate(node, state, active, out) {
         const info = node.node.getChild('CodeInfo')
         const language = info ? state.doc.sliceString(info.from, info.to) : ''
@@ -52,7 +59,7 @@ export const proseCodeBlockPlugin = createProsePlugin({
             else out.push(lineContent.range(line.from))
         }
         if (closed && !active) {
-            out.push(Decoration.replace({ widget: new LanguageFlairWidget(codeBlockLabel(language), code) }).range(first.from, first.to))
+            out.push(Decoration.replace({ widget: new LanguageFlairWidget(codeBlockLabel(language, state.facet(codeLanguagesFacet)), code) }).range(first.from, first.to))
             out.push(Decoration.replace({ widget: new EndFenceWidget() }).range(last.from, last.to))
         }
         return false

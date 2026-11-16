@@ -7,9 +7,16 @@ import { listEditing, listRenumbering, renumberAt } from '../src/runtime/editor/
 import type { Transaction } from '@codemirror/state'
 import { state } from './helpers'
 
-/** Two peers start from `base`, each applies its own changes offline, then they exchange updates. */
-function merge(base: string, a: TextChange[], b: TextChange[]): string {
-    const docs = [new Y.Doc(), new Y.Doc()]
+/**
+ * Two peers start from `base`, each applies its own changes offline, then they exchange updates. Yjs orders
+ * concurrent inserts at one position by client id, so tests that care run both `ids` orders.
+ */
+function merge(base: string, a: TextChange[], b: TextChange[], ids = [1, 2]): string {
+    const docs = ids.map((id) => {
+        const doc = new Y.Doc()
+        doc.clientID = id
+        return doc
+    })
     docs[0]!.getText().insert(0, base)
     Y.applyUpdate(docs[1]!, Y.encodeStateAsUpdate(docs[0]!))
     docs.forEach((doc, i) => {
@@ -60,13 +67,12 @@ describe('concurrent edits merge where they were made', () => {
         const base = '| a | b |\n| - | - |\n| c | d |'
         const added = serializeTable(insertCol(parseTable(base)!, 2))
         const typed = base.replace('| d |', '| dB |')
-        const table = parseTable(merge(base, edit(base, added), edit(base, typed)))!
-        // Still a table, with the new column and the typed text in its cell. The column's re-padding lands where the
-        // text was typed, so the cell can read `d  B`: whitespace only.
-        expect(table.header).toEqual(['a', 'b', ''])
-        expect(table.rows[0]![0]).toBe('c')
-        expect(table.rows[0]![1]!.replace(/\s+/g, '')).toBe('dB')
-        expect(table.rows[0]![2]).toBe('')
+        // Whichever peer Yjs orders first: the new column, and the typed text in its own cell.
+        for (const ids of [[1, 2], [2, 1]]) {
+            const table = parseTable(merge(base, edit(base, added), edit(base, typed), ids))!
+            expect(table.header).toEqual(['a', 'b', ''])
+            expect(table.rows[0]).toEqual(['c', 'dB', ''])
+        }
     })
 
     it('lists: only the elected peer renumbers, and it repairs after the others (F3)', () => {

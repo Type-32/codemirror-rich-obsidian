@@ -3,6 +3,7 @@ import { EditorView } from '@codemirror/view'
 import type { SyntaxNode, Tree } from '@lezer/common'
 import type { Ref } from 'vue'
 import type { TransactionSpec } from '@codemirror/state'
+import { language } from '@codemirror/language'
 import { parseMarkdownToAST } from '../utils/markdownParser'
 import type { SearchMatch, SearchOptions } from '../editor/types/editor-types'
 
@@ -64,8 +65,10 @@ export function useEditorUtils(editor: Ref<any>) {
 		unref(view)?.dispatch(...specs)
 	}
 
+    /** The whole document parsed by the editor's own parser, so the host's Markdown syntax is in it too. */
     function getDocAst(): Tree {
-        return parseMarkdownToAST(getDoc() || '') as Tree
+        const parser = unref(view)?.state.facet(language)?.parser
+        return parser ? parser.parse(getDoc() || '') : parseMarkdownToAST(getDoc() || '')
     }
 
 	function findNodesByType(tree: Tree, nodeTypeName: string): SyntaxNode[] {

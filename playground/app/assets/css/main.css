@@ -8,3 +8,10 @@
 
 	--font-editor-code: 'JetBrains Mono', 'Consolas', var(--font-mono, ui-monospace);
 }
+
+/* `{{variables}}` (playground host syntax, see ~/extensions). */
+.pg-variable {
+	color: var(--ui-warning);
+	background: color-mix(in oklab, var(--ui-warning) 15%, transparent);
+	border-radius: 0.25rem;
+}

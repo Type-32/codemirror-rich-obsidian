@@ -1,4 +1,5 @@
 import type { Language, LanguageDescription } from '@codemirror/language'
+import type { MarkdownExtension } from '@lezer/markdown'
 
 /**
  * Represents a resolvable internal link within the editor.
@@ -99,12 +100,22 @@ export interface SpecialCodeBlockMapping {
 /** Draws into `el` with `props`; returns what tears it down, if anything. */
 export type EmbedMount = (el: HTMLElement, props: Record<string, unknown>) => (() => void) | void
 
+/** The languages fenced code is highlighted with, as for `@codemirror/lang-markdown`. */
+export type CodeLanguages = readonly LanguageDescription[] | ((info: string) => Language | LanguageDescription | null)
+
+/** What the editor parses (`<Editor :markdown>`, `wysiwyg({ lezer })`). Nested editors (callouts, table cells) parse the same. */
+export interface MarkdownOptions {
+    /**
+     * Markdown syntax added to the editor's own (CommonMark, GFM, Obsidian's): Lezer `MarkdownConfig`s, which can
+     * define nodes, parse inline and block syntax, and remove built-in syntax.
+     */
+    extensions?: MarkdownExtension[]
+    /** Default: `@codemirror/language-data`'s list (loaded on demand). The code block's label shows their names. */
+    codeLanguages?: CodeLanguages
+}
+
 export type WysiwygPlugin = {
-  lezer?: {
-      /** Fenced-code languages, as for `@codemirror/lang-markdown`. Default: `@codemirror/language-data`'s list (lazy-loaded). */
-      codeLanguages?: readonly LanguageDescription[] | ((info: string) => Language | LanguageDescription | null)
-      [key: string]: any
-  }
+    lezer?: MarkdownOptions
 }
 
 /**

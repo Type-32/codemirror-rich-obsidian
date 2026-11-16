@@ -116,8 +116,15 @@ describe('code blocks', () => {
     })
 
     it('labels the block with the language name, the raw tag if unknown, nothing without one', () => {
-        expect(['js', 'ts', 'python', 'css', 'js title="x.js"', 'unknownlang', ''].map(codeBlockLabel))
+        expect(['js', 'ts', 'python', 'css', 'js title="x.js"', 'unknownlang', ''].map(info => codeBlockLabel(info)))
             .toEqual(['JavaScript', 'TypeScript', 'Python', 'CSS', 'JavaScript', 'unknownlang', ''])
+    })
+
+    it("labels with the host's own languages when given", () => {
+        const own = [LanguageDescription.of({ name: 'Dataview', alias: ['dv'], load: async () => { throw new Error('unused') } })]
+        expect(codeBlockLabel('dv', own)).toBe('Dataview')
+        expect(codeBlockLabel('js', own)).toBe('js')
+        expect(codeBlockLabel('dv', info => (info === 'dv' ? own[0]! : null))).toBe('Dataview')
     })
 })
 
