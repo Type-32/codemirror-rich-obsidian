@@ -80,6 +80,7 @@
     "dev:build": "bunx nuxi build playground",
     "dev:prepare": "bunx nuxt-module-build build --stub && bunx nuxt-module-build prepare && bunx nuxi prepare playground",
     "release": "bun run prepack && bunx changelogen --release && bun publish && git push --follow-tags",
+    "release:breaking": "bun run prepack && bunx changelogen --release --major && bun publish && git push --follow-tags",
     "lint": "bunx eslint .",
     "test": "bunx vitest run",
     "test:watch": "bunx vitest watch",
@@ -90,7 +91,8 @@
     "alfaaz": "^1.1.0",
     "diff": "^9.0.0",
     "lezer-markdown-obsidian": "^0.0.3",
-    "yaml": "^2.9.1"
+    "yaml": "^2.9.1",
+    "@nuxt/kit": "^4.0.0"
   },
   "peerDependencies": {
     "@ai-sdk/openai-compatible": "^3.0.0",
@@ -110,11 +112,10 @@
     "@lezer/markdown": "^1.6.3",
     "@nuxt/ui": "^4.12.0",
     "codemirror": "^6.0.2",
-    "katex": "^0.16.33",
+    "katex": ">=0.16.33 <1",
     "tailwindcss": "^4.2.1",
     "vue": "^3.5.0",
     "vue-codemirror6": "^1.4.2",
-    "@nuxt/kit": "^4.0.0",
     "comark": "^0.9.0"
   },
   "peerDependenciesMeta": {
@@ -127,22 +128,13 @@
     "ai": {
       "optional": true
     },
-    "katex": {
-      "optional": true
-    },
     "vue": {
-      "optional": true
-    },
-    "vue-codemirror6": {
       "optional": true
     },
     "@nuxt/ui": {
       "optional": true
     },
     "tailwindcss": {
-      "optional": true
-    },
-    "@nuxt/kit": {
       "optional": true
     },
     "comark": {

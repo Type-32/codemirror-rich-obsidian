@@ -1,6 +1,15 @@
 # What's new in 0.5 (since 0.4)
 
-0.5 makes the editor usable outside Nuxt: a framework-free core for any CodeMirror 6 editor, Vue components for any Vue app with Nuxt UI, and the Nuxt module on top. Work in progress; this file grows with the release.
+0.5 makes the editor usable outside Nuxt: a framework-free core for any CodeMirror 6 editor, Vue components for any Vue app with Nuxt UI, and the Nuxt module on top. It is also ready for collaborative editing, takes your own Markdown syntax, and ships a comark plugin that renders notes with the editor's rules.
+
+## Upgrading a Nuxt app from 0.4
+
+1. `nuxt.config.ts`: `modules: ['@type32/codemirror-rich-obsidian-editor']` → `'@type32/codemirror-rich-obsidian-editor/nuxt'`.
+2. Types: `#codemirror-rich-obsidian-editor/editor-types` → `@type32/codemirror-rich-obsidian-editor`.
+3. CSS overrides on `.vue-embed-widget` → `.cm-embed-widget`.
+4. Pass stable objects (not template literals) to `internal-link-map`, `special-code-block-map`, `extensions`, `properties` and `markdown`: a new object reconfigures the editor.
+
+Nothing else in `<Editor>`'s props, events or `/kit` and `/ext` names changed.
 
 ## Breaking changes
 
@@ -9,7 +18,7 @@
 - **`.vue-embed-widget` is now `.cm-embed-widget`.** Embeds aren't only Vue components any more (see below).
 - **Image embeds (`![alt](src)`, bare image URLs) are plain DOM**, `.cm-image-embed > img` and its caption `div`, styled by `editor.css` as before. They used to mount `ImageEmbedComponent`, which is still exported for your own `embedComponent`s.
 - **`InternalLink.embedComponent` and `SpecialCodeBlockMapping.component` are typed `unknown`**, so the types don't depend on Vue; pass a Vue component as before. `SpecialCodeBlockMapping.component` is optional now (or give `mount`).
-- **`@nuxt/kit` is an optional peer dependency** instead of a dependency; Nuxt apps have it. `@nuxt/ui`, `tailwindcss`, `vue` and `vue-codemirror6` are optional peers too: a CodeMirror-only app needs none of them.
+- **`katex` and `vue-codemirror6` are required peer dependencies**, installed for you. `katex` was optional in 0.4, so npm and pnpm never installed it, though the stylesheet imports KaTeX's. `@nuxt/ui`, `tailwindcss` and `vue` became optional, so a CodeMirror-only app doesn't get Nuxt UI. Nuxt and Vue apps install it themselves.
 - **`WysiwygPlugin['lezer']` is `MarkdownOptions`** (`extensions`, `codeLanguages`) instead of any object.
 
 ## Entries

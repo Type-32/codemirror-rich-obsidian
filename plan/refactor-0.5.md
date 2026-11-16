@@ -1,6 +1,6 @@
 # 0.5 refactor plan — `@type32/codemirror-rich-obsidian-editor`
 
-Status: Phases 1–5 done (collab spike, boundaries, collab-ready editor, host Markdown syntax, comark plugin). Next: Phase 6 (docs and release). User-facing changes are tracked in `WHATS-NEW-0.5.md`.
+Status: Phases 1–6 done; 0.5.0 is ready to publish (see Phase 6). User-facing changes are in `WHATS-NEW-0.5.md`.
 
 Already done in 0.4 for Vertex: `alfaaz` removed from `build.transpile` in `module.ts` (CommonJS, was kept out of pre-bundling). Vertex can delete its `nuxt.config.ts` hook when it upgrades.
 
@@ -159,6 +159,14 @@ Driven by the spike (findings F1–F8 below):
 
 - README install section per target (CodeMirror, Vue, Nuxt), migration note for `/nuxt`.
 - `WHATS-NEW-0.5.md`. CHANGELOG stays generated.
+
+**Phase 6 done (2026-11-15).**
+- **Installed from the packed tarball** (`npm pack`, 138 KB, 224 files, `dist` only) into fresh pnpm apps outside the repo, the check Phase 2 never did (its fixtures resolved the package from inside the repo):
+  - Nuxt (`modules: ['…/nuxt']`, production build, served): panel, tables, callout, links, `[[`, table menu; no console errors.
+  - Vite + Vue + Nuxt UI (`/vue`, `/ext`): panel, tables, callout, toolbar tooltip.
+  - CodeMirror only (root + `editor.css`): live preview, math, `mount` block, label; no Vue in the bundle.
+- **Found and fixed by those installs:** `katex` was an optional peer (already in 0.4), so npm/pnpm never installed it, yet the stylesheet imports KaTeX's CSS: build error. Phase 2 had made `vue-codemirror6` optional too (same failure) and `@nuxt/kit` an optional peer (it resolved only through pnpm's hidden hoisting). Now: `@nuxt/kit` a dependency (as in 0.4), `katex` (`>=0.16.33 <1`, comark wants 0.19) and `vue-codemirror6` required peers; `@nuxt/ui`, `tailwindcss`, `vue`, `comark`, the AI peers optional. README install commands list what each kind of app imports itself (`katex`, `vue-router` for Nuxt UI's Vue mode, CodeMirror modules).
+- **Release:** `changelogen` shifts bumps down on 0.x (`--major` → minor, even an explicit `--minor` → patch), so `bun run release` gives a patch (fine for fixes and features). Breaking releases use the new `bun run release:breaking` (`--major`): 0.5.0 now, a major bump after 1.0. No version to type either way.
 
 ## Order
 

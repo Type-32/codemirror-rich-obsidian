@@ -33,21 +33,18 @@ That being said, please do note that:
 
 ## Installation
 
-Run with your preferred package manager:
-```shell
-bun add @type32/codemirror-rich-obsidian-editor
-```
-
 The package has an entry for each kind of app:
 
-| Your app | Import from | You also need |
+| Your app | Import from | Install |
 |---|---|---|
-| Nuxt | `…/nuxt` (the module) | `@nuxt/ui` |
-| Vue (Vite) | `…/vue` | Vue and Nuxt UI, [set up for Vue](https://ui.nuxt.com/docs/getting-started/installation/vue) |
-| Any CodeMirror 6 editor | the package root | CodeMirror and Lezer (peers), `katex` for math |
-| Rendering notes (reading view, publish, chat) | `…/comark` | [comark](https://comark.dev) |
+| Nuxt | `…/nuxt` (the module) | `bun add @type32/codemirror-rich-obsidian-editor @nuxt/ui` |
+| Vue (Vite) | `…/vue` | `bun add @type32/codemirror-rich-obsidian-editor @nuxt/ui tailwindcss vue-router katex` ([Nuxt UI's Vue setup](https://ui.nuxt.com/docs/getting-started/installation/vue)) |
+| Any CodeMirror 6 editor | the package root | `bun add @type32/codemirror-rich-obsidian-editor @codemirror/state @codemirror/view @codemirror/commands katex` |
+| Rendering notes (reading view, publish, chat) | `…/comark` | `bun add comark` as well |
 
 The root is the framework-free core (the live preview, its facets, commands, link search, the frontmatter and table helpers, and every type), and the Vue and Nuxt entries are built on it.
+
+Your package manager installs the rest as peer dependencies: CodeMirror and Lezer, `katex` and `vue-codemirror6`. List a package yourself when your own code imports it (a strict installer like pnpm hides the others), as the Vue and CodeMirror rows do for `katex`'s stylesheet and CodeMirror's modules. A CodeMirror-only app also gets `vue-codemirror6` and Vue installed, but never loads them.
 
 ### Nuxt
 
