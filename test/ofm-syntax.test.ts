@@ -116,8 +116,15 @@ describe('code blocks', () => {
     })
 
     it('labels the block with the language name, the raw tag if unknown, nothing without one', () => {
-        expect(['js', 'ts', 'python', 'css', 'js title="x.js"', 'unknownlang', ''].map(codeBlockLabel))
+        expect(['js', 'ts', 'python', 'css', 'js title="x.js"', 'unknownlang', ''].map(info => codeBlockLabel(info)))
             .toEqual(['JavaScript', 'TypeScript', 'Python', 'CSS', 'JavaScript', 'unknownlang', ''])
+    })
+
+    it("labels with the host's own languages when given", () => {
+        const own = [LanguageDescription.of({ name: 'Dataview', alias: ['dv'], load: async () => { throw new Error('unused') } })]
+        expect(codeBlockLabel('dv', own)).toBe('Dataview')
+        expect(codeBlockLabel('js', own)).toBe('js')
+        expect(codeBlockLabel('dv', info => (info === 'dv' ? own[0]! : null))).toBe('Dataview')
     })
 })
 
@@ -144,5 +151,39 @@ describe('math', () => {
     it('highlights commands, scripts, brackets, numbers and comments', () => {
         const s = '\\frac{a}^2_1 \\{ % c'
         expect(texTokens(s, 0).map(r => s.slice(r.from, r.to))).toEqual(['\\frac', '{', '}', '^', '2', '_', '1', '\\{', '% c'])
+    })
+})
+
+describe('comments', () => {
+    const comments = (src: string) => {
+        const out: string[] = []
+        syntaxTree(state(src)).iterate({ enter: n => { if (n.name === 'Comment') out.push(src.slice(n.from, n.to)) } })
+        return out
+    }
+
+    it('end at the first close, so text between two comments stays visible', () => {
+        // Two comments on one line used to hang the parser (lezer-markdown-obsidian's block comment looped).
+        expect(comments('%%a%% %%b%%')).toEqual(['%%a%%', '%%b%%'])
+        expect(comments('%%a%% shown %%b%%\nnext')).toEqual(['%%a%%', '%%b%%'])
+        expect(comments('%%%%%%%%')).toEqual(['%%%%%'])
+        expect(comments('x %%a\\%% b%% y')).toEqual(['%%a\\%% b%%'])
+    })
+
+    it('a block runs to the next close, or the end', () => {
+        expect(comments('%%\nhidden\n%% after\n\nbody')).toEqual(['%%\nhidden\n%%'])
+        expect(comments('%%\nopen')).toEqual(['%%\nopen'])
+    })
+
+    it('text after a block’s close on its last line is a paragraph, whatever it starts with', () => {
+        // A `-` or `*` there was read as a list marker at the old position and looped the parser (comments and math).
+        const top = (src: string) => {
+            const out: string[] = []
+            syntaxTree(state(src)).topNode.cursor().iterate(n => { out.push(n.name); return n.name === 'Document' })
+            return out.slice(1)
+        }
+        for (const src of ['%%\n-%% x', '%%\nab%% text'])
+            expect(top(src), src).toEqual(['Comment', 'Paragraph'])
+        for (const src of ['$$\n-$$ x', '$$\nab$$ text'])
+            expect(top(src), src).toEqual(['TexBlock', 'Paragraph'])
     })
 })

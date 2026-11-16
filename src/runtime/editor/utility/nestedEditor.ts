@@ -2,7 +2,6 @@ import { EditorState, Facet, Prec, type Extension } from '@codemirror/state'
 import { EditorView } from '@codemirror/view'
 import { internalLinkMapFacet } from '../plugins/linkMappingConfig'
 import { specialCodeBlockMapFacet } from '../plugins/specialCodeBlockMappingConfig'
-import { vueContextFacet } from '../plugins/hostAppConfig'
 import { customBracketClosingConfig } from '../plugins/customBracketClosingConfig'
 import { editorLabels } from '../../kit/labels'
 
@@ -16,27 +15,37 @@ export const nestedEditorContent = Facet.define<() => Extension, (() => Extensio
 export const readOnly: Extension = [EditorState.readOnly.of(true), EditorView.editable.of(false)]
 
 /**
- * What a nested editor takes from its parent (mappings, labels, bracket closing, and whether the parent is editable).
- * Widgets holding nested editors keep this and compare it in `eq`, so a change re-renders them instead of leaving
- * their nested editors on the old values.
+ * Extensions also installed in every nested editor (callout titles and bodies, table cells, and theirs in turn), on
+ * top of the live preview they always get. Provide only what should work inside those: a decoration, a renderer.
+ * Not menus, overlays or a collaboration binding, which would run once per cell. The editor's own extensions don't
+ * reach nested editors unless provided here too.
+ */
+export const nestedExtensions = Facet.define<Extension, readonly Extension[]>()
+
+/**
+ * What a nested editor takes from its parent (mappings, labels, bracket closing, `nestedExtensions`, the live preview's
+ * own config such as host Markdown syntax, and whether the parent is editable). Widgets holding nested editors keep this
+ * and compare it in `eq`, so a change re-renders them instead of leaving their nested editors on the old values.
  */
 export function nestedInputs(state: EditorState): readonly unknown[] {
     return [
         state.facet(internalLinkMapFacet), state.facet(specialCodeBlockMapFacet), state.facet(editorLabels),
-        state.facet(customBracketClosingConfig), state.facet(EditorView.editable),
+        state.facet(customBracketClosingConfig), state.facet(EditorView.editable), state.facet(nestedExtensions),
+        state.facet(nestedEditorContent),
     ]
 }
 
 export const sameInputs = (a: readonly unknown[], b: readonly unknown[]) => a.every((v, i) => v === b[i])
 
 /**
- * An editor rendering `doc` the way `parent` renders markdown (same live preview, link and code-block mappings, Vue
- * context, labels), mounted in `container`; destroy it with the widget. Read-only by default (callout titles and
- * bodies), so nothing in it reveals source; `extensions` replaces that, e.g. with a compartment that makes a table
- * cell editable while it's being edited.
+ * An editor rendering `doc` the way `parent` renders markdown (same live preview, link and code-block mappings,
+ * labels, `nestedExtensions`), mounted in `container`; destroy it with the widget. Read-only by default (callout
+ * titles and bodies), so nothing in it reveals source; `extensions` replaces that, e.g. with a compartment that makes
+ * a table cell editable while it's being edited.
  */
 export function nestedEditor(parent: EditorView, doc: string, container: HTMLElement, extensions: Extension = readOnly): EditorView {
     const content = parent.state.facet(nestedEditorContent)
+    const inherited = parent.state.facet(nestedExtensions)
     return new EditorView({
         parent: container,
         state: EditorState.create({
@@ -45,7 +54,8 @@ export function nestedEditor(parent: EditorView, doc: string, container: HTMLEle
                 content ? content() : [],
                 internalLinkMapFacet.of(parent.state.facet(internalLinkMapFacet)),
                 specialCodeBlockMapFacet.of(parent.state.facet(specialCodeBlockMapFacet)),
-                vueContextFacet.of(parent.state.facet(vueContextFacet)),
+                // Installed, and handed on to this editor's own nested editors.
+                inherited, nestedExtensions.of(inherited),
                 editorLabels.of(parent.state.facet(editorLabels)),
                 // Over `wysiwyg()`'s own default, so the host's `bracketClosing` reaches table cells.
                 Prec.highest(customBracketClosingConfig.of(parent.state.facet(customBracketClosingConfig))),

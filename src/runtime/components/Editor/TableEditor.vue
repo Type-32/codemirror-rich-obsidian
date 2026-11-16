@@ -1,12 +1,15 @@
 <script setup lang="ts">
 import { computed, nextTick, onMounted, ref, type Directive, type ShallowRef } from 'vue'
+import UButton from '@nuxt/ui/components/Button.vue'
+import UContextMenu from '@nuxt/ui/components/ContextMenu.vue'
+import UIcon from '@nuxt/ui/components/Icon.vue'
 import type { ContextMenuItem } from '@nuxt/ui'
 import { Compartment, EditorState, Prec, Transaction, type TransactionSpec } from '@codemirror/state'
-import { EditorView, drawSelection, keymap, type ViewUpdate } from '@codemirror/view'
-import { redo, undo } from '@codemirror/commands'
+import { EditorView, drawSelection, keymap, runScopeHandlers, type ViewUpdate } from '@codemirror/view'
+import { textChanges } from '../../editor/utility/textChanges'
 import { nestedEditor, readOnly } from '../../editor/utility/nestedEditor'
 import { sameVisualLine } from '../../editor/utility/tools'
-import type { RenderedTable } from '../../editor/plugins/codemirror-widgets/proseTableWidget'
+import type { RenderedTable } from '../../editor/plugins/renderers'
 import { label } from '../../kit/labels'
 import { panelEnd } from '../../editor/plugins/codemirror-plugin-proses/propertiesPlugin'
 import {
@@ -27,11 +30,10 @@ const root = ref<HTMLElement>()
 const editable = () => props.view.state.facet(EditorView.editable)
 const tableFrom = () => props.view.posAtDOM(root.value!.closest('.cm-table-widget')!)
 
-/** Rewrites the whole table, for structural edits (rows, columns, alignment). */
+/** Structural edits (rows, columns, alignment): the table's new text, written as what changed in it. */
 function commit(next: TableModel) {
     if (!editable()) return
-    const from = tableFrom()
-    props.view.dispatch({ changes: { from, to: from + props.table.value.source.length, insert: serializeTable(next) } })
+    props.view.dispatch({ changes: textChanges(props.table.value.source, serializeTable(next), tableFrom()) })
 }
 
 // ── Cells: one nested editor each, editable only while it's the one being edited ──
@@ -59,15 +61,6 @@ function deactivate() {
     const cell = active
     active = null
     cell?.dispatch({ effects: mode.reconfigure(readOnly) })
-}
-
-/** The single change turning `a` into `b`, so a cursor outside the difference stays where it is. */
-function diff(a: string, b: string) {
-    let start = 0
-    while (start < a.length && start < b.length && a[start] === b[start]) start++
-    let end = 0
-    while (end < a.length - start && end < b.length - start && a[a.length - 1 - end] === b[b.length - 1 - end]) end++
-    return { from: start, to: a.length - end, insert: b.slice(start, b.length - end) }
 }
 
 /** Mirror an edit (or cursor move) in the cell being edited onto its text in the source, and the cursor with it. */
@@ -104,7 +97,7 @@ const cellExtensions = [
     EditorState.transactionFilter.of((tr) => {
         if (!tr.docChanged) return tr
         const text = tr.newDoc.toString(), safe = escapeCell(text)
-        return safe === text ? tr : [tr, { changes: diff(text, safe), sequential: true }]
+        return safe === text ? tr : [tr, { changes: textChanges(text, safe), sequential: true }]
     }),
     EditorView.updateListener.of((u) => {
         if (u.focusChanged && !u.view.hasFocus) queueMicrotask(() => active === u.view && !u.view.hasFocus && deactivate())
@@ -119,9 +112,9 @@ const cellExtensions = [
         { key: 'ArrowLeft', run: v => horizontal(v, -1) },
         { key: 'ArrowRight', run: v => horizontal(v, 1) },
         { key: 'Escape', run: () => exit(true) },
-        // The cells have no history of their own: undo is the document's.
-        { key: 'Mod-z', run: () => undo(props.view) },
-        { key: 'Mod-y', mac: 'Mod-Shift-z', run: () => redo(props.view) },
+        // The cells have no history of their own: undo and redo are the document's, with whatever it binds them to
+        // (its history, or a collaboration undo manager).
+        { any: (_v, e) => (e.metaKey || e.ctrlKey) && !e.altKey && /^[zy]$/i.test(e.key) && runScopeHandlers(props.view, e, 'editor') },
     ])),
 ]
 
@@ -210,7 +203,7 @@ const vCell: Directive<HTMLElement, [number, number]> = {
         const cell = cells.get(key(r, c))!
         const current = cell.state.doc.toString(), next = textOf(r, c)
         // The source holds the cell trimmed, so a space just typed at its end isn't a difference.
-        if (current.trim() !== next) cell.dispatch({ changes: diff(current, next), annotations: Transaction.remote.of(true) })
+        if (current.trim() !== next) cell.dispatch({ changes: textChanges(current, next), annotations: Transaction.remote.of(true) })
     },
     beforeUnmount(_el, { value: [r, c] }) {
         const cell = cells.get(key(r, c))
@@ -224,7 +217,7 @@ function onCellMousedown(e: MouseEvent, r: number, c: number) {
     const cell = cells.get(key(r, c))
     if (!cell || cell === active || e.button !== 0 || !editable()) return
     // Links behave as links, embeds (a base's toolbar, a diagram) as themselves, and handles drag.
-    if ((e.target as Element).closest('a, .cm-link, .cm-clickable-link, .vue-embed-widget, .cm-table-handle')) return
+    if ((e.target as Element).closest('a, .cm-link, .cm-clickable-link, .cm-embed-widget, .cm-table-handle')) return
     e.preventDefault()
     e.stopPropagation()
     activate(cell, cell.posAtCoords({ x: e.clientX, y: e.clientY }, false))

@@ -3,6 +3,9 @@ import {syntaxTree} from "@codemirror/language";
 import {internalLinkMapFacet} from "../linkMappingConfig";
 import type {ExternalLinkClickDetail, InternalLinkClickDetail} from "../../types/editor-types";
 
+/** Internal links (`[[…]]`) and external ones (`[text](url)`, bare URLs). */
+const LINK = 'a.cm-link, a.cm-clickable-link'
+
 export const editorLinkClickPlugin = EditorView.domEventHandlers({
     mousedown(event, view) {
         let target = event.target as HTMLElement;
@@ -21,7 +24,7 @@ export const editorLinkClickPlugin = EditorView.domEventHandlers({
             }
         }
 
-        const anchor = target.closest('a.cm-link') as HTMLAnchorElement;
+        const anchor = target.closest(LINK) as HTMLAnchorElement;
 
         if (!anchor) {
             return false;
@@ -67,5 +70,12 @@ export const editorLinkClickPlugin = EditorView.domEventHandlers({
         }
 
         return true;
+    },
+    // Read-only editors (callouts, table cells, `disabled`) aren't contenteditable, so the browser would also follow the
+    // link's `href` itself, past the host's `*-link-click` handler.
+    click(event) {
+        if (!(event.target as HTMLElement).closest(LINK)) return false
+        event.preventDefault()
+        return true
     },
 });

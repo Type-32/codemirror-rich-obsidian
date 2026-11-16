@@ -59,6 +59,11 @@ export class EndFenceWidget extends WidgetType {
         return div;
     }
 
+    // Stateless: an equal widget keeps its DOM instead of being redrawn on every rebuild.
+    override eq(): boolean {
+        return true;
+    }
+
     override ignoreEvent(): boolean {
         return true;
     }

@@ -4,8 +4,9 @@ import { ensureSyntaxTree, syntaxTree } from '@codemirror/language'
 import { Decoration, type DecorationSet } from '@codemirror/view'
 import { createProsePlugin } from '../src/runtime/editor/plugins/codemirror-plugin-proses/createProsePlugin'
 import { proseInternalLinkPlugin } from '../src/runtime/editor/plugins/codemirror-plugin-proses/proseInternalLinkCodemirrorViewPlugin'
-import { ProseVueComponentEmbedWidget } from '../src/runtime/editor/plugins/codemirror-widgets/proseVueComponentEmbedWidget'
+import { EmbedWidget } from '../src/runtime/editor/plugins/codemirror-widgets/embedWidget'
 import { internalLinkMapFacet } from '../src/runtime/editor/plugins/linkMappingConfig'
+import { tableRenderer } from '../src/runtime/editor/plugins/renderers'
 import { lang, parsed } from './helpers'
 
 const marked = Decoration.mark({ class: 'x' })
@@ -32,15 +33,24 @@ describe('createProsePlugin (block)', () => {
 })
 
 describe('proseInternalLinkPlugin', () => {
-	const links = internalLinkMapFacet.of([{ name: 'P.base', referenceId: 'p', embedComponent: {} }])
+	const links = internalLinkMapFacet.of([
+		{ name: 'P.base', referenceId: 'p', embedMount: () => {} },
+		{ name: 'Q.base', referenceId: 'q', embedComponent: {} },
+	])
+	const tables = tableRenderer.of(() => ({ update() {}, destroy() {} }))
 	const field = proseInternalLinkPlugin as StateField<DecorationSet>
 	/** Embed widgets this editor draws, with the cursor at `cursor` (default: the start, outside everything). */
 	const embeds = (doc: string, cursor = 0) => {
-		const s = parsed(EditorState.create({ doc, extensions: [lang, links, field], selection: EditorSelection.cursor(cursor) }))
+		const s = parsed(EditorState.create({ doc, extensions: [lang, links, tables, field], selection: EditorSelection.cursor(cursor) }))
 		let n = 0
-		s.update({}).state.field(field).between(0, s.doc.length, (_f, _t, d) => { if (d.spec.widget instanceof ProseVueComponentEmbedWidget) n++ })
+		s.update({}).state.field(field).between(0, s.doc.length, (_f, _t, d) => { if (d.spec.widget instanceof EmbedWidget) n++ })
 		return n
 	}
+
+	it('draws an embed with a mount function, but a component only when something can mount it', () => {
+		expect(embeds('x\n\n![[P.base]]\n')).toBe(1)
+		expect(embeds('x\n\n![[Q.base]]\n')).toBe(0)
+	})
 
 	it('draws an embed itself, but not inside a rendered callout or table, whose nested editors draw it', () => {
 		expect(embeds('x\n\n![[P.base]]\n')).toBe(1)

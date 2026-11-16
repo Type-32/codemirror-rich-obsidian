@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import { computed, nextTick, ref, watch } from 'vue'
+import UIcon from '@nuxt/ui/components/Icon.vue'
+import UKbd from '@nuxt/ui/components/Kbd.vue'
 import type { EditorState } from '@codemirror/state'
 import type { EditorAction } from '../actions'
 import { keepEditorFocus } from '../overlay'

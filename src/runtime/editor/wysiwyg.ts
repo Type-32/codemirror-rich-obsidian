@@ -14,7 +14,7 @@ import { CustomOFM } from './lezer-parsers/customOFMParsers'
 import { mouseSelectingTracker } from './utility/tools'
 import { proseHashtagPlugin } from './plugins/codemirror-plugin-proses/proseHashtagCodemirrorViewPlugin'
 import { proseInternalLinkPlugin } from './plugins/codemirror-plugin-proses/proseInternalLinkCodemirrorViewPlugin'
-import { proseCodeBlockPlugin } from './plugins/codemirror-plugin-proses/proseCodeBlockCodemirrorViewPlugin'
+import { codeLanguagesFacet, proseCodeBlockPlugin } from './plugins/codemirror-plugin-proses/proseCodeBlockCodemirrorViewPlugin'
 import { proseLinkPlugin } from './plugins/codemirror-plugin-proses/proseLinkCodemirrorViewPlugin'
 import { proseLatexPlugin } from './plugins/codemirror-plugin-proses/proseLatexCodemirrorViewPlugin'
 import { proseQuoteblockPlugin } from './plugins/codemirror-plugin-proses/proseQuoteblockCodemirrorViewPlugin'
@@ -25,15 +25,12 @@ import { proseTablePlugin } from './plugins/codemirror-plugin-proses/proseTableP
 import { proseListPlugin, proseListEditMarkPlugin } from './plugins/codemirror-plugin-proses/proseListPlugin'
 import { proseHangingIndentPlugin } from './plugins/codemirror-plugin-proses/proseHangingIndentPlugin'
 import { editorLinkClickPlugin } from './plugins/codemirror-editor-plugins/editorLinkClickPlugin'
-import { linkQueryField, linkSuggestPlugin } from './plugins/codemirror-editor-plugins/linkSuggestPlugin'
-import LinkSuggest from '../components/Editor/LinkSuggest.vue'
-import { vueOverlay } from '../kit/overlay'
 import { editorKeymapPlugin } from './plugins/codemirror-editor-plugins/editorKeymapPlugin'
 import { customBracketClosingConfig } from './plugins/customBracketClosingConfig'
 import { indentationGuides } from './plugins/codemirror-editor-plugins/indentationGuidesPlugin'
 import { listEditing } from './plugins/codemirror-editor-plugins/listEditingPlugin'
 import { nestedEditorContent } from './utility/nestedEditor'
-import type { WysiwygPlugin } from './types/editor-types'
+import type { MarkdownOptions, WysiwygPlugin } from './types/editor-types'
 
 /**
  * Style overrides on top of lezer-markdown's: fenced code text carries the code language's own tokens (not the
@@ -52,11 +49,8 @@ const bracketClosing = [
     Prec.highest(EditorState.languageData.of(state => (state.facet(customBracketClosingConfig) ? [] : [{ closeBrackets: { brackets: [] } }]))),
 ]
 
-/** `[[` completion and its popover, mounted the first time a completion opens (most table cells never do). */
-const linkSuggest = [linkSuggestPlugin, vueOverlay(LinkSuggest, state => state.field(linkQueryField, false) !== null)]
-
 /** Lezer config shared with `parseMarkdownToAST` so offline parsing matches the live editor. */
-export function markdownConfig(config?: WysiwygPlugin['lezer']) {
+export function markdownConfig(config?: MarkdownOptions) {
     const { extensions, ...rest } = config ?? {}
     return {
         ...rest,
@@ -64,9 +58,15 @@ export function markdownConfig(config?: WysiwygPlugin['lezer']) {
     }
 }
 
+/**
+ * The live preview. `config.lezer` adds Markdown syntax and sets the fenced-code languages; nested editors (callouts,
+ * table cells) render with the same config.
+ */
 export default function wysiwyg(config?: WysiwygPlugin): Extension {
+    const codeLanguages = config?.lezer?.codeLanguages ?? languages
     return [
         nestedEditorContent.of(() => wysiwyg(config)),
+        codeLanguagesFacet.of(codeLanguages),
         bracketClosing,
         mouseSelectingTracker,
         richTextPlugin,
@@ -85,7 +85,6 @@ export default function wysiwyg(config?: WysiwygPlugin): Extension {
         proseHangingIndentPlugin,
 
         editorLinkClickPlugin,
-        linkSuggest,
         editorKeymapPlugin,
         listEditing,
         customBracketClosingConfig.of(true),
@@ -93,6 +92,6 @@ export default function wysiwyg(config?: WysiwygPlugin): Extension {
         syntaxHighlighting(proseStylesPlugin),
         syntaxHighlighting(codeHighlighter),
         //@ts-ignore lezer extension typing is looser than lang-markdown's
-        markdown({ ...markdownConfig({ ...config?.lezer, codeLanguages: config?.lezer?.codeLanguages ?? languages }), addKeymap: false }),
+        markdown({ ...markdownConfig({ ...config?.lezer, codeLanguages }), addKeymap: false }),
     ]
 }

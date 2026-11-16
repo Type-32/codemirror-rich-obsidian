@@ -1,5 +1,12 @@
 <script setup lang="ts">
 import { computed, nextTick, onBeforeUnmount, ref, shallowRef, watch } from 'vue'
+import UAlert from '@nuxt/ui/components/Alert.vue'
+import UButton from '@nuxt/ui/components/Button.vue'
+import UIcon from '@nuxt/ui/components/Icon.vue'
+import UInput from '@nuxt/ui/components/Input.vue'
+import UKbd from '@nuxt/ui/components/Kbd.vue'
+import UPopover from '@nuxt/ui/components/Popover.vue'
+import UTextarea from '@nuxt/ui/components/Textarea.vue'
 import { EditorView } from '@codemirror/view'
 import { useCompletion } from '@ai-sdk/vue'
 import { diffWords } from 'diff'

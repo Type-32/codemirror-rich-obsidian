@@ -232,8 +232,9 @@ div[contenteditable='true']:focus {
 
         .cm-codeblock-flair-container {
             @apply absolute top-1 right-2 overflow-visible z-10;
+            /* border-0 and bg-transparent: no Tailwind preflight in `dist/editor.css`. */
             .cm-codeblock-copy-button {
-                @apply inline-flex items-center rounded hover:bg-accented transition duration-200 cursor-pointer py-1 px-2 font-sans text-xs text-dimmed z-10;
+                @apply inline-flex items-center rounded border-0 bg-transparent hover:bg-accented transition duration-200 cursor-pointer py-1 px-2 font-sans text-xs text-dimmed z-10;
             }
         }
     }
@@ -823,6 +824,19 @@ div[contenteditable='true']:focus {
         content: '';
         @apply block w-full h-px bg-accented;
     }
+}
+
+/* `![alt](src)` and bare image URLs: the image, with its alt text as a caption below. */
+.cm-image-embed {
+    @apply p-3 grid grid-cols-1;
+}
+
+.cm-image-embed > img {
+    @apply h-auto min-h-12 max-h-96 object-contain rounded-lg;
+}
+
+.cm-image-embed > div {
+    @apply text-muted text-left text-xs select-none mt-1.5 text-pretty;
 }
 
 /* The editor's menus (property type menu, name and value suggestions, `[[` completion), portaled out of the editor:

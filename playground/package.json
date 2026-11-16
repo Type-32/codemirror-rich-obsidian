@@ -24,7 +24,10 @@
   },
   "devDependencies": {
     "@tailwindcss/language-server": "^0.14.29",
-    "typescript": "^5.9.3"
+    "typescript": "^5.9.3",
+    "y-codemirror.next": "^0.3.6",
+    "y-protocols": "^1.0.7",
+    "yjs": "^13.6.33"
   },
   "trustedDependencies": [
     "@parcel/watcher",

@@ -1,6 +1,16 @@
-import { createVNode, render, type Component } from 'vue'
+import { createVNode, render, type AppContext, type Component } from 'vue'
+import { Facet } from '@codemirror/state'
 import type { EditorView } from '@codemirror/view'
-import { vueContextFacet } from '../editor/plugins/hostAppConfig'
+
+/**
+ * Vue context for components CodeMirror renders (widgets, overlays): the host app's context with
+ * `provides` taken from the Editor component instance, so mounted components see app-level config
+ * (Nuxt UI, icons, auto-registered components) *and* component-level provides from ancestors such
+ * as `<UApp>` (TooltipProvider, toaster, portal target).
+ */
+export const vueContextFacet = Facet.define<AppContext | null, AppContext | null>({
+    combine: values => values[0] ?? null,
+})
 
 /**
  * Render `component` into `el` as if it were a child of the Editor component: app config,

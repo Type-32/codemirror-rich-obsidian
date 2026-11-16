@@ -1,12 +1,12 @@
 <script setup lang="ts">
-import type { ExternalLinkClickDetail, InternalLink, InternalLinkClickDetail, SpecialCodeBlockMapping } from '#codemirror-rich-obsidian-editor/editor-types'
+import type { EmbedMount, ExternalLinkClickDetail, InternalLink, InternalLinkClickDetail, SpecialCodeBlockMapping } from '@type32/codemirror-rich-obsidian-editor'
 import { EditorImageEmbedComponent, TestCustomCodeBlock } from '#components'
 import type { TabsItem } from '@nuxt/ui'
 import { EditorView } from '@codemirror/view'
 import { editorLabels, headingsField, type Heading } from '@type32/codemirror-rich-obsidian-editor/kit'
 import { blockDragHandle, selectionToolbar, slashMenu } from '@type32/codemirror-rich-obsidian-editor/ext'
 import { aiAssistant } from '@type32/codemirror-rich-obsidian-editor/ext/ai'
-import { uppercaseButton, wordCount } from '~/extensions'
+import { markdownOptions, uppercaseButton, variables, wordCount } from '~/extensions'
 
 const router = useRouter()
 const editorDisabled = ref(false), showFrontmatter = ref(false)
@@ -15,7 +15,7 @@ const $eutils = useEditorUtils(editor)
 const content = useState<string>('content', () => '')
 const codeLanguage = ref('js')
 
-const toolbarOn = ref(true), uppercaseOn = ref(true), slashOn = ref(true), handleOn = ref(true), aiOn = ref(true), aiDirect = ref(false), zhLabels = ref(false)
+const toolbarOn = ref(true), uppercaseOn = ref(true), slashOn = ref(true), handleOn = ref(true), aiOn = ref(true), aiDirect = ref(false), zhLabels = ref(false), variablesOn = ref(true)
 // The README's "Labels / localization" example.
 const zh = editorLabels.of({ bold: '粗体', heading1: '标题 1', moveUp: '上移', askAi: '问 AI', 'ui.ai.accept': '接受', 'ui.ai.discard': '放弃' })
 
@@ -40,7 +40,17 @@ const extensions = computed(() => [
 	outlineListener,
 	wordCount,
 	zhLabels.value ? zh : [],
+	variablesOn.value ? variables : [],
 ])
+
+// A plain-DOM embed (`embedMount`, no component). `window.__liveEmbeds` counts mounted ones: each unmounts when it goes.
+const liveEmbed: EmbedMount = (el, props) => {
+	const w = window as unknown as { __liveEmbeds?: number }
+	w.__liveEmbeds = (w.__liveEmbeds ?? 0) + 1
+	el.textContent = `Plain DOM embed of ${props.filePath}`
+	el.style.cssText = 'padding: 0.75rem; border: 1px dashed var(--ui-border); border-radius: 0.5rem; font-size: 0.875rem'
+	return () => { w.__liveEmbeds!-- }
+}
 
 const internalLinkMap = ref<InternalLink[]>([
     {
@@ -71,7 +81,18 @@ const internalLinkMap = ref<InternalLink[]>([
         filePath: "/Kthalatir.png",
         referenceId: "/images/kthalatir",
         embedComponent: EditorImageEmbedComponent,
-    }
+    },
+	{
+		name: "Widget.canvas",
+		filePath: "/Widget.canvas",
+		referenceId: "/widget",
+		embedMount: liveEmbed,
+	},
+	{
+		name: "极乐迪斯科",
+		filePath: "/disco-elysium.md",
+		referenceId: "/de"
+	},
 ]);
 
 const specialCodeBlockMap = ref<SpecialCodeBlockMapping[]>([
@@ -91,7 +112,7 @@ const handleInternalLinkClick = (detail: InternalLinkClickDetail) => {
 };
 
 const handleExternalLinkClick = (detail: ExternalLinkClickDetail) => {
-    if (detail.url) {
+    if (/^(https?|mailto):/i.test(detail.url)) {
         window.open(detail.url, '_blank');
     }
 };
@@ -154,6 +175,7 @@ function test3() {
 						:extensions="extensions"
 						:fold-gutter="false"
 						context-menu-size="sm"
+						:markdown="variablesOn ? markdownOptions : undefined"
 						:properties="{
 							types: { aliases: 'aliases', cssclasses: 'list', tags: 'tags', cover: 'text', description: 'text', status: 'text', rating: 'number', done: 'checkbox', created: 'date', updated: 'datetime' },
 							valueSuggestions: key => key === 'tags' ? ['kthalatir', 'lab/parity', 'draft'] : key === 'status' ? ['draft', 'review', 'done'] : [],
@@ -184,6 +206,7 @@ function test3() {
 	<USwitch v-model="aiOn" label="AI assistant"/>
 	<USwitch v-model="aiDirect" label="AI: call Ollama from the browser"/>
 	<USwitch v-model="zhLabels" label="Chinese labels (editorLabels)"/>
+	<USwitch v-model="variablesOn" label="{{variables}}: host syntax (markdown) + highlight (nestedExtensions)"/>
 	<UColorModeButton/>
 	<UButton @click="test" label="Test"/>
 </template>

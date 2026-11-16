@@ -2,7 +2,9 @@
 import type { EditorContext } from '@type32/codemirror-rich-obsidian-editor/kit'
 
 const props = defineProps<{ editor: EditorContext }>()
-const words = computed(() => props.editor.state.value.doc.toString().split(/\s+/).filter(Boolean).length)
+// The module's own counter, so the playground loads its CommonJS dependency (alfaaz) in the browser.
+const { getWordCount } = useDocumentUtils()
+const words = computed(() => getWordCount(props.editor.state.value.doc.toString()))
 const mountedAt = new Date().toLocaleTimeString()
 </script>
 

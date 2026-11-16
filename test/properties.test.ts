@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { EditorSelection } from '@codemirror/state'
 import { convertValue, editProperties, inferType, propertiesYaml, removeProperty, renameProperty, setProperty } from '../src/runtime/editor/utility/properties'
 import { panelEnd, propertiesPanel } from '../src/runtime/editor/plugins/codemirror-plugin-proses/propertiesPlugin'
-import { state } from './helpers'
+import { renderers, state } from './helpers'
 import { linkCompletions, wikilink } from '../src/runtime/components/Editor/properties'
 import { linkSuggestions } from '../src/runtime/editor/utility/linkSearch'
 
@@ -69,11 +69,17 @@ describe('frontmatter', () => {
         expect(propertiesYaml('---\n- a list\n---')).toBeNull()
         expect(propertiesYaml('---\na: [\n---')).toBeNull()
     })
+
+    it('stays source when the panel could not show it (an alias bomb past yaml’s limit)', () => {
+        const bomb = 'a: &a [x,x,x,x,x,x,x,x,x,x]\nb: &b [*a,*a,*a,*a,*a,*a,*a,*a,*a,*a]\nc: [*b,*b,*b,*b,*b,*b,*b,*b,*b,*b]\n'
+        expect(propertiesYaml(`---\n${bomb}---`)).toBeNull()
+        expect(propertiesYaml('---\na: &x 1\nb: *x\n---')).toBe('a: &x 1\nb: *x\n')
+    })
 })
 
 describe('the panel', () => {
     const DOC = '---\na: 1\n---\nbody'
-    const panel = (doc: string, sel = doc.length) => state(doc.slice(0, sel) + '«»' + doc.slice(sel), propertiesPanel())
+    const panel = (doc: string, sel = doc.length) => state(doc.slice(0, sel) + '«»' + doc.slice(sel), [renderers, propertiesPanel()])
 
     it('replaces valid frontmatter only', () => {
         expect(panelEnd(panel(DOC))).toBe(12)

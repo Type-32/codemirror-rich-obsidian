@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, shallowRef, watch } from 'vue'
+import UPopover from '@nuxt/ui/components/Popover.vue'
 import { ActionList, floatingContent, virtualAnchor, type EditorAction, type EditorContext } from '../../kit'
 import { closeSlash, runSlashAction, selectSlash, slashField, slashMatches } from './state'
 

@@ -8,14 +8,17 @@ import wysiwyg from '../editor/wysiwyg'
 import { internalLinkMapFacet } from '../editor/plugins/linkMappingConfig'
 import { specialCodeBlockMapFacet } from '../editor/plugins/specialCodeBlockMappingConfig'
 import { customBracketClosingConfig } from '../editor/plugins/customBracketClosingConfig'
-import { contextMenuSize, vueContextFacet, type MenuSize } from '../editor/plugins/hostAppConfig'
+import { contextMenuSize, type MenuSize } from '../editor/plugins/hostAppConfig'
+import { vueRenderers } from '../vue/renderers'
 import { editorKeywordSearchPlugin, searchOptionsFacet } from '../editor/plugins/codemirror-editor-plugins/editorKeywordSearchPlugin'
 import { propertiesPanel } from '../editor/plugins/codemirror-plugin-proses/propertiesPlugin'
+import { textChanges } from '../editor/utility/textChanges'
 import type {
     InternalLink,
     SpecialCodeBlockMapping,
     InternalLinkClickDetail,
     ExternalLinkClickDetail,
+    MarkdownOptions,
     PropertiesOptions,
     SearchOptions
 } from '../editor/types/editor-types'
@@ -37,7 +40,19 @@ const props = withDefaults(defineProps<{
     properties?: PropertiesOptions | false
     /** Nuxt UI size of the menus the editor opens: a property's type menu, a table's context menu. Default `md`. */
     contextMenuSize?: MenuSize
-}>(), { properties: () => ({}), bracketClosing: true, foldGutter: true })
+    /**
+     * CodeMirror's undo history and its keys (default `true`). `false` when something else owns undo, such as a
+     * collaboration binding's undo manager, so each peer undoes only its own edits. Read when the editor mounts.
+     */
+    history?: boolean
+    /**
+     * Markdown syntax added to the editor's (Lezer `MarkdownConfig`s) and the fenced-code languages. Callouts and table
+     * cells parse the same. Changing it reparses the note; pass the same object between renders.
+     */
+    markdown?: MarkdownOptions
+    /** Shown while the note is empty (translate it with the rest of your UI). */
+    placeholder?: string
+}>(), { properties: () => ({}), bracketClosing: true, foldGutter: true, history: true, placeholder: 'Start typing your markdown content here...' })
 const emit = defineEmits<{
     'internal-link-click': [detail: InternalLinkClickDetail]
     'external-link-click': [detail: ExternalLinkClickDetail]
@@ -52,6 +67,7 @@ const searchCompartment = new Compartment()
 const extensionsCompartment = new Compartment()
 const propertiesCompartment = new Compartment()
 const contextMenuSizeCompartment = new Compartment()
+const markdownCompartment = new Compartment()
 const propertiesExtension = (p: PropertiesOptions | false | undefined) => (p === false ? [] : propertiesPanel(p))
 const editorElement = ref<HTMLElement>()
 const instance = getCurrentInstance()
@@ -63,23 +79,27 @@ const vueContext = instance
     : null
 // Prop changes that land before vue-codemirror6 emits @ready are queued here and flushed in handleReady.
 let pendingEffects: StateEffect<unknown>[] = []
+// vue-codemirror6 replaces the whole document whenever its value differs from the view's, which moves the cursor
+// and, with a collaboration binding, a peer's concurrent edit. It gets only the first value; later ones go in as the
+// changes between the two texts (`syncFromModel`).
+const initialDoc = doc.value ?? ''
 
 onMounted(() => {
     cmExtensions.value = [
         EditorView.lineWrapping,
-        history(),
+        props.history ? history() : [],
         drawSelection(),
         rectangularSelection(),
         indentOnInput(),
-        keymap.of(props.disabled ? [] : [...standardKeymap, ...historyKeymap, indentWithTab]),
+        keymap.of(props.disabled ? [] : [...standardKeymap, ...(props.history ? historyKeymap : []), indentWithTab]),
         internalLinkCompartment.of(internalLinkMapFacet.of(props.internalLinkMap || [])),
         specialCodeBlockCompartment.of(specialCodeBlockMapFacet.of(props.specialCodeBlockMap || [])),
         bracketClosingCompartment.of(customBracketClosingConfig.of(props.bracketClosing)),
         foldGutterCompartment.of(props.foldGutter ? foldGutter() : []),
         editorKeywordSearchPlugin,
-        vueContextFacet.of(vueContext),
+        vueRenderers(vueContext),
         searchCompartment.of(searchOptionsFacet.of(props.searchOptions || { query: '' })),
-        wysiwyg(),
+        markdownCompartment.of(wysiwyg({ lezer: props.markdown })),
         EditorView.editable.of(!props.disabled),
         extensionsCompartment.of(props.extensions ?? []),
         propertiesCompartment.of(propertiesExtension(props.properties)),
@@ -115,6 +135,16 @@ watch(() => props.searchOptions, o => reconfigure(searchCompartment.reconfigure(
 watch(() => props.extensions, e => reconfigure(extensionsCompartment.reconfigure(e ?? [])))
 watch(() => props.properties, p => reconfigure(propertiesCompartment.reconfigure(propertiesExtension(p))))
 watch(() => props.contextMenuSize, s => reconfigure(contextMenuSizeCompartment.reconfigure(contextMenuSize.of(s))))
+watch(() => props.markdown, m => reconfigure(markdownCompartment.reconfigure(wysiwyg({ lezer: m }))))
+
+/** The host set `v-model` to something the editor doesn't show: write what changed. Not while composing (IME). */
+function syncFromModel() {
+    const v = view.value, next = doc.value ?? ''
+    if (!v || v.composing) return
+    const current = v.state.doc.toString()
+    if (next !== current) v.dispatch({ changes: textChanges(current, next) })
+}
+watch(doc, syncFromModel)
 
 function handleReady(payload: { view: EditorView }) {
     view.value = payload.view
@@ -122,6 +152,7 @@ function handleReady(payload: { view: EditorView }) {
         payload.view.dispatch({ effects: pendingEffects })
         pendingEffects = []
     }
+    syncFromModel()
 }
 
 defineExpose({ view })
@@ -129,24 +160,23 @@ defineExpose({ view })
 
 <template>
     <div :class="props.class ? props.class : 'w-full h-full overflow-visible'" ref="editorElement">
-        <ClientOnly class="overflow-visible">
-            <div class="w-full cm-rich-editor overflow-visible">
-                <CodeMirror
-                    v-model="doc"
-                    placeholder="Start typing your markdown content here..."
-                    :basic="false"
-                    :autofocus="true"
-                    :indent-with-tab="true"
-                    :tab-size="4"
-                    :tab="true"
-                    :indent-unit="'\t'"
-                    :extensions="cmExtensions"
-                    @ready="handleReady"
-                    class="w-full h-full cm-rich-editor overflow-visible"
-                    :disabled="props.disabled"
-                    :readonly="props.disabled"
-                />
-            </div>
-        </ClientOnly>
+        <div class="w-full cm-rich-editor overflow-visible">
+            <CodeMirror
+                :model-value="initialDoc"
+                @update:model-value="value => doc = String(value)"
+                :placeholder="props.placeholder"
+                :basic="false"
+                :autofocus="true"
+                :indent-with-tab="true"
+                :tab-size="4"
+                :tab="true"
+                :indent-unit="'\t'"
+                :extensions="cmExtensions"
+                @ready="handleReady"
+                class="w-full h-full cm-rich-editor overflow-visible"
+                :disabled="props.disabled"
+                :readonly="props.disabled"
+            />
+        </div>
     </div>
 </template>

@@ -1,10 +1,21 @@
 import { Decoration } from '@codemirror/view'
-import { ProseVueComponentEmbedWidget } from '../codemirror-widgets/proseVueComponentEmbedWidget'
-import ImageEmbedComponent from '../../../components/Editor/ImageEmbedComponent.vue'
+import { EmbedWidget } from '../codemirror-widgets/embedWidget'
+import type { EmbedMount } from '../../types/editor-types'
 import { createProsePlugin } from './createProsePlugin'
 
 const hidden = Decoration.replace({})
 const IMAGE_URL = /\.(png|jpe?g|gif|svg|webp)(\?.*)?$/i
+
+/** An image (`filePath`) with its alt text (`display`) as the caption. */
+const image: { mount: EmbedMount } = {
+    mount(el, { filePath, display }) {
+        el.classList.add('cm-image-embed')
+        const img = el.appendChild(document.createElement('img'))
+        img.src = String(filePath)
+        if (display) img.alt = String(display)
+        el.appendChild(document.createElement('div')).textContent = display ? String(display) : ''
+    },
+}
 
 /**
  * `[text](url)` → <a>text</a>; `![alt](src)` → image embed; bare URLs → <a>. Image/Link nodes
@@ -22,7 +33,7 @@ export const proseLinkPlugin = createProsePlugin({
             if (!url) return false
             const alt = open ? state.doc.sliceString(open.to, Math.max(open.to, url.from - 2)) : undefined
             out.push(Decoration.replace({
-                widget: new ProseVueComponentEmbedWidget(ImageEmbedComponent, { filePath: state.doc.sliceString(url.from, url.to), display: alt }, node.from, node.to),
+                widget: new EmbedWidget(image, { filePath: state.doc.sliceString(url.from, url.to), display: alt }, node.from, node.to),
                 block: true,
             }).range(node.from, node.to))
             return false
@@ -34,7 +45,8 @@ export const proseLinkPlugin = createProsePlugin({
             const marks = n.getChildren('LinkMark')
             const open = marks.find(m => state.doc.sliceString(m.from, m.to) === '[')
             const close = marks.find(m => state.doc.sliceString(m.from, m.to) === ']')
-            if (!url || !open || !close) return false
+            // `[](url)` (text not typed yet) stays source: an empty mark would throw, and hiding it would leave nothing.
+            if (!url || !open || !close || open.to === close.from) return false
             const href = state.doc.sliceString(url.from, url.to)
             out.push(hidden.range(node.from, open.to))
             out.push(Decoration.mark({
@@ -52,7 +64,7 @@ export const proseLinkPlugin = createProsePlugin({
         const href = state.doc.sliceString(node.from, node.to)
         if (IMAGE_URL.test(href)) {
             out.push(Decoration.widget({
-                widget: new ProseVueComponentEmbedWidget(ImageEmbedComponent, { filePath: href }, node.from, node.to),
+                widget: new EmbedWidget(image, { filePath: href }, node.from, node.to),
                 block: true,
                 side: 1,
             }).range(state.doc.lineAt(node.from).to))

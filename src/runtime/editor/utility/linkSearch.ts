@@ -9,14 +9,6 @@ export interface LinkSuggestion {
     insert: string
 }
 
-/** Icon of each kind of suggestion, in every `[[` list (the note's and the properties panel's). */
-export const LINK_ICONS: Record<LinkSuggestion['kind'], string> = {
-    note: 'i-lucide-file-text',
-    alias: 'i-lucide-forward',
-    heading: 'i-lucide-heading',
-    block: 'i-lucide-square-dashed-text',
-}
-
 /** Headings and blocks of the note being edited, for `[[#…` and `[[#^…`. */
 export interface NoteTargets {
     headings: string[]
@@ -43,7 +35,7 @@ function indexOf(links: readonly InternalLink[]): Entry[] {
         for (const l of links) counts.set(l.name, (counts.get(l.name) ?? 0) + 1)
         index = links.filter(l => l.name).flatMap((link) => {
             const target = counts.get(link.name)! > 1 && link.filePath ? link.filePath : link.name
-            const path = link.filePath?.toLowerCase() ?? ''
+            const path = fold(link.filePath ?? '')
             return [
                 { link, key: link.name.toLowerCase(), path, target },
                 ...(link.aliases ?? []).map(alias => ({ link, key: alias.toLowerCase(), path: '', alias, target })),
@@ -53,6 +45,12 @@ function indexOf(links: readonly InternalLink[]): Entry[] {
     }
     return index
 }
+
+/**
+ * Lower case without accents, so `cafe` finds "Café". Only the combining diacritics (U+0300–036F) go: Japanese voicing
+ * marks tell different kana apart (ゲ, ケ), and recomposing keeps Hangul syllables whole.
+ */
+const fold = (s: string) => s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').normalize('NFC').toLowerCase()
 
 /** `query`'s characters appear in `text` in order (`mnt` → "My Note"). */
 function subsequence(text: string, query: string): boolean {
@@ -73,10 +71,10 @@ function rank(key: string, q: string, path = ''): number {
 
 /** `items` matching `query` by `keyOf`, best first; with nothing typed, in their own order. */
 function ranked<T>(items: T[], query: string, keyOf: (item: T) => string, pathOf?: (item: T) => string): T[] {
-    const q = query.toLowerCase()
+    const q = fold(query)
     const matches: { item: T, r: number, len: number }[] = []
     for (const item of items) {
-        const key = keyOf(item).toLowerCase()
+        const key = fold(keyOf(item))
         const r = rank(key, q, pathOf?.(item))
         if (r >= 0) matches.push({ item, r, len: key.length })
     }

@@ -1,10 +1,16 @@
 <script setup lang="ts">
 import { computed, inject, nextTick, ref } from 'vue'
+import UBadge from '@nuxt/ui/components/Badge.vue'
+import UButton from '@nuxt/ui/components/Button.vue'
+import UCheckbox from '@nuxt/ui/components/Checkbox.vue'
+import UDropdownMenu from '@nuxt/ui/components/DropdownMenu.vue'
+import UInput from '@nuxt/ui/components/Input.vue'
+import UInputMenu from '@nuxt/ui/components/InputMenu.vue'
+import ULink from '@nuxt/ui/components/Link.vue'
 import type { DropdownMenuItem } from '@nuxt/ui'
 import type { PropertyType } from '../../editor/types/editor-types'
 import { isListType } from '../../editor/utility/properties'
-import { LINK_ICONS } from '../../editor/utility/linkSearch'
-import { MENU_UI, PROPERTIES, SUGGESTIONS_CONTENT, TYPE_ICONS, TYPE_LABELS, linkCompletions, pathId, wikilink } from './properties'
+import { LINK_ICONS, MENU_UI, PROPERTIES, SUGGESTIONS_CONTENT, TYPE_ICONS, TYPE_LABELS, linkCompletions, pathId, wikilink } from './properties'
 
 defineOptions({ name: 'PropertyRow' })
 

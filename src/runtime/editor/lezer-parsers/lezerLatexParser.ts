@@ -5,6 +5,7 @@
 
 import type { MarkdownConfig, BlockContext, InlineContext, Line } from '@lezer/markdown';
 import {Tag} from "@lezer/highlight";
+import { resumeLine } from './resumeLine'
 
 const TexDelim = { resolve: "TexInline", mark: "TexMarker" };
 
@@ -56,8 +57,8 @@ export const lezerLatexParser: MarkdownConfig = {
                     ) {
                         cx.nextLine();
                     } else {
-                        // If there's content after "$$" on the same line, adjust line.pos
-                        line.pos = line.skipSpace(lineEnd);
+                        // Content after "$$" on the same line: parse it as blocks.
+                        resumeLine(line, lineEnd);
                     }
                 } else {
                     // No closing "$$", consume to end of document (or handle as unterminated)

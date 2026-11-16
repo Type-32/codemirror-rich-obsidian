@@ -1,18 +1,19 @@
-import { Annotation, EditorSelection, EditorState, Prec, Transaction, type Extension, type StateField } from '@codemirror/state'
+import { Annotation, EditorSelection, EditorState, Facet, Prec, Transaction, type Extension, type StateField } from '@codemirror/state'
 import { Decoration, EditorView, ViewPlugin, keymap, type DecorationSet } from '@codemirror/view'
 import { PropertiesWidget } from '../codemirror-widgets/propertiesWidget'
 import { contextMenuSize } from '../hostAppConfig'
+import { propertiesRenderer } from '../renderers'
 import { propertiesOptions } from '../propertiesConfig'
 import { propertiesYaml } from '../../utility/properties'
 import type { PropertiesOptions } from '../../types/editor-types'
 import { createProsePlugin } from './createProsePlugin'
 
-/** The panel over the frontmatter, when its YAML is a mapping Obsidian would show; invalid YAML stays as source. */
+/** The panel over the frontmatter, when a `propertiesRenderer` is set and its YAML is a mapping Obsidian would show; invalid YAML stays as source. */
 const panelField = createProsePlugin({
     block: true,
     nodes: ['YAMLFrontMatter'],
     decorate(node, state, _active, out) {
-        if (node.from !== 0) return false
+        if (node.from !== 0 || !state.facet(propertiesRenderer)) return false
         const yaml = propertiesYaml(state.doc.sliceString(node.from, node.to))
         if (yaml === null) return false
         const panel = { yaml, options: state.facet(propertiesOptions), menuSize: state.facet(contextMenuSize), editable: state.facet(EditorView.editable) }
@@ -47,12 +48,22 @@ const protectFrontmatter = EditorState.changeFilter.of((tr) => {
 })
 
 /**
+ * Which document changes, made while the editor has focus, add the line after a frontmatter that ends the note
+ * (focusing the editor always does). Default: every change. Collaborating, two peers can add it at once and leave
+ * two: accept only this peer's own edits (`tr => !!tr.annotation(Transaction.userEvent)`), or other peers' changes on
+ * one peer only.
+ */
+export const bodyLineAfter = Facet.define<(tr: Transaction) => boolean, (tr: Transaction) => boolean>({ combine: values => values[0] ?? (() => true) })
+
+/**
  * Frontmatter that ends the note leaves no body line in the DOM for the caret, so typing would go nowhere: while the
  * editor has focus, such a note gets a line break after its closing `---` to type on. Not an undo step, and only once
  * the user is in the editor, so loading a note never rewrites it.
  */
 const bodyLine = EditorView.updateListener.of((u) => {
-    if (!u.view.hasFocus || !(u.focusChanged || u.docChanged)) return
+    if (!u.view.hasFocus) return
+    const after = u.state.facet(bodyLineAfter)
+    if (!u.focusChanged && !u.transactions.some(t => t.docChanged && after(t))) return
     const end = panelEnd(u.state)
     if (end === null || end !== u.state.doc.length || !u.state.facet(EditorView.editable)) return
     queueMicrotask(() => {

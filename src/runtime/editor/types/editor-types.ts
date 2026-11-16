@@ -1,5 +1,5 @@
-import type { Component } from 'vue'
 import type { Language, LanguageDescription } from '@codemirror/language'
+import type { MarkdownExtension } from '@lezer/markdown'
 
 /**
  * Represents a resolvable internal link within the editor.
@@ -25,15 +25,19 @@ export interface InternalLink {
 	 */
 	referenceId: string;
 	/**
-	 * An optional Vue component to render when this link is embedded (e.g., `![[link]]`).
-	 * If not provided, embeds of this link will be rendered as standard links.
-	 * It receives `linkData` (this link), `filePath`, `subpath` (`View` for `![[x.base#View]]`, without `#`),
-	 * `display` (`300` for `![[x.png|300]]`) and `componentProps`.
+	 * Renders this link's embeds (`![[link]]`) with a function: `embedMount(el, props)` draws into `el` and returns
+	 * what tears it down. Takes precedence over `embedComponent`. The props are `linkData` (this link), `filePath`,
+	 * `subpath` (`View` for `![[x.base#View]]`, without `#`), `display` (`300` for `![[x.png|300]]`) and
+	 * `componentProps`, spread. Embeds re-render when a prop changes or the function is a different one, so keep one
+	 * function per kind of embed rather than a new closure each time the link list is rebuilt.
 	 */
-	embedComponent?: Component;
+	embedMount?: EmbedMount
 	/**
-	 * An optional parameter to pass alongside into the component as the prop.
+	 * Renders this link's embeds with a component, with the props of `embedMount`. Needs a `componentMounter`: `/vue`
+	 * (and `<Editor>`) mount Vue components. Without either, embeds render as links.
 	 */
+	embedComponent?: unknown
+	/** Extra props for `embedMount` / `embedComponent`. */
 	componentProps?: Record<string, any>
 	/**
 	 * Other names of the note (Obsidian's `aliases` property). `[[` completion offers them; picking one inserts
@@ -77,22 +81,43 @@ export interface InternalLinkClickDetail {
 	referenceId?: string;
 }
 
+/** `external-link-click`: the editor never follows links itself. */
 export interface ExternalLinkClickDetail {
+    /** As written in the note, any scheme (`javascript:` too): check it before opening. */
     url: string;
     text: string | null;
 }
 
+/**
+ * Renders a fenced code block whose info string is `codeInfo` (e.g. `mermaid`) with `mount` or `component` instead of
+ * as code; both get `{ codeContent }`, and `mount` takes precedence. The block shows as code while the cursor is in it.
+ */
 export interface SpecialCodeBlockMapping {
     codeInfo: string
-    component: Component
+    mount?: EmbedMount
+    /** A component, mounted by the `componentMounter` (`/vue`, `<Editor>`: Vue components). */
+    component?: unknown
+}
+
+/** Draws into `el` with `props`; returns what tears it down, if anything. */
+export type EmbedMount = (el: HTMLElement, props: Record<string, unknown>) => (() => void) | void
+
+/** The languages fenced code is highlighted with, as for `@codemirror/lang-markdown`. */
+export type CodeLanguages = readonly LanguageDescription[] | ((info: string) => Language | LanguageDescription | null)
+
+/** What the editor parses (`<Editor :markdown>`, `wysiwyg({ lezer })`). Nested editors (callouts, table cells) parse the same. */
+export interface MarkdownOptions {
+    /**
+     * Markdown syntax added to the editor's own (CommonMark, GFM, Obsidian's): Lezer `MarkdownConfig`s, which can
+     * define nodes, parse inline and block syntax, and remove built-in syntax.
+     */
+    extensions?: MarkdownExtension[]
+    /** Default: `@codemirror/language-data`'s list (loaded on demand). The code block's label shows their names. */
+    codeLanguages?: CodeLanguages
 }
 
 export type WysiwygPlugin = {
-  lezer?: {
-      /** Fenced-code languages, as for `@codemirror/lang-markdown`. Default: `@codemirror/language-data`'s list (lazy-loaded). */
-      codeLanguages?: readonly LanguageDescription[] | ((info: string) => Language | LanguageDescription | null)
-      [key: string]: any
-  }
+    lezer?: MarkdownOptions
 }
 
 /**

@@ -198,3 +198,7 @@ Checked key by key against Obsidian.
   - `--table-drag-handle-size`, `--table-drag-handle-color`;
   - ours: `--table-radius` (the body's corners).
 - **The table sits inside the text column,** indented by the handle gutter. Obsidian pulls it into the page margin, but the editor has no side padding for the handles to sit in.
+
+## Module
+
+- **`alfaaz` is no longer in `build.transpile`.** It is a CommonJS package, and Nuxt keeps transpiled packages out of Vite's pre-bundling, so the browser was served it unconverted and pages showed a 500. Hosts that worked around this by removing it from `build.transpile` in a hook can delete the hook.
