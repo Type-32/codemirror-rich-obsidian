@@ -1,6 +1,30 @@
 # Changelog
 
 
+## v0.5.0
+
+[compare changes](https://github.com/Type-32/codemirror-rich-obsidian/compare/v0.4.4...v0.5.0)
+
+### 🚀 Enhancements
+
+- **ext:** Offer aliases, headings, and blocks in `[[` completion ([1afa71d](https://github.com/Type-32/codemirror-rich-obsidian/commit/1afa71d))
+- **playground:** Add a Yjs collab spike page ([9b1476d](https://github.com/Type-32/codemirror-rich-obsidian/commit/9b1476d))
+- **editor:** Render embeds with host `mount` functions ([efa26bb](https://github.com/Type-32/codemirror-rich-obsidian/commit/efa26bb))
+- **editor:** Make the editor collaboration-ready ([dc51489](https://github.com/Type-32/codemirror-rich-obsidian/commit/dc51489))
+- **editor:** Parse host Markdown syntax in the editor and its nested editors ([ce34669](https://github.com/Type-32/codemirror-rich-obsidian/commit/ce34669))
+- **comark:** Parse Obsidian's syntax in comark as the editor does ([f79bfc2](https://github.com/Type-32/codemirror-rich-obsidian/commit/f79bfc2))
+- **editor:** Make placeholders configurable and fold accents in link search ([24d4424](https://github.com/Type-32/codemirror-rich-obsidian/commit/24d4424))
+
+### 🩹 Fixes
+
+- **module:** Keep `alfaaz` out of `build.transpile` ([210c06d](https://github.com/Type-32/codemirror-rich-obsidian/commit/210c06d))
+- **package:** Install the editor's peers in every app, document 0.5 ([67ede9a](https://github.com/Type-32/codemirror-rich-obsidian/commit/67ede9a))
+- **editor:** Survive pathological notes and patch only touched blocks ([8bac76b](https://github.com/Type-32/codemirror-rich-obsidian/commit/8bac76b))
+
+### ❤️ Contributors
+
+- Type-32 ([@Type-32](https://github.com/Type-32))
+
 ## v0.4.4
 
 [compare changes](https://github.com/Type-32/codemirror-rich-obsidian/compare/v0.4.3...v0.4.4)

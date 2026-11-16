@@ -1,6 +1,6 @@
 {
   "name": "@type32/codemirror-rich-obsidian-editor",
-  "version": "0.4.4",
+  "version": "0.5.0",
   "description": "Obsidian-flavored Markdown live preview for CodeMirror 6, with Vue components and a Nuxt module.",
   "repository": "https://github.com/Type-32/codemirror-rich-obsidian",
   "license": "MIT",
